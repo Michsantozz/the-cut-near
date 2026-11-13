@@ -1,3 +1,33 @@
-export default function Home() {
-  return <main>The Cut</main>;
+import { Suspense } from "react";
+
+import { LineupScreen, LineupSkeleton, lineupSubtitle } from "@/features/lineup";
+import { loadLineup } from "@/features/lineup/server";
+import { getViewerAccountId } from "@/shared/wallet/server";
+
+import { AppHeader } from "./_shell/app-header";
+
+// The main screen: today's cut (SPEC-v19 §6), for a visitor or a member.
+export default function LineupPage() {
+  return (
+    <Suspense
+      fallback={
+        <>
+          <AppHeader title="The lineup" />
+          <LineupSkeleton />
+        </>
+      }
+    >
+      <Lineup />
+    </Suspense>
+  );
+}
+
+async function Lineup() {
+  const lineup = await loadLineup(await getViewerAccountId());
+  return (
+    <>
+      <AppHeader title="The lineup" sub={lineupSubtitle(lineup)} />
+      <LineupScreen lineup={lineup} />
+    </>
+  );
 }
