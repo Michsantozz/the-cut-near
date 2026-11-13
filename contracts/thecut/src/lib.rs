@@ -333,3 +333,6 @@ pub(crate) fn checked<T>(value: Option<T>) -> T {
     value.unwrap_or_else(|| env::panic_str("Math overflow"))
 }
 
+
+#[cfg(test)]
+mod tests;
