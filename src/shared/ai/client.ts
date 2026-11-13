@@ -58,7 +58,10 @@ const modelListSchema = z.looseObject({ data: z.array(modelEntrySchema) });
 export type SignatureWait = { attempts: number; delayMs: number };
 
 export type NearAiClientOptions = {
-  apiKey: string;
+  /** Needed for chat completions and signatures. The attestation report and the model list are public. */
+  apiKey?: string;
+  /** Send the API key with attestation requests too: only needed for a model enabled for your organization alone. Default false, so the key never goes to a gateway before it is verified. */
+  attestationWithKey?: boolean;
   baseURL?: string;
   timeoutMs?: number;
   maxRetries?: number;
@@ -86,7 +89,8 @@ const NO_ALIASING = { "x-no-aliasing": "true" } as const;
 export function createNearAiClient(options: NearAiClientOptions): NearAiClient {
   const baseURL = (options.baseURL ?? "https://cloud-api.near.ai/v1").replace(/\/+$/, "");
   const sdk = new OpenAI({
-    apiKey: options.apiKey,
+    // The SDK needs a value; without a real key, calls that need one are refused before any request.
+    apiKey: options.apiKey ?? "unset",
     baseURL,
     timeout: options.timeoutMs ?? 45_000,
     maxRetries: options.maxRetries ?? 3,
@@ -94,6 +98,11 @@ export function createNearAiClient(options: NearAiClientOptions): NearAiClient {
     fetch: (input, init) => globalThis.fetch(input, init),
   });
   const wait = options.signatureWait ?? DEFAULT_SIGNATURE_WAIT;
+  const requireKey = (what: string) => {
+    if (!options.apiKey) throw new NearAiError("config", `${what}: NEAR_AI_API_KEY is not set.`);
+  };
+  /** Public endpoints: no Authorization header. */
+  const anonymous = { authorization: null } as const;
 
   const parse = <T>(schema: z.ZodType<T>, value: unknown, what: string): T => {
     const result = schema.safeParse(value);
@@ -105,6 +114,7 @@ export function createNearAiClient(options: NearAiClientOptions): NearAiClient {
     baseURL,
 
     async chatCompletion(request) {
+      requireKey("Chat completion");
       const requestBody = JSON.stringify({ ...request, stream: false });
       let bytes: Uint8Array;
       try {
@@ -138,7 +148,7 @@ export function createNearAiClient(options: NearAiClientOptions): NearAiClient {
       try {
         const body = await sdk.get<unknown>("/attestation/report", {
           query: { model, provider: "near", include_tls_fingerprint: "false", signing_algo: signingAlgo, nonce },
-          headers: { accept: "application/json", ...NO_ALIASING },
+          headers: { accept: "application/json", ...NO_ALIASING, ...(options.attestationWithKey ? {} : anonymous) },
         });
         return parse(attestationReportSchema, body, "Attestation report");
       } catch (error) {
@@ -147,6 +157,7 @@ export function createNearAiClient(options: NearAiClientOptions): NearAiClient {
     },
 
     async chatSignature({ chatId, model, signingAlgo }) {
+      requireKey("Chat signature");
       let delay = wait.delayMs;
       let last = "no answer";
       for (let attempt = 1; attempt <= wait.attempts; attempt++) {
@@ -175,7 +186,7 @@ export function createNearAiClient(options: NearAiClientOptions): NearAiClient {
 
     async listModels() {
       try {
-        const body = await sdk.get<unknown>("/models", { headers: { accept: "application/json" } });
+        const body = await sdk.get<unknown>("/models", { headers: { accept: "application/json", ...anonymous } });
         return parse(modelListSchema, body, "Model list").data;
       } catch (error) {
         throw toNearAiError(error, "Model list");
