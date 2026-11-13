@@ -1,12 +1,15 @@
 import "server-only";
 
+import { dataSource } from "@/shared/config/data-source";
+import { cutContract } from "@/shared/near/contract";
+import { getLiveParams } from "./api/live";
 import { SAMPLE_PARAMS, SAMPLE_POOL } from "./api/sample";
 import type { Params, Pool } from "./model/types";
 
 export async function getParams(): Promise<Params> {
-  return SAMPLE_PARAMS;
+  return dataSource() === "live" ? getLiveParams() : SAMPLE_PARAMS;
 }
 
 export async function getPool(): Promise<Pool> {
-  return SAMPLE_POOL;
+  return dataSource() === "live" ? cutContract().getPool() : SAMPLE_POOL;
 }
