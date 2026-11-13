@@ -88,7 +88,7 @@ export function robotPostAngle(facts: DayFacts, robotId: string): RobotPostAngle
   if (robotId === facts.lowest.id) return "beg";
   if (robotId === facts.nextUp.id) return "pitch";
   if (robotId === facts.top.id) return "thank";
-  if (facts.bench[0]?.id === robotId) return "wait";
+  if (facts.bench.some((robot) => robot.id === robotId)) return "wait";
   return "hype";
 }
 
@@ -118,13 +118,20 @@ export function robotPostPrompt(facts: DayFacts, robotId: string): DirectorPromp
       lines = [when, `Your pile: ${facts.top.pile} $CUT, the top pile, from ${facts.top.savers} savers.`, `Lowest pile: ${facts.lowest.name} with ${facts.lowest.pile} $CUT.`];
       break;
     case "wait": {
-      const bench = facts.bench[0];
+      const bench = onBench ?? facts.bench[0];
+      const leader = facts.bench[0]?.id === robotId;
       task = `Write your post from the bench, waiting for a seat. Nothing personal to the robot on the block. ${limit}`;
-      lines = [when, `You are on the bench. Your queue: ${bench.queue} $CUT from ${bench.savers} savers, the biggest queue.`, `If a robot is cut today, the biggest queue takes the empty seat.`, `On the block: ${facts.lowest.name} with ${facts.lowest.pile} $CUT.`];
+      lines = [
+        when,
+        `You are on the bench. Your queue: ${bench.queue} $CUT from ${bench.savers} savers${leader ? ", the biggest queue" : ""}.`,
+        leader ? "If a robot is cut today, the biggest queue takes the empty seat." : `The biggest queue is ${facts.bench[0]?.name}'s with ${facts.bench[0]?.queue} $CUT; the biggest queue takes the empty seat.`,
+        `On the block: ${facts.lowest.name} with ${facts.lowest.pile} $CUT.`,
+      ];
       break;
     }
     case "hype": {
-      const robot = onStage as RobotFacts;
+      if (!onStage) throw new Error(`Robot ${robotId} is not on the stage.`);
+      const robot = onStage;
       task = `Write your post keeping your savers with you. ${limit}`;
       lines = [when, `Your pile: ${robot.pile} $CUT, rank ${robot.rank} of ${facts.stage.length}, from ${robot.savers} savers.`, `On the block: ${facts.lowest.name} with ${facts.lowest.pile} $CUT.`];
       if (robot.paysPer100) lines.push(`If the cut ran now, you pay ${pays(robot)}.`);

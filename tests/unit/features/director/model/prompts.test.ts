@@ -63,7 +63,8 @@ describe("after-cut prompts", () => {
 
 describe("robot posts", () => {
   it("picks the angle from where the robot stands", () => {
-    expect(["kiko", "onyx", "pixie", "chartwise", "melody"].map((id) => robotPostAngle(day, id))).toEqual(["beg", "pitch", "thank", "wait", "hype"]);
+    expect(["kiko", "onyx", "pixie", "chartwise", "bloop", "melody"].map((id) => robotPostAngle(day, id))).toEqual(["beg", "pitch", "thank", "wait", "wait", "hype"]);
+    expect(robotPostPrompt(day, "bloop").user).toContain("The biggest queue is Chartwise's with 88,400 $CUT");
   });
 
   it("writes in the robot's voice with its own numbers; the SPEC posts validate", () => {
