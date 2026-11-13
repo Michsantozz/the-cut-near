@@ -46,6 +46,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number, what: string): Promise<
 }
 
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
+/** Errors that mean "the service could not be reached", as opposed to "the evidence is bad". */
+const UNREACHABLE = /fetch|network|timed out|ENOTFOUND|ECONN|EAI_AGAIN|socket|status 5\d\d/i;
 
 type DcapModule = typeof import("@phala/dcap-qvl");
 
@@ -60,7 +62,8 @@ export function createHardwareVerifier(options: HardwareVerifierOptions = {}): H
   const jwks = createRemoteJWKSet(new URL(options.jwksUrl ?? NRAS_JWKS_URL), { timeoutDuration: timeoutMs });
 
   const verifyJwt = async (token: string, nonce: string): Promise<JWTPayload> => {
-    const { payload } = await jwtVerify(token, jwks, { issuer: NRAS_ISSUER, algorithms: ["ES384"] });
+    // NRAS stamps nbf/iat with its own clock; allow for skew with ours.
+    const { payload } = await jwtVerify(token, jwks, { issuer: NRAS_ISSUER, algorithms: ["ES384"], clockTolerance: 120 });
     if (typeof payload.eat_nonce !== "string" || payload.eat_nonce.toLowerCase() !== nonce.toLowerCase()) throw new Error("NRAS token eat_nonce does not match our nonce.");
     return payload;
   };
@@ -71,7 +74,9 @@ export function createHardwareVerifier(options: HardwareVerifierOptions = {}): H
       if (!bytes) return { status: "fail", detail: "The quote is not hex." };
       try {
         const dcap = await loadDcap();
-        const verified = await withTimeout(dcap.getCollateralAndVerify(bytes, options.pccsUrl), timeoutMs, "Intel quote verification");
+        const attempt = () => withTimeout(dcap.getCollateralAndVerify(bytes, options.pccsUrl), timeoutMs, "Intel quote verification");
+        // Collateral comes over the network: one retry absorbs a transient fetch failure.
+        const verified = await attempt().catch((error: unknown) => (UNREACHABLE.test(message(error)) ? attempt() : Promise.reject(error)));
         const report = verified.report.asTd10() ?? verified.report.asTd15()?.base ?? null;
         if (!report) return { status: "fail", detail: `Expected a TDX report, got ${verified.report.type}.` };
         // The checks we ran locally read the same bytes; make sure the verified report agrees field by field.
@@ -84,7 +89,7 @@ export function createHardwareVerifier(options: HardwareVerifierOptions = {}): H
       } catch (error) {
         const text = message(error);
         // Unreachable collateral is "not established"; a quote that fails verification is a failure.
-        const unreachable = /fetch|network|timed out|ENOTFOUND|ECONN|socket|status 5\d\d/i.test(text);
+        const unreachable = UNREACHABLE.test(text);
         return { status: unreachable ? "warn" : "fail", detail: `Intel quote verification ${unreachable ? "could not run" : "failed"}: ${text}` };
       }
     },
