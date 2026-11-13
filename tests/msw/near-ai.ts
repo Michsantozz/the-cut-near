@@ -83,7 +83,9 @@ export function fakeNearAiCloud(options: FakeCloudOptions = {}) {
       const nonce = url.searchParams.get("nonce") ?? "";
       requests.push({ url: request.url, headers: request.headers, body: "" });
       const gateway = boundReport(fixture.report.gateway_attestation, gatewayKey.address, nonce);
-      const candidate = boundReport((fixture.report.model_attestations ?? [])[0], modelKey.address, nonce);
+      // The recorded fixture has no GPU evidence (98 KB); a minimal payload bound to the nonce stands in for it.
+      const gpu = JSON.stringify({ nonce, evidence_list: [{ certificate: "test", evidence: "test" }], arch: "HOPPER" });
+      const candidate = { ...boundReport((fixture.report.model_attestations ?? [])[0], modelKey.address, nonce), nvidia_payload: gpu };
       return HttpResponse.json({ gateway_attestation: gateway, model_attestations: [candidate, { ...candidate }] });
     }),
     http.post(`${BASE}/chat/completions`, async ({ request }) => {
