@@ -143,3 +143,6 @@ export function rankBench(bench: readonly Robot[]): Robot[] {
 export function dayOfCut(cutIndex: number): number {
   return cutIndex + 1;
 }
+
+/** The Final hour: the last hour before each cut, when rescues happen. */
+export const FINAL_HOUR_MS = 60 * 60 * 1_000;
