@@ -86,3 +86,10 @@ export function formatUtcDate(at: Date): string {
 export function isSameUtcDay(a: Date, b: Date): boolean {
   return a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
 }
+
+/** "today" or "tomorrow" for `at` seen from `now`, by UTC calendar day; null for any other day. */
+export function relativeUtcDay(now: Date, at: Date): "today" | "tomorrow" | null {
+  if (isSameUtcDay(now, at)) return "today";
+  if (isSameUtcDay(new Date(now.getTime() + 24 * HOUR), at)) return "tomorrow";
+  return null;
+}

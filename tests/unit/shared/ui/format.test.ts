@@ -10,6 +10,7 @@ import {
   formatUtcDate,
   formatUtcTime,
   isSameUtcDay,
+  relativeUtcDay,
 } from "@/shared/ui/format";
 
 describe("formatAmount", () => {
@@ -83,6 +84,13 @@ describe("time", () => {
     expect(formatUtcTime(cut)).toBe("18:00");
     expect(formatUtcTime(new Date("2026-11-13T00:05:00Z"))).toBe("00:05");
     expect(formatUtcDate(cut)).toBe("Fri, Nov 13");
+  });
+
+  it("names today and tomorrow by UTC day", () => {
+    const now = new Date("2026-11-13T21:32:00Z");
+    expect(relativeUtcDay(now, new Date("2026-11-13T18:00:00Z"))).toBe("today");
+    expect(relativeUtcDay(now, new Date("2026-11-14T18:00:00Z"))).toBe("tomorrow");
+    expect(relativeUtcDay(now, new Date("2026-11-15T18:00:00Z"))).toBeNull();
   });
 
   it("compares UTC calendar days", () => {
