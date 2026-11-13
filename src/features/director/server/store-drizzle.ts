@@ -1,11 +1,11 @@
 import "server-only";
 import { and, desc, eq, inArray, type SQL } from "drizzle-orm";
-import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
+import type { Database } from "@/shared/db";
 import { directorAttestations, directorLines } from "../db/schema";
 import type { DirectorLineRecord, DirectorStore } from "./store";
 
-/** Any Drizzle Postgres database (postgres-js in the app, others in tests). */
-export type DirectorDb = PgDatabase<PgQueryResultHKT>;
+/** Any Drizzle Postgres database (postgres-js in the app, PGlite in tests). */
+export type DirectorDb = Database;
 
 // `proof_status` is a denormalized copy of `proof.status`, for filtering only.
 const toRecord = (row: typeof directorLines.$inferSelect): DirectorLineRecord => ({
