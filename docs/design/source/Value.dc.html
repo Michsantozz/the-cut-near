@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Cut · $CUT price</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; background: #EEF1F7; color: #0A0B0D; font-family: Inter, system-ui, sans-serif; font-variant-numeric: tabular-nums">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 0">
+    <button type="button" onClick="{{toHome}}" aria-label="Back to the lineup" style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 2px 2px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">$CUT price</div>
+    <div style="width: 44px"></div>
+  </div>
+
+  <div style="padding: 14px 24px 0">
+    <div style="font-size: 13px; font-weight: 600; color: #4B5160">Your 674.2 $CUT</div>
+    <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px; line-height: 50px; letter-spacing: -1.5px">$1,240.53</div>
+    <span style="display: inline-block; margin-top: 4px; padding: 3px 10px; border-radius: 999px; background: #FFFFFF; border: 2px solid #0A0B0D; font-size: 13px; font-weight: 700; white-space: nowrap">274.2 free · 400 saved on Melody-9</span>
+  </div>
+
+  <div style="margin: 12px 20px 0; padding: 12px 12px 10px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+    <div role="tablist" style="display: flex; gap: 6px">
+      <sc-for list="{{ranges}}" as="r" hint-placeholder-count="3">
+        <button type="button" role="tab" aria-selected="{{r.on}}" onClick="{{r.go}}" style="height: 32px; padding: 0 14px; border-radius: 999px; background: {{r.bg}}; color: {{r.fg}}; border: 2px solid #0A0B0D; font: 700 13px Inter, sans-serif">{{r.label}}</button>
+      </sc-for>
+      <span style="margin-left: auto; align-self: center; font-size: 12.5px; font-weight: 600; color: #4B5160">1 $CUT = $1.84</span>
+    </div>
+    <svg role="img" aria-label="{{chartLabel}}" width="322" height="128" viewBox="0 0 322 128" style="display: block; margin-top: 10px">
+      <defs><linearGradient id="valueFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0052FF" stop-opacity="0.22"/><stop offset="1" stop-color="#0052FF" stop-opacity="0"/></linearGradient></defs>
+      <path d="{{area}}" fill="url(#valueFill)"/>
+      <path d="{{line}}" fill="none" stroke="#0052FF" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="{{endX}}" cy="{{endY}}" r="6" fill="#C6F432" stroke="#0A0B0D" stroke-width="2"/>
+    </svg>
+    <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 11.5px; font-weight: 600; color: #4B5160">
+      <sc-for list="{{ticks}}" as="t" hint-placeholder-count="3"><span>{{t}}</span></sc-for>
+    </div>
+    <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; font-size: 12px; font-weight: 600">
+      <span style="display: flex; align-items: center; gap: 6px"><span style="width: 16px; height: 3px; border-radius: 2px; background: #0052FF"></span>Price $1.84</span>
+      <span style="color: #4B5160">{{change}}</span>
+    </div>
+  </div>
+
+  <div style="margin: 12px 20px 0; padding: 12px 14px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+    <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 17px">Where all 10,000,000 $CUT are</div>
+    <div role="img" aria-label="Saved in piles 10.5%, free 89.5%, burned 0%" style="display: flex; height: 18px; margin-top: 8px; box-sizing: border-box; border-radius: 999px; border: 2px solid #0A0B0D; overflow: hidden; background: #EEF1F7">
+      <span style="width: 10.5%; background: #C6F432; border-right: 2px solid #0A0B0D"></span>
+    </div>
+    <div style="display: flex; flex-direction: column; margin-top: 6px; font-size: 13px">
+      <sc-for list="{{split}}" as="d" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 5px 0; border-top: {{d.line}}">
+          <span style="width: 12px; height: 12px; flex-shrink: 0; box-sizing: border-box; border-radius: 4px; background: {{d.bg}}; border: 2px solid #0A0B0D"></span>
+          <span style="flex-grow: 1; min-width: 0"><b>{{d.label}}</b> <span style="color: #4B5160">{{d.sub}}</span></span>
+          <span style="font-weight: 700; white-space: nowrap">{{d.value}}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 8px 10px; border-radius: 12px; background: #EEFBC8; font-size: 12.5px; font-weight: 600"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M3 8h18v4H3zM5 12v9h14v-9M12 8v13"/></svg><span style="flex-grow: 1">Fees for today’s prize</span><b style="white-space: nowrap">4,100 $CUT so far</b></div>
+  </div>
+
+  <div style="display: flex; align-items: flex-start; gap: 8px; margin: 12px 20px 0; padding: 8px 12px; border-radius: 14px; background: #FFE7D6; border: 2px solid #0A0B0D; font-size: 12.5px; line-height: 17px; font-weight: 600"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M12 3.5L2.5 20h19zM12 10v4M12 17v.01"/></svg>$CUT has nothing behind it. Its price can fall close to zero.</div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 20px 0">
+    <sc-for list="{{stats}}" as="s" hint-placeholder-count="3">
+      <div style="padding: 8px 10px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D">
+        <div style="display: flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: #4B5160"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="{{s.icon}}"/></svg>{{s.label}}</div>
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 19px">{{s.value}}</div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variant":{"editor":"enum","default":"week","options":["day","week","all"]},"go":{"editor":null},"$preview":{"width":390,"height":844}}'>
+// Sample data: every robot, account and number here is fictional.
+// Day 2: the coin launched Thu Nov 12 at 15:01 UTC, so 1W and All show the same 23 hours, about one point every 2 hours.
+const LAUNCH = [1.733, 1.75, 1.79, 1.77, 1.80, 1.826, 1.81, 1.78, 1.76, 1.79, 1.81, 1.83, 1.84];
+const RANGES = {
+  day: { label: '1D', points: [1.812, 1.815, 1.81, 1.818, 1.822, 1.83, 1.826, 1.829, 1.835, 1.832, 1.838, 1.836, 1.84], change: 'Today, Fri Nov 13', ticks: ['00:00', '07:00', '13:48'] },
+  week: { label: '1W', points: LAUNCH, change: 'Since launch, Thu Nov 12', ticks: ['Thu 15:01', 'Fri 02:24', 'Fri 13:48'] },
+  all: { label: 'All', points: LAUNCH, change: 'Since launch, Thu Nov 12', ticks: ['Thu 15:01', 'Fri 02:24', 'Fri 13:48'] }
+};
+// Where the supply sits: saved in the 10 piles, free in wallets and the pool, burned (none before the first cut).
+const SPLIT = [
+  { label: 'Saved in piles', sub: '10.5%', value: '1,052,400', bg: '#C6F432' },
+  { label: 'Free', sub: '89.5%', value: '8,947,600', bg: '#EEF1F7' },
+  { label: 'Burned', sub: 'first burn today, 18:00 UTC', value: '0', bg: '#FF3B3B' }
+];
+const W = 322;
+const H = 128;
+class Component extends DCLogic {
+  nav(screen, variant) {
+    return () => {
+      if (this.props.go) this.props.go(screen, variant);
+      else if (screen === 'value') this.setState({ variant });
+    };
+  }
+  renderVals() {
+    const v = this.props.go ? (this.props.variant ?? 'week') : ((this.state && this.state.variant) ?? this.props.variant ?? 'week');
+    const r = RANGES[v] || RANGES.week;
+    const lo = Math.min(...r.points);
+    const hi = Math.max(...r.points);
+    const pad = (hi - lo) * 0.12;
+    const y = (p) => 8 + (1 - (p - lo + pad) / (hi - lo + pad * 2)) * (H - 16);
+    const x = (i) => 8 + (i / (r.points.length - 1)) * (W - 16);
+    const pts = r.points.map((p, i) => [x(i), y(p)]);
+    const line = pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)} ${py.toFixed(1)}`).join(' ');
+    const end = pts[pts.length - 1];
+    return {
+      change: r.change,
+      chartLabel: `$CUT price, ${r.change}`,
+      ranges: Object.entries(RANGES).map(([id, o]) => ({ label: o.label, on: id === v, bg: id === v ? '#0A0B0D' : '#FFFFFF', fg: id === v ? '#FFFFFF' : '#0A0B0D', go: this.nav('value', id) })),
+      line,
+      area: `${line} L${end[0].toFixed(1)} ${H} L8 ${H} Z`,
+      endX: end[0].toFixed(1),
+      endY: end[1].toFixed(1),
+      ticks: r.ticks,
+      split: SPLIT.map((d, i) => ({ ...d, line: i ? '1.5px solid #EEF1F7' : '0' })),
+      stats: [
+        { label: 'Market cap', value: '$18.4M', icon: 'M3 20h18M7 20v-6M12 20V8M17 20V4' },
+        { label: 'Holders', value: '2,140', icon: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M13.5 8a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0zM20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4M15.5 4.6a3.5 3.5 0 0 1 0 6.8' },
+        { label: 'Next cut', value: '4h 12m', icon: 'M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM8.1 8.1L20 20M20 4L8.1 15.9' }
+      ],
+      toHome: this.nav('cast', 'list')
+    };
+  }
+}
+</script>
+</body>
+</html>

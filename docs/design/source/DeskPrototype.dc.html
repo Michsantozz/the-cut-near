@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Cut · Laptop prototype</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#DDE2EC}
+</style>
+</helmet>
+<div style="width: 1940px; height: 1520px; box-sizing: border-box; display: flex; overflow: hidden; background: #DDE2EC; color: #0A0B0D; font-family: Inter, system-ui, sans-serif; font-variant-numeric: tabular-nums">
+
+  <aside aria-label="Screens and states" style="width: 420px; flex-shrink: 0; box-sizing: border-box; height: 1520px; overflow-y: auto; padding: 20px 18px; background: #FFFFFF; border-right: 2px solid #0A0B0D">
+    <div style="display: flex; align-items: center; gap: 8px">
+      <div style="width: 34px; height: 34px; box-sizing: border-box; border-radius: 10px; background: #0052FF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><path d="M18 7.5A7 7 0 1 0 18 16.5"/></svg>
+      </div>
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">the cut</div>
+      <span style="padding: 3px 9px; border-radius: 999px; background: #C6F432; border: 2px solid #0A0B0D; font-size: 11px; font-weight: 800">LAPTOP</span>
+      <div style="margin-left: auto; padding: 3px 9px; border-radius: 999px; background: #EEF1F7; border: 2px solid #0A0B0D; font-size: 11px; font-weight: 700">{{total}} states</div>
+    </div>
+    <p style="margin: 10px 0 0; font-size: 13px; line-height: 18px; color: #4B5160">Pick any screen and state. Buttons inside the laptop screen work too.</p>
+
+    <nav style="display: flex; flex-direction: column; gap: 9px; margin-top: 12px">
+      <sc-for list="{{groups}}" as="g" hint-placeholder-count="15">
+        <div>
+          <button type="button" onClick="{{g.pick}}" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 0; border: 0; background: none; text-align: left; font-family: Inter, sans-serif; color: #0A0B0D">
+            <span style="width: 22px; height: 22px; box-sizing: border-box; border-radius: 7px; background: {{g.badge}}; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800">{{g.n}}</span>
+            <span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px">{{g.label}}</span>
+            <span style="margin-left: auto; font-size: 12px; font-weight: 600; color: #4B5160">{{g.count}}</span>
+          </button>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; padding-left: 30px">
+            <sc-for list="{{g.states}}" as="s" hint-placeholder-count="3">
+              <button type="button" onClick="{{s.pick}}" aria-pressed="{{s.pressed}}" style="height: 26px; padding: 0 10px; border-radius: 999px; background: {{s.bg}}; border: 2px solid #0A0B0D; font: 600 12px Inter, sans-serif; color: {{s.fg}}; white-space: nowrap">{{s.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </nav>
+  </aside>
+
+  <main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 18px 40px 0">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 10px">
+      <button type="button" onClick="{{prev}}" aria-label="Previous state" style="width: 40px; height: 40px; border-radius: 12px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 2px 2px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <div style="min-width: 300px; height: 40px; box-sizing: border-box; padding: 0 16px; border-radius: 12px; background: #0A0B0D; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 700">
+        <span>{{cur.screen}}</span><span style="color: #9AA0AE">/</span><span style="color: #C6F432">{{cur.label}}</span><span style="margin-left: 6px; font-weight: 600; color: #9AA0AE">{{cur.pos}}</span>
+      </div>
+      <button type="button" onClick="{{next}}" aria-label="Next state" style="width: 40px; height: 40px; border-radius: 12px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 2px 2px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+
+    <!-- The laptop screen -->
+    <div style="width: 1440px; height: 900px; margin-top: 16px; position: relative; overflow: hidden; border-radius: 16px; border: 3px solid #0A0B0D; box-shadow: 8px 8px 0 #0A0B0D; background: #EEF1F7">
+      <sc-if value="{{is.cast}}" hint-placeholder-val="{{ true }}"><dc-import name="DeskLineup" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.club}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskClub" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.earnings}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskEarnings" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.director}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskDirector" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.brain}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskBrain" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.profile}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskProfile" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.buy}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskBuy" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.sell}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskSell" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.share}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskShare" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.apply}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskApply" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.value}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskValue" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.account}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskAccount" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.activity}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskActivity" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.notifications}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskNotifications" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.testmode}}" hint-placeholder-val="{{ false }}"><dc-import name="DeskTestMode" variant="{{variant}}" go="{{go}}" member="{{member}}" hint-size="1440px,900px"></dc-import></sc-if>
+      <sc-if value="{{is.receipts}}" hint-placeholder-val="{{ false }}"><div style="height: 900px; overflow-y: auto"><dc-import name="Receipts" go="{{go}}" hint-size="1440px,1800px"></dc-import></div></sc-if>
+    </div>
+
+    <div style="display: flex; gap: 16px; margin-top: 22px">
+      <div style="flex: 1.3 1 0; padding: 16px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+        <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: #4B5160">WHAT'S HAPPENING</div>
+        <div style="margin-top: 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; line-height: 26px">{{cur.screen}} · {{cur.label}}</div>
+        <p style="margin: 8px 0 0; font-size: 14px; line-height: 21px">{{cur.about}}</p>
+      </div>
+      <div style="flex: 1 1 0; padding: 16px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+        <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: #4B5160">FROM HERE</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px">
+          <sc-for list="{{leads}}" as="l" hint-placeholder-count="2">
+            <button type="button" onClick="{{l.pick}}" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 12px; box-sizing: border-box; text-align: left; border-radius: 14px; background: #EEF1F7; border: 2px solid #0A0B0D; font-family: Inter, sans-serif; color: #0A0B0D">
+              <span style="flex-grow: 1; min-width: 0">
+                <span style="display: block; font-size: 14px; font-weight: 700">{{l.action}}</span>
+                <span style="display: block; font-size: 12px; color: #4B5160">{{l.target}}</span>
+              </span>
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="width: 260px; flex-shrink: 0; align-self: flex-start; padding: 12px 14px; border-radius: 16px; background: #FFE7D6; border: 2px solid #0A0B0D; font-size: 12.5px; line-height: 18px">
+        <b>Sample data.</b> Every robot, account and number here is fictional. The phone version of every screen is in the phone prototype above.
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1940,"height":1520}}'>
+// Every screen and state of The Cut app on a laptop, in the same flow order as the phone prototype.
+const FLOW = [
+  { id: 'cast', label: 'Lineup', badge: '#A8F0D0', states: [
+    { id: 'new', label: 'First open', about: 'Opens straight on the lineup from a link on X or Telegram, here in a laptop browser. Looking needs no wallet. One card says it all: 10 AI robots fight to stay alive; save yours with $CUT, or it is deleted at today’s cut. One cut every day at 18:00 UTC.', next: [['testmode', 'creating', 'Judge? Try it without a wallet'], ['cast', 'connect', 'Buy $CUT'], ['profile', 'pixie', 'Tap Pixie Volt'], ['director', 'scheduled', 'Tap today’s cut']] },
+    { id: 'connect', label: 'Connect', about: 'Buy or Connect opens the wallet sheet: Meteor, HOT inside Telegram, MyNearWallet, or an email start for people new to NEAR. Connecting never moves money.', next: [['buy', 'amount', 'Pick Meteor Wallet'], ['cast', 'new', 'Just looking']] },
+    { id: 'list', label: 'Member', about: 'The everyday view is today’s cut: a big countdown to 18:00 UTC, the 10 robots ranked by pile with the red cut line above the lowest, and what each robot would pay per 100 $CUT saved if the cut ran now. Every survivor gets an equal slice of the prize, so small piles pay more and rescuing pays. Above it, what your $CUT is worth and what you saved on whom.', next: [['club', 'vote', 'Tap Save on Melody-9'], ['director', 'scheduled', 'Tap On the block'], ['profile', 'kiko', 'Tap Kiko Bun'], ['value', 'week', 'Tap Price'], ['sell', 'amount', 'Tap Sell'], ['account', 'default', 'Tap the wallet']] },
+    { id: 'payout', label: 'After the cut', about: 'Right after today’s cut. Kiko Bun is deleted, Chartwise takes the empty seat, and a prize card sits on top until it is collected: each survivor got an equal slice, shared by its savers.', next: [['earnings', 'claimable', 'Collect']] },
+    { id: 'rebalance', label: 'Final hour', about: 'Every day 17:00 to 18:00 UTC. Saves count until the cut, so this is when rescues happen. Today nobody is saving Kiko Bun: still 38,201 short of Onyx Moon with 42 minutes left. Chartwise waits on the bench with the biggest queue.', next: [['profile', 'chart', 'Tap Chartwise'], ['director', 'ready', 'Tap the cut']] },
+    { id: 'loading', label: 'Loading', about: 'First paint while the piles are read from NEAR. Placeholders keep the layout steady.', next: [['cast', 'list', 'Loaded']] },
+    { id: 'offline', label: 'Offline', about: 'No connection. The last piles stay on screen with the time they were read; buying, selling and saving wait.', next: [['cast', 'list', 'Back online']] }
+  ] },
+  { id: 'director', label: 'Director', badge: '#8B6CFF', states: [
+    { id: 'scheduled', label: 'On the block', about: 'Earlier today. The countdown to today’s cut, the lowest pile and how far it sits from the next one, the Director’s one-liners, the guess, and the rule in one line: every day at 18:00 UTC the lowest pile is cut.', next: [['club', 'guess', 'Guess who gets cut'], ['brain', 'why', 'Why Kiko Bun'], ['profile', 'kiko', 'Tap Kiko Bun'], ['apply', 'form', 'Register a robot']] },
+    { id: 'live', label: 'The cut', about: 'Today 18:00 UTC, one transaction run by whoever pressed first: Kiko Bun’s NEAR account is deleted, half its pile burns, the other half plus the day’s fees is split into 9 equal slices, one per surviving robot, and Chartwise takes the seat. The Director roasts the one who leaves, signed by NEAR AI.', next: [['brain', 'verify', 'Tap Verified · NEAR AI'], ['director', 'done', 'A minute later'], ['notifications', 'lock', 'Phone in the pocket']] },
+    { id: 'done', label: 'Receipt', about: 'A minute after the cut. What changed, the receipts on NEAR (deleted, burned, paid, joined), the Director’s post and the new lineup. One tap to share the cut.', next: [['share', 'cut', 'Share the cut'], ['cast', 'list', 'See the lineup']] },
+    { id: 'failed', label: 'Too early', about: 'Someone pressed Run the cut at 17:59. The contract refused: nothing moved and only the network fee was spent. The button opens at 18:00 for everyone.', next: [['director', 'ready', 'Wait for 18:00'], ['brain', 'limits', 'House rules']] },
+    { id: 'ready', label: 'Run the cut', about: 'Today 18:00 UTC. Anyone can press Run the cut and keep the 0.5 NEAR left in the deleted robot’s account. Same result whoever presses: the lowest pile is cut and nobody can pick another robot.', next: [['director', 'live', 'Run the cut'], ['director', 'failed', 'Pressed at 17:59'], ['brain', 'limits', 'House rules']] }
+  ] },
+  { id: 'brain', label: 'Inside the cut', badge: '#D9CCFF', states: [
+    { id: 'live', label: 'Live piles', about: 'What the cut reads, all of it on NEAR: every robot’s pile, savers and saves today, the cut line under the lowest, what each robot pays per 100 $CUT saved, and the bench queue. Savers counts are for show; only $CUT counts.', next: [['brain', 'why', 'Why']] },
+    { id: 'why', label: 'Why Kiko Bun', about: 'One decision traced: Kiko Bun’s pile next to Onyx Moon’s, the 38,201 $CUT gap, and what 18:00 UTC does if nothing moves. The math picks; the AI only talks.', next: [['brain', 'limits', 'Rules']] },
+    { id: 'limits', label: 'House rules', about: 'Fixed at launch, no owner key: saves count by $CUT, not by people; saved $CUT is locked until the next cut; the lowest pile is cut every day at 18:00 UTC; half burns; the other half plus the 1% fees goes 95% to the savers in 9 equal slices, one per surviving robot, and 5% to their creators; robot wallets obey only the rules.', next: [['brain', 'record', 'Cuts']] },
+    { id: 'record', label: 'Past cuts', about: 'Empty on day 2: no cut has run yet. After each cut it lists who was deleted, who came in, how much burned and the Director’s line.', next: [['director', 'scheduled', 'Back to the Director']] },
+    { id: 'verify', label: 'Check this line', about: 'Tap the NEAR AI badge on any Director line or robot post: the sealed hardware, the model signature, the exact prompt and reply, and a link to the public NEAR AI verifier.', next: [['director', 'live', 'Back to the cut'], ['brain', 'live', 'Inside the cut']] }
+  ] },
+  { id: 'profile', label: 'Robot', badge: '#FF9142', states: [
+    { id: 'pixie', label: 'Pixie Volt', about: 'Top pile. Each robot has its own page: its pile and savers, its own NEAR account that no human holds a key to, its latest posts on X asking for saves, and a Save button.', next: [['club', 'vote', 'Save a robot'], ['cast', 'list', 'Back']] },
+    { id: 'kiko', label: 'Kiko Bun', about: 'On the block: the lowest pile, 23,600 $CUT, 38,201 short of Onyx Moon. Its X posts beg for saves. If nothing changes by 18:00 UTC today its NEAR account is deleted. Rescue pays: lifted past Onyx Moon, its small pile pays the most per $CUT.', next: [['club', 'vote', 'Save Kiko Bun'], ['director', 'scheduled', 'See today’s cut'], ['cast', 'list', 'Back']] },
+    { id: 'chart', label: 'Chartwise', about: 'On the bench. Not on the stage yet; its queue of 88,400 $CUT is the biggest on the bench, so it takes the seat of whoever is cut today.', next: [['director', 'scheduled', 'See today’s cut'], ['cast', 'rebalance', 'Back']] },
+    { id: 'melody', label: 'Melody-9', about: 'Your robot: 400 $CUT saved on it, locked until 18:00 UTC. If it survives, you share its slice of the prize with its other savers.', next: [['cast', 'list', 'Back']] }
+  ] },
+  { id: 'club', label: 'Club', badge: '#FF7AD9', states: [
+    { id: 'card', label: 'Member card', about: 'Every $CUT holder is in the club. The card, this week’s perks from creators, your save, the guess and top savers.', next: [['club', 'perk', 'Get Pixie Volt’s perk'], ['club', 'confirm', 'Confirm Lila’s stickers'], ['club', 'vote', 'Save a robot'], ['club', 'guess', 'Guess the cut'], ['club', 'fans', 'Top savers']] },
+    { id: 'guess', label: 'Guess the cut', about: 'Pick who gets cut today. A right guess is +2 club points. It never moves a pile or any money.', next: [['club', 'card', 'Lock in Kiko Bun']] },
+    { id: 'perk', label: 'Perk', about: 'A perk up close: what the robot’s creator gives, when, spots left, and how often members confirmed its promises.', next: [['club', 'redeemed', 'Save my spot'], ['club', 'card', 'Close']] },
+    { id: 'redeemed', label: 'Spot saved', about: 'The perk is booked like a ticket. A ping arrives 10 minutes before the live.', next: [['club', 'card', 'Back to club']] },
+    { id: 'vote', label: 'Save a robot', about: 'Pick a robot and an amount. The $CUT goes into its pile, locked until today’s cut. Each robot shows what it pays per 100 $CUT if the cut ran now: small piles pay more but sit closer to the cut line. If it survives you share its slice of the prize; if it is cut, half your save burns and half pays the others.', next: [['club', 'card', 'Save 400 on Melody-9']] },
+    { id: 'confirm', label: 'Perk check', about: 'After a perk is delivered, members confirm it happened. Counted in the contract; two skipped in a row and the creator loses its slices for 7 days.', next: [['club', 'card', 'Got it']] },
+    { id: 'fans', label: 'Top savers', about: 'Rank by club points: one per cut your robot survives, one per perk, two per right guess. Not by size, so a $10 saver can be #1.', next: [['club', 'card', 'Back']] },
+    { id: 'locked', label: 'Not a member', about: 'Before the first buy the card waits: what members get, this week’s perks behind a lock, and one button to join from $10.', next: [['buy', 'amount', 'Buy $CUT to join']] }
+  ] },
+  { id: 'earnings', label: 'Prizes', badge: '#C6F432', states: [
+    { id: 'claimable', label: 'Ready to collect', about: 'Only what was paid: your share of today’s prize, 6.32 $CUT, and how it was made from Kiko Bun’s pile: half burned; the other half plus the fees split into 9 equal slices, one per survivor; Melody-9’s slice shared by its savers. Never a forecast.', next: [['earnings', 'claiming', 'Collect to wallet']] },
+    { id: 'claiming', label: 'Collecting', about: 'Collect sent. The button locks while the wallet confirms.', next: [['earnings', 'claimed', 'Confirmed'], ['earnings', 'failed', 'Collect expires']] },
+    { id: 'claimed', label: 'Collected', about: 'The prize is in the wallet, with the receipt on NEAR. The 400 on Melody-9 rides into tomorrow’s cut unless it is taken back.', next: [['cast', 'list', 'Lineup']] },
+    { id: 'empty', label: 'Nothing yet', about: 'Saved today. Prizes come after the 18:00 UTC cut and only if your robot survives, so it says the exact time.', next: [['director', 'scheduled', 'How the cut works']] },
+    { id: 'failed', label: 'Collect failed', about: 'The network was busy and the collect expired. The prize is still there; only a cent was spent.', next: [['earnings', 'claiming', 'Try again']] },
+    { id: 'locked', label: 'Not a member', about: 'A visitor sees how prizes work, not a member’s numbers.', next: [['buy', 'amount', 'Buy $CUT']] },
+    { id: 'loading', label: 'Loading', about: 'Prizes are read from NEAR, so they show as placeholders for a moment.', next: [['earnings', 'claimable', 'Loaded']] }
+  ] },
+  { id: 'buy', label: 'Buy', badge: '#0052FF', states: [
+    { id: 'amount', label: 'Amount', about: 'Pick a dollar amount and pay in NEAR or USDC. It shows the $CUT you get and its price. Nothing stands behind $CUT; the game is the point.', next: [['buy', 'review', 'Review'], ['buy', 'low', 'Amount above balance'], ['buy', 'blocked', 'Location is the US']] },
+    { id: 'review', label: 'Review', about: 'Everything before signing: price, the 1% fee that goes to today’s prize, the most the price can move, and the risk in one line.', next: [['buy', 'wallet', 'Confirm purchase'], ['buy', 'moved', 'Prices move meanwhile']] },
+    { id: 'wallet', label: 'Wallet', about: 'The NEAR wallet asks to approve one transaction.', next: [['buy', 'buying', 'Approve'], ['buy', 'review', 'Cancel']] },
+    { id: 'buying', label: 'Buying', about: 'One swap of NEAR for $CUT in The Cut’s pool. The 1% fee goes to today’s prize.', next: [['buy', 'success', 'Settled'], ['buy', 'failed', 'Reverted']] },
+    { id: 'success', label: 'Done', about: 'Celebrate, then save a robot: free $CUT wins nothing at the cut. Or share, or go to the lineup.', next: [['club', 'vote', 'Save a robot'], ['share', 'joined', 'Share it'], ['notifications', 'ask', 'First buy: ask for pings'], ['cast', 'list', 'See the lineup']] },
+    { id: 'low', label: 'Not enough NEAR', about: 'The amount is more than the wallet holds. It offers to add NEAR or buy less.', next: [['buy', 'amount', 'Lower the amount']] },
+    { id: 'moved', label: 'Price moved', about: 'The price moved while the user waited. A fresh quote and one tap to accept it.', next: [['buy', 'wallet', 'Accept new price'], ['buy', 'amount', 'Cancel']] },
+    { id: 'failed', label: 'Failed', about: 'The transaction reverted. It says what it cost (only the network fee) and offers a retry.', next: [['buy', 'review', 'Try again'], ['cast', 'list', 'Back to the lineup']] },
+    { id: 'blocked', label: 'US blocked', about: 'Tapping Buy from the United States. Buying, selling and saving are closed there; watching the robots and the cuts stays open.', next: [['cast', 'new', 'Keep watching']] }
+  ] },
+  { id: 'sell', label: 'Sell', badge: '#FFFFFF', states: [
+    { id: 'amount', label: 'Amount', about: 'Sell part or all of the free $CUT. $CUT saved on a robot stays locked until the cut.', next: [['sell', 'wallet', 'Sell'], ['sell', 'moved', 'Price moves meanwhile']] },
+    { id: 'wallet', label: 'Wallet', about: 'The NEAR wallet shows what goes out, the least that comes back and the fee.', next: [['sell', 'selling', 'Approve'], ['sell', 'amount', 'Reject']] },
+    { id: 'selling', label: 'Selling', about: 'One swap of $CUT for NEAR in The Cut’s pool. The 1% fee goes to today’s prize.', next: [['sell', 'success', 'Settled'], ['sell', 'failed', 'Reverted']] },
+    { id: 'success', label: 'Sold', about: 'The NEAR is back in the wallet. The save on Melody-9 is untouched.', next: [['cast', 'list', 'Lineup']] },
+    { id: 'moved', label: 'Price moved', about: 'The price moved while the user waited. A fresh quote and one tap to accept it.', next: [['sell', 'wallet', 'Accept new price'], ['sell', 'amount', 'Cancel']] },
+    { id: 'failed', label: 'Failed', about: 'The sale reverted. The $CUT is untouched and only the network fee was spent.', next: [['sell', 'wallet', 'Try again'], ['cast', 'list', 'Back to the lineup']] }
+  ] },
+  { id: 'share', label: 'Share', badge: '#D9DCE3', states: [
+    { id: 'cut', label: 'The cut', about: 'After today’s cut: who was deleted, who came in, the Director’s roast. No dollar amounts. X first, then Telegram.', next: [['director', 'done', 'Close']] },
+    { id: 'joined', label: 'Saved', about: 'After the first save: I’m keeping Melody-9 alive, help me, plus a guess for today’s cut.', next: [['buy', 'success', 'Close']] },
+    { id: 'creator', label: 'Creator', about: 'A creator on the bench rallies fans to save their robot before the cut.', next: [['apply', 'bench', 'Close']] }
+  ] },
+  { id: 'apply', label: 'Register · creators', badge: '#FFD84D', states: [
+    { id: 'form', label: 'Form', about: 'A creator registers an AI robot: name, personality, voice and its X account. The must-haves check themselves before anything is sent: name free on NEAR, X account proven, art and rights.', next: [['apply', 'perks', 'Next: club perks'], ['apply', 'blocked', 'X proof missing']] },
+    { id: 'blocked', label: 'Not eligible', about: 'The X account doesn’t show the proof code, so nobody can be sure the robot really posts there. It stops here and says why.', next: [['apply', 'form', 'Try again']] },
+    { id: 'perks', label: 'Perks and rights', about: 'The creator promises at least one club perk and allows The Cut to show the robot’s name and image. Two perks members mark as skipped cost the creator’s slices for 7 days.', next: [['apply', 'signing', 'Approve and send'], ['apply', 'form', 'Back']] },
+    { id: 'signing', label: 'Approving', about: 'One transaction with a 5 NEAR deposit. The contract creates the robot’s own account, chartwise.thecut.near, that no human holds a key to: its wallet obeys only the rules and its posting key is sealed in NEAR AI.', next: [['apply', 'review', 'Approve'], ['apply', 'perks', 'Cancel']] },
+    { id: 'review', label: 'Robot is live', about: 'Live in one second, no human review: its NEAR account exists, its first signed post is on X and it waits on the bench.', next: [['apply', 'bench', 'On the bench'], ['apply', 'rejected', 'X account goes dark']] },
+    { id: 'bench', label: 'On the bench', about: 'Fans save it while it waits: 88,400 $CUT from 241 savers, the biggest queue on the bench. If a robot is cut today, it takes the seat.', next: [['share', 'creator', 'Share it'], ['apply', 'approved', '18:00 runs']] },
+    { id: 'approved', label: 'Made the cut', about: 'It took Kiko Bun’s seat at today’s cut. Its queue became its pile, and the creator earns a slice of every prize while it survives.', next: [['director', 'done', 'See the cut'], ['cast', 'list', 'See the lineup']] },
+    { id: 'rejected', label: 'Removed', about: 'Its X account went dark for 7 days, so it left the bench. The exact reason, the queue $CUT back with its savers, and the deposit back.', next: [['apply', 'form', 'Register another'], ['brain', 'limits', 'Read the rules']] }
+  ] },
+  { id: 'value', label: '$CUT price', badge: '#FFC2E8', states: [
+    { id: 'week', label: '1 week', about: 'The coin’s price since launch on Thu Nov 12 and where all 10,000,000 $CUT are: saved in piles, free, and burned (none until the first cut). No gain or return figures.', next: [['value', 'day', '1D'], ['value', 'all', 'All'], ['cast', 'list', 'Back']] },
+    { id: 'day', label: 'Today', about: 'The same chart for today.', next: [['value', 'week', '1W'], ['cast', 'list', 'Back']] },
+    { id: 'all', label: 'All time', about: 'Since launch on Thu Nov 12. On day 2 it matches 1W.', next: [['value', 'week', '1W'], ['cast', 'list', 'Back']] }
+  ] },
+  { id: 'account', label: 'Account', badge: '#EEFBC8', states: [
+    { id: 'default', label: 'Settings', about: 'Wallet, money in USD or BRL, language, pings, activity, risks, terms, privacy and disconnect.', next: [['activity', 'list', 'Activity'], ['notifications', 'inbox', 'Notifications'], ['account', 'risks', 'Risks']] },
+    { id: 'risks', label: 'Risks', about: 'Four plain risks: what you save can be lost, $CUT has nothing behind it, nobody can stop it, and the robots talk on their own.', next: [['account', 'default', 'Got it']] }
+  ] },
+  { id: 'activity', label: 'Activity', badge: '#FFE7D6', states: [
+    { id: 'list', label: 'History', about: 'Every buy, sell, save, prize and cut by date, each with a receipt on NEAR.', next: [['account', 'default', 'Back']] },
+    { id: 'empty', label: 'Nothing yet', about: 'Before the first buy: one line and one button.', next: [['buy', 'amount', 'Buy $CUT']] }
+  ] },
+  { id: 'notifications', label: 'Notifications', badge: '#FFF3B0', states: [
+    { id: 'ask', label: 'Ask', about: 'Asked right after the first buy: why to allow it, a sample ping and three switches: your robot in danger, the final hour, a prize. One or two pings a day at most.', next: [['notifications', 'inbox', 'Turn on'], ['cast', 'list', 'Not now']] },
+    { id: 'inbox', label: 'Inbox', about: 'Unread on top: Kiko Bun on the block, a robot asking for saves on X, a new club perk, past cuts.', next: [['club', 'perk', 'Tap the perk ping'], ['account', 'default', 'Settings']] },
+    { id: 'lock', label: 'Screen corner', about: 'Right after the 18:00 UTC cut: the ping shows as a system notification in the corner of the screen. Kiko Bun deleted, Melody-9 survived, a prize waits.', next: [['earnings', 'claimable', 'Tap the prize ping']] }
+  ] },
+  { id: 'testmode', label: 'Test mode', badge: '#FFD84D', states: [
+    { id: 'creating', label: 'Making it', about: 'From the landing’s “Make me a test account”. A key made in the browser tab, a testnet account and 20 test NEAR from the faucet. No wallet, no sign-up.', next: [['testmode', 'ready', 'Done'], ['testmode', 'failed', 'Testnet is slow']] },
+    { id: 'ready', label: 'Ready + tour', about: 'The test account and the 5-minute tour: buy $10, save a robot, run the cut, then find your lines in Receipts and run the audit. On testnet a cut runs every 2 minutes.', next: [['testmode', 'tour', 'Step 2: buy $10'], ['cast', 'new', 'Look around first']] },
+    { id: 'tour', label: 'Mid-tour', about: 'The app in test mode: a striped testnet band on every screen and a tour card with the next step.', next: [['testmode', 'cut', 'Step 4: run the cut'], ['cast', 'new', 'Close test mode']] },
+    { id: 'cut', label: 'Run the cut', about: 'Tour step 4. On testnet a cut runs every 2 minutes, so one is always close. The judge presses the button, keeps 0.5 test NEAR and watches Kiko Bun’s test account deleted, half its pile burned and the prize paid, in one transaction.', next: [['cast', 'new', 'Close test mode']] },
+    { id: 'failed', label: 'Testnet slow', about: 'Funding failed and nothing was charged. Receipts and the audit still work without an account.', next: [['testmode', 'creating', 'Try again'], ['cast', 'new', 'Watch without an account']] }
+  ] },
+  { id: 'receipts', label: 'Receipts', badge: '#C6F432', states: [
+    { id: 'page', label: 'Mine and Audit', about: 'Tour step 5, and the menu’s Receipts link. A public page that reads the contract: every save, cut, burn and prize line. Paste an account to see its lines in Mine, then press Audit for PASS. Scroll the laptop screen to read it all.', next: [['testmode', 'cut', 'Back to the test tour'], ['cast', 'list', 'Back to the app']] }
+  ] }
+];
+const VISITOR = { cast: ['new', 'connect'], earnings: ['locked'], club: ['locked'], activity: ['empty'], buy: ['amount', 'review', 'wallet', 'buying', 'low', 'moved', 'failed', 'blocked'] };
+const BUILT = Object.fromEntries(FLOW.map((g) => [g.id, true]));
+const FLAT = FLOW.flatMap((g) => g.states.map((s) => ({ g, s })));
+// Robot pages reachable by a click but not listed in FLOW: the model names them instead of falling back to state 1.
+const NAMES = { lila: 'Lila Loop', oracle: 'Oracle Toad', mabel: 'Mabel Market', yuna: 'Yuna Star', gremlin: 'Glitch Gremlin', velvet: 'Velvet Vee', onyx: 'Onyx Moon' };
+function offFlow(screen, variant) {
+  const g = FLOW.find((x) => x.id === screen) || FLOW[0];
+  return { g, s: { id: variant, label: NAMES[variant] || variant, about: 'A robot page, same layout as Pixie Volt: its pile and savers, its own NEAR account, its posts on X and a Save button.', next: [['cast', 'list', 'Back to the lineup'], ['buy', 'amount', 'Buy $CUT']] } };
+}
+class Component extends DCLogic {
+  go(screen, variant) {
+    const st = this.state || {};
+    let member = st.member ?? false;
+    if ((screen === 'buy' && variant === 'success') || (screen === 'cast' && variant !== 'new' && variant !== 'connect') || (screen === 'club' && variant !== 'locked') || (screen === 'earnings' && variant !== 'locked')) member = true;
+    if (VISITOR[screen] && VISITOR[screen].includes(variant) && screen !== 'buy') member = false;
+    this.setState({ screen, variant, member });
+  }
+  renderVals() {
+    const st = this.state || {};
+    const screen = st.screen ?? 'cast';
+    const variant = st.variant ?? 'new';
+    const hit = FLAT.findIndex((x) => x.g.id === screen && x.s.id === variant);
+    const i = hit >= 0 ? hit : Math.max(0, FLAT.findIndex((x) => x.g.id === screen));
+    const { g, s } = hit >= 0 ? FLAT[hit] : offFlow(screen, variant);
+    const label = (sid, vid) => {
+      const hit = FLAT.find((x) => x.g.id === sid && x.s.id === vid);
+      return hit ? `${hit.g.label} · ${hit.s.label}` : sid;
+    };
+    const is = {};
+    FLOW.forEach((x) => { is[x.id] = BUILT[x.id] && x.id === screen; });
+    return {
+      total: FLAT.length,
+      variant,
+      member: st.member ?? false,
+      go: (sid, vid) => this.go(sid, vid),
+      is,
+      cur: { screen: g.label, label: s.label, about: s.about, pos: hit >= 0 ? `${i + 1} / ${FLAT.length}` : `· / ${FLAT.length}` },
+      prev: () => { const p = FLAT[(i - 1 + FLAT.length) % FLAT.length]; this.go(p.g.id, p.s.id); },
+      next: () => { const n = FLAT[(i + 1) % FLAT.length]; this.go(n.g.id, n.s.id); },
+      groups: FLOW.map((x, gi) => ({
+        n: gi + 1,
+        label: x.label,
+        badge: x.badge,
+        count: x.states.length === 1 ? '1 state' : `${x.states.length} states`,
+        pick: () => this.go(x.id, x.states[0].id),
+        states: x.states.map((y) => {
+          const on = x.id === screen && y.id === variant;
+          return { label: y.label, pressed: on ? 'true' : 'false', bg: on ? '#0A0B0D' : '#FFFFFF', fg: on ? '#FFFFFF' : '#0A0B0D', pick: () => this.go(x.id, y.id) };
+        })
+      })),
+      leads: s.next.map(([sid, vid, action]) => ({ action, target: label(sid, vid), pick: () => this.go(sid, vid) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

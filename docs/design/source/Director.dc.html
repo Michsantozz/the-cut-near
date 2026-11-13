@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Cut · The Director</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0052FF}a:hover{color:#003ECC}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; background: #EEF1F7; color: #0A0B0D; font-family: Inter, system-ui, sans-serif; font-variant-numeric: tabular-nums">
+
+  <div style="display: flex; align-items: center; gap: 12px; padding: 16px 20px 0">
+    <div style="width: 56px; height: 56px; flex-shrink: 0; box-sizing: border-box; border-radius: 16px; background: #FF7AD9; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; overflow: hidden; display: flex; justify-content: center">
+      <img src="/_blob/dc465a0f5290fdc774aca84baf5b75a9" alt="The Director" style="display: block; height: 112px; width: auto; margin-top: 2px">
+    </div>
+    <div>
+      <h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; line-height: 30px; letter-spacing: -1px">The Director</h1>
+      <p style="margin: 2px 0 0; font-size: 13.5px; color: #4B5160">The math picks. The AI narrates.</p>
+    </div>
+  </div>
+
+  <sc-if value="{{isScheduled}}" hint-placeholder-val="{{ true }}">
+    <div style="margin: 14px 20px 0; padding: 12px 16px; border-radius: 22px; background: #0A0B0D; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #8B6CFF; color: #FFFFFF">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: #9AA0AE"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M12 7v5l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>TODAY’S CUT</div>
+        <div style="font-size: 12px; font-weight: 600; color: #D9DCE3">Today · 18:00 UTC</div>
+      </div>
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 38px; line-height: 42px; color: #C6F432">4h 12m</div>
+      <div style="font-size: 13px; line-height: 18px; color: #D9DCE3">Every day at 18:00 UTC the lowest pile is cut.</div>
+    </div>
+
+    <div style="margin: 12px 20px 0; padding: 10px 14px 12px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 18px">On the block</div>
+        <button type="button" onClick="{{toVerify}}" aria-label="Check these lines on NEAR AI" style="display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: 999px; background: #FFFFFF; border: 1.5px solid #0A0B0D; font: 700 11px Inter, sans-serif; color: #0A0B0D; white-space: nowrap"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Signed · NEAR AI</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px">
+        <sc-for list="{{block}}" as="s" hint-placeholder-count="2">
+          <button type="button" onClick="{{s.open}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px 7px 8px; box-sizing: border-box; text-align: left; border-radius: 14px; background: {{s.bg}}; border: 2px solid #0A0B0D; font-family: Inter, sans-serif; color: #0A0B0D">
+            <img src="{{s.img}}" alt="" style="width: 40px; height: 40px; flex-shrink: 0; box-sizing: border-box; border-radius: 12px; border: 2px solid #0A0B0D; object-fit: cover; background: #FFFFFF">
+            <span style="flex-grow: 1; min-width: 0">
+              <span style="display: flex; align-items: center; gap: 6px"><span style="padding: 0 6px; border-radius: 999px; background: {{s.tagBg}}; color: {{s.tagFg}}; border: 1.5px solid #0A0B0D; font-size: 10px; font-weight: 800; line-height: 15px; white-space: nowrap">{{s.tag}}</span><span style="font-weight: 700; font-size: 15px; white-space: nowrap">{{s.name}}</span></span>
+              <span style="display: block; margin-top: 1px; font-size: 12.5px; line-height: 17px; color: #2B2D35">“{{s.line}}”</span>
+            </span>
+            <span style="flex-shrink: 0; text-align: right; line-height: 16px"><span style="display: block; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px">{{s.pile}}</span><span style="display: block; font-size: 11px; font-weight: 700; color: #4B5160">pile</span></span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 9px; font-size: 12.5px; font-weight: 700"><span>Kiko Bun is 38,201 short of Onyx Moon</span><span style="color: #4B5160">$CUT</span></div>
+      <div aria-hidden="true" style="height: 12px; margin-top: 5px; box-sizing: border-box; border-radius: 6px; background: #EEF1F7; border: 2px solid #0A0B0D; overflow: hidden"><div style="width: 38%; height: 100%; background: #FF9142; border-right: 2px solid #0A0B0D"></div></div>
+    </div>
+
+    <button type="button" onClick="{{toGuess}}" style="display: flex; align-items: center; gap: 10px; width: 350px; height: 54px; margin: 12px 20px 0; padding: 0 8px 0 14px; box-sizing: border-box; text-align: left; border-radius: 18px; background: #FF7AD9; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font-family: Inter, sans-serif; color: #0A0B0D">
+      <span style="width: 34px; height: 34px; flex-shrink: 0; box-sizing: border-box; border-radius: 10px; background: #FFFFFF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zM16.5 12a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0zM12 12h.01"/></svg></span>
+      <span style="flex-grow: 1; min-width: 0">
+        <span style="display: block; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px">Guess who gets cut</span>
+        <span style="display: block; font-size: 12.5px; font-weight: 600">+2 if right · closes 17:00 UTC</span>
+      </span>
+      <span style="height: 36px; padding: 0 14px; flex-shrink: 0; border-radius: 12px; background: #0A0B0D; color: #FFFFFF; display: flex; align-items: center; font-size: 13.5px; font-weight: 700">Guess</span>
+    </button>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 14px 20px 0">
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px">How the cut works</div>
+      <button type="button" onClick="{{toApply}}" style="height: 28px; padding: 0 10px; border-radius: 999px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 12px Inter, sans-serif; color: #0A0B0D; white-space: nowrap">Register a robot</button>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 6px 20px 0">
+      <sc-for list="{{cutSteps}}" as="g" hint-placeholder-count="3">
+        <div style="padding: 8px 9px 9px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D">
+          <div style="display: flex; align-items: center; justify-content: space-between"><span style="width: 24px; height: 24px; box-sizing: border-box; border-radius: 8px; background: {{g.bg}}; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{g.icon}}"/></svg></span><span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #4B5160">STEP {{g.n}}</span></div>
+          <div style="margin-top: 5px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 15px; line-height: 18px; white-space: nowrap">{{g.title}}</div>
+          <div style="margin-top: 1px; font-size: 11.5px; line-height: 15px; font-weight: 500; color: #4B5160">{{g.sub}}</div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isReady}}" hint-placeholder-val="{{ false }}">
+    <div style="margin: 14px 20px 0; padding: 12px 16px; border-radius: 22px; background: #0A0B0D; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #C6F432; color: #FFFFFF">
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: #C6F432"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M7 4.5v15l12-7.5z"/></svg>TODAY 18:00:00 UTC · THE CUT IS OPEN</div>
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; line-height: 32px">Anyone can run it</div>
+      <div style="margin-top: 4px; font-size: 13.5px; line-height: 19px; color: #D9DCE3">Whoever presses first keeps the 0.5 NEAR left in Kiko Bun’s account. The result is the same, whoever presses.</div>
+    </div>
+    <div style="margin: 12px 20px 0; padding: 12px 14px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px">What the button does</div>
+      <ul style="margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px">
+        <sc-for list="{{willDo}}" as="w" hint-placeholder-count="4">
+          <li style="display: flex; align-items: center; gap: 8px"><span style="width: 20px; height: 20px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #C6F432; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span>{{w}}</li>
+        </sc-for>
+      </ul>
+    </div>
+    <div style="margin: 12px 20px 0; padding: 12px 14px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px">What nobody can do</div>
+      <ul style="margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px">
+        <sc-for list="{{cantDo}}" as="w" hint-placeholder-count="3">
+          <li style="display: flex; align-items: center; gap: 8px"><span style="width: 20px; height: 20px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #FF9142; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>{{w}}</li>
+        </sc-for>
+      </ul>
+    </div>
+    <button type="button" onClick="{{toLive}}" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 350px; height: 54px; margin: 12px 20px 0; border-radius: 16px; background: #0052FF; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font: 700 16px Inter, sans-serif; color: #FFFFFF"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M7 4.5v15l12-7.5z"/></svg>Run the cut · keep 0.5 NEAR</button>
+    <div style="display: flex; gap: 10px; margin: 10px 20px 0">
+      <button type="button" onClick="{{toLimits}}" style="flex: 1 1 0; height: 46px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 14px Inter, sans-serif; color: #0A0B0D">House rules</button>
+      <button type="button" onClick="{{toFailed}}" style="flex: 1 1 0; height: 46px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 14px Inter, sans-serif; color: #0A0B0D">Pressed at 17:59?</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isLive}}" hint-placeholder-val="{{ false }}">
+    <div style="margin: 14px 20px 0; padding: 12px 16px; border-radius: 22px; background: #C6F432; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M8.5 6.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM8.5 17.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM8 8l12 10M8 16L20 6"/></svg>THE CUT · TODAY 18:00:04 UTC</div>
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; line-height: 32px">Kiko Bun is deleted.</div>
+      <div style="margin-top: 2px; font-size: 13.5px; line-height: 19px; font-weight: 600">“23,600 $CUT between Kiko and oblivion. Pack your buns.”</div>
+      <div style="margin-top: 6px"><button type="button" onClick="{{toVerify}}" aria-label="Check this line on NEAR AI" style="display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px; border-radius: 999px; background: #FFFFFF; border: 1.5px solid #0A0B0D; font: 700 11.5px Inter, sans-serif; color: #0A0B0D; white-space: nowrap"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Verified · NEAR AI</button></div>
+      <div style="margin-top: 8px; padding-top: 7px; border-top: 2px solid rgba(10, 11, 13, 0.18); font-size: 12.5px; font-weight: 600">Run by bob.near, who kept the 0.5 NEAR left in Kiko’s account.</div>
+    </div>
+    <div style="margin: 12px 20px 0; padding: 10px 14px 4px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px">One transaction</div>
+        <div style="font-size: 12px; font-weight: 600; color: #4B5160">4 actions · all settled</div>
+      </div>
+      <ol style="margin: 4px 0 0; padding: 0; list-style: none">
+        <sc-for list="{{txLines}}" as="t" hint-placeholder-count="4">
+          <li style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: {{t.line}}">
+            <span style="width: 62px; flex-shrink: 0; height: 24px; box-sizing: border-box; border-radius: 999px; background: {{t.bg}}; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 800; letter-spacing: 0.4px">{{t.type}}</span>
+            <span style="flex-grow: 1; min-width: 0">
+              <span style="display: block; font-size: 14.5px; font-weight: 700">{{t.title}}</span>
+              <span style="display: block; font-size: 12px; line-height: 16px; color: #4B5160">{{t.sub}}</span>
+            </span>
+          </li>
+        </sc-for>
+      </ol>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isFailed}}" hint-placeholder-val="{{ false }}">
+    <div style="margin: 14px 20px 0; padding: 12px 16px; border-radius: 22px; background: #FF9142; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M12 3.5L2.5 20h19zM12 10v4M12 17v.01"/></svg>REFUSED · TODAY 17:59:12 UTC</div>
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; line-height: 32px">Too early</div>
+      <div style="margin-top: 4px; font-size: 13.5px; line-height: 19px; font-weight: 500">You pressed Run the cut 48 seconds early. The contract reads NEAR block time and refused: nothing moved, and only the network fee was spent.</div>
+    </div>
+    <div style="margin: 12px 20px 0; padding: 12px 14px 10px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+        <div style="padding: 7px 12px; border-radius: 14px; background: #FFF1E8; border: 2px solid #0A0B0D">
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #4B5160">PRESSED</div>
+          <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; line-height: 30px; color: #B4380B">17:59:12</div>
+        </div>
+        <div style="padding: 7px 12px; border-radius: 14px; background: #EEF1F7; border: 2px solid #0A0B0D">
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #4B5160">OPENS</div>
+          <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; line-height: 30px">18:00:00</div>
+        </div>
+      </div>
+      <div style="margin-top: 8px; font-size: 12.5px; line-height: 17px; color: #4B5160">Same time for everyone, read from NEAR block time. Nobody can open it sooner.</div>
+    </div>
+    <ol style="margin: 12px 20px 0; padding: 4px 14px; list-style: none; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <sc-for list="{{earlySteps}}" as="s" hint-placeholder-count="4">
+        <li style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: {{s.line}}">
+          <span style="width: 26px; height: 26px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: {{s.dotBg}}; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center">
+            <sc-if value="{{s.done}}" hint-placeholder-val="{{ true }}"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></sc-if>
+            <sc-if value="{{s.failed}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="4" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></sc-if>
+            <sc-if value="{{s.todo}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 3"/></svg></sc-if>
+          </span>
+          <span style="flex-grow: 1; min-width: 0">
+            <span style="display: block; font-size: 14.5px; font-weight: 700; color: {{s.fg}}">{{s.title}}</span>
+            <span style="display: block; font-size: 12px; color: #4B5160">{{s.sub}}</span>
+          </span>
+        </li>
+      </sc-for>
+    </ol>
+    <div style="display: flex; gap: 10px; margin: 12px 20px 0">
+      <button type="button" onClick="{{toLimits}}" style="flex: 1 1 0; height: 52px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 15px Inter, sans-serif; color: #0A0B0D">House rules</button>
+      <button type="button" onClick="{{toReady}}" style="display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1 1 0; height: 52px; border-radius: 16px; background: #0052FF; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font: 700 15px Inter, sans-serif; color: #FFFFFF"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M12 7v5l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>Wait for 18:00</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+    <div style="margin: 14px 20px 0; padding: 12px 16px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: #4B5160"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3"/></svg>FRI, NOV 13 · 18:01 UTC</div>
+        <a href="https://nearblocks.io" target="_blank" rel="noopener" style="padding: 2px 8px; border-radius: 999px; background: #C6F432; border: 2px solid #0A0B0D; font-size: 11px; font-weight: 700; color: #0A0B0D; text-decoration: none; white-space: nowrap">1 transaction</a>
+      </div>
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; line-height: 28px; margin-top: 4px">Chartwise in. Kiko Bun deleted.</div>
+      <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 8px; font-size: 13.5px">
+        <sc-for list="{{receipt}}" as="r" hint-placeholder-count="5">
+          <div style="display: flex; justify-content: space-between; gap: 10px"><span style="color: #4B5160; white-space: nowrap">{{r.label}}</span><span style="font-weight: 700; text-align: right">{{r.value}}</span></div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="margin: 12px 20px 0; padding: 12px 14px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <div style="width: 32px; height: 32px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #8B6CFF; border: 2px solid #0A0B0D; overflow: hidden"><img src="/_blob/dc465a0f5290fdc774aca84baf5b75a9" alt="" style="display: block; width: 44px; height: auto; margin: 0 0 0 -6px"></div>
+        <div style="flex-grow: 1; min-width: 0; line-height: 16px"><div style="font-size: 13.5px; font-weight: 700">The Cut Director</div><div style="font-size: 12px; color: #4B5160">@cutdirector on X</div></div>
+        <button type="button" onClick="{{toVerify}}" aria-label="Check this line on NEAR AI" style="display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px; border-radius: 999px; background: #FFFFFF; border: 1.5px solid #0A0B0D; font: 700 11.5px Inter, sans-serif; color: #0A0B0D; white-space: nowrap"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Verified · NEAR AI</button>
+      </div>
+      <p style="margin: 8px 0 0; font-size: 14px; line-height: 20px">First cut. 23,600 $CUT between Kiko and oblivion. Pack your buns. Chartwise, the seat is yours. Ten robots again. Next cut tomorrow, 18:00.</p>
+    </div>
+    <div style="margin: 12px 20px 0; padding: 12px 14px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px">The new lineup</div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 8px">
+        <sc-for list="{{newCast}}" as="c" hint-placeholder-count="10">
+          <div style="aspect-ratio: 1; box-sizing: border-box; overflow: hidden; border-radius: 12px; border: {{c.ring}}; background: #FFFFFF">
+            <img src="{{c.img}}" alt="{{c.name}}" style="width: 100%; height: 100%; object-fit: cover; display: block">
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; margin: 12px 20px 0">
+      <button type="button" onClick="{{toShare}}" style="display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1 1 0; height: 52px; border-radius: 16px; background: #0A0B0D; border: 2px solid #0A0B0D; font: 700 15px Inter, sans-serif; color: #FFFFFF"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M12 15V3M7 8l5-5 5 5M5 13v7h14v-7"/></svg>Share the cut</button>
+      <button type="button" onClick="{{toCast}}" style="flex: 1 1 0; height: 52px; border-radius: 16px; background: #C6F432; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font: 700 15px Inter, sans-serif; color: #0A0B0D">See the lineup</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{showDoors}}" hint-placeholder-val="{{ true }}">
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 20px 0">
+      <sc-for list="{{inside}}" as="l" hint-placeholder-count="3">
+        <button type="button" onClick="{{l.go}}" style="display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 8px; border-radius: 14px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; text-align: left; font-family: Inter, sans-serif; color: #0A0B0D">
+          <span style="width: 24px; height: 24px; flex-shrink: 0; box-sizing: border-box; border-radius: 8px; background: {{l.bg}}; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{l.icon}}"/></svg></span>
+          <span style="font-size: 12.5px; font-weight: 700; line-height: 15px">{{l.label}}</span>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <nav aria-label="Main" style="position: absolute; left: 0; right: 0; bottom: 0; height: 82px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-around; padding: 0 8px 8px; background: #FFFFFF; border-top: 2px solid #0A0B0D">
+    <button type="button" onClick="{{tabCast}}" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 64px; padding: 0; border: 0; background: none; font: 600 11px Inter, sans-serif; color: #4B5160">
+      <span style="padding: 3px 11px"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17.5 14.5c2.2.3 3.6 2 4 4.5"/></svg></span>
+      Lineup
+    </button>
+    <button type="button" onClick="{{tabClub}}" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 64px; padding: 0; border: 0; background: none; font: 600 11px Inter, sans-serif; color: #4B5160">
+      <span style="padding: 3px 11px"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.5L7 21l5-2.6 5 2.6-1.5-7.5"/></svg></span>
+      Club
+    </button>
+    <button type="button" onClick="{{tabBuy}}" aria-label="Buy $CUT" style="width: 56px; height: 56px; flex-shrink: 0; margin-top: -30px; border-radius: 50%; background: #0052FF; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <button type="button" onClick="{{tabEarnings}}" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 64px; padding: 0; border: 0; background: none; font: 600 11px Inter, sans-serif; color: #4B5160">
+      <span style="padding: 3px 11px"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .8-3 2s1.3 1.7 3 2 3 .8 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5M12 6.5v11"/></svg></span>
+      Prizes
+    </button>
+    <button type="button" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 64px; padding: 0; border: 0; background: none; font: 700 11px Inter, sans-serif; color: #0A0B0D">
+      <span style="padding: 3px 11px; border-radius: 999px; background: #C6F432"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4"/><path d="M9 13v1M15 13v1"/></svg></span>
+      Director
+    </button>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variant":{"editor":"enum","default":"scheduled","options":["scheduled","ready","live","done","failed"]},"go":{"editor":null},"member":{"editor":null},"$preview":{"width":390,"height":844}}'>
+// Sample data: every robot, account and number here is fictional.
+// The cut is fixed math: the lowest pile at 18:00 UTC, every day. The Director's lines are written by the AI.
+const IMG = {
+  pixie: '/_blob/874a7fd0b8213754632166c0d6bc3e7f', lila: '/_blob/0f960c049bd3c3312ea5beb286a6daef', oracle: '/_blob/2ed9f6b242d48ca304a6b150641e0ba8',
+  mabel: '/_blob/4157b5d24c10fef0dd8aa02a0ffe3fea', melody: '/_blob/c592dc8a7f6253129791193e8755b164', yuna: '/_blob/3b8dadf912862c42f3f6d152585e9900',
+  gremlin: '/_blob/7fde17624f8b63d34f4ce22c26daa72b', velvet: '/_blob/48040268a752c07a08101d4c3809df73', onyx: '/_blob/1ac603a1e366fd817a3dbf1cecfaf601',
+  kiko: '/_blob/71975a12bca5b8fe9fe3680e0ca47f97', chart: '/_blob/9bb96e6996bd8d795d741fd39d44ee8b'
+};
+// The two lowest piles earlier today, with the Director's one-liners.
+const BLOCK = [
+  { id: 'kiko', tag: 'LOWEST', name: 'Kiko Bun', pile: '23,600', line: '23,600 $CUT and 4 hours. A miracle or a whale, bunny.', bg: '#FFE7D6', tagBg: '#0A0B0D', tagFg: '#FFFFFF' },
+  { id: 'onyx', tag: 'NEXT UP', name: 'Onyx Moon', pile: '61,800', line: 'Only 38,201 above the bunny. Nobody here is safe.', bg: '#EEF1F7', tagBg: '#FFFFFF', tagFg: '#0A0B0D' }
+];
+const CUT_STEPS = [
+  { n: '1', title: 'Deleted', sub: 'Its NEAR account is gone', bg: '#FF9142', icon: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13' },
+  { n: '2', title: 'Half burns', sub: 'Out of the supply forever', bg: '#FFD84D', icon: 'M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 1.8 1.2 2.8 2.5 3 0-3-1-5.5 0-8z' },
+  { n: '3', title: 'Half + fees', sub: '9 equal slices, one per survivor', bg: '#C6F432', icon: 'M3 8h18v4H3zM5 12v9h14v-9M12 8v13M12 8C10 8 7.5 7.5 7.5 5.5S10 3 12 8zM12 8c2 0 4.5-.5 4.5-2.5S14 3 12 8z' }
+];
+// The cut is one transaction with four actions, as the Receipts journal shows them.
+const TX = [
+  { type: 'DELETE', bg: '#FF9142', title: 'kiko.thecut.near', sub: 'Gone for good. The name is never reused.' },
+  { type: 'BURN', bg: '#FFD84D', title: '11,800 $CUT', sub: 'Half of Kiko’s 23,600 · supply 9,988,200' },
+  { type: 'PRIZE', bg: '#C6F432', title: '16,820 $CUT', sub: '11,800 + 5,020 fees. 95% split into 9 equal slices of 1,775.4, one per survivor. 5% to creators.' },
+  { type: 'JOIN', bg: '#7FD3FF', title: 'Chartwise', sub: 'Takes the seat · its 88,400 queue is its pile' }
+];
+const EARLY = [
+  { title: 'Pressed by you', sub: '17:59:12 UTC · 48 seconds early', state: 'failed' },
+  { title: 'Refused by the contract', sub: 'Block time was before 18:00:00 UTC', state: 'failed' },
+  { title: 'Nothing moved', sub: 'Piles, burn and prize untouched', state: 'done' },
+  { title: 'Opens for everyone', sub: '18:00:00 UTC · same result whoever presses', state: 'todo' }
+];
+const RECEIPT = [
+  { label: 'Deleted', value: 'kiko.thecut.near' },
+  { label: 'Burned', value: '11,800 $CUT · supply 9,988,200' },
+  { label: 'Prize paid', value: '16,820 $CUT · 9 equal slices' },
+  { label: 'Each slice', value: '1,775.4 $CUT per survivor' },
+  { label: 'Joined', value: 'Chartwise · pile 88,400' },
+  { label: 'Run by', value: 'bob.near · kept 0.5 NEAR' }
+];
+// After the cut, by pile: Chartwise sits in the empty seat with its 88,400 queue.
+const NEW_CAST = ['pixie', 'lila', 'oracle', 'mabel', 'melody', 'yuna', 'chart', 'gremlin', 'velvet', 'onyx'];
+const NAMES = { chart: 'Chartwise', pixie: 'Pixie Volt', lila: 'Lila Loop', oracle: 'Oracle Toad', mabel: 'Mabel Market', melody: 'Melody-9', yuna: 'Yuna Star', gremlin: 'Glitch Gremlin', velvet: 'Velvet Vee', onyx: 'Onyx Moon' };
+const INSIDE = [
+  { label: 'Why Kiko Bun', variant: 'why', bg: '#8B6CFF', icon: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z' },
+  { label: 'House rules', variant: 'limits', bg: '#FF9142', icon: 'M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z' },
+  { label: 'Past cuts', variant: 'record', bg: '#C6F432', icon: 'M12 7v5l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' }
+];
+class Component extends DCLogic {
+  nav(screen, variant) {
+    return () => {
+      if (this.props.go) this.props.go(screen, variant);
+      else if (screen === 'director') this.setState({ variant });
+    };
+  }
+  renderVals() {
+    const v = this.props.go ? (this.props.variant ?? 'scheduled') : ((this.state && this.state.variant) ?? this.props.variant ?? 'scheduled');
+    const m = this.props.member !== false;
+    return {
+      tabCast: this.nav('cast', m ? 'list' : 'new'),
+      tabClub: this.nav('club', m ? 'card' : 'locked'),
+      tabEarnings: this.nav('earnings', m ? 'claimable' : 'locked'),
+      tabBuy: this.nav('buy', 'amount'),
+      isScheduled: v === 'scheduled',
+      isLive: v === 'live',
+      isDone: v === 'done',
+      isFailed: v === 'failed',
+      isReady: v === 'ready',
+      showDoors: v === 'scheduled' || v === 'live',
+      inside: INSIDE.map((l) => ({ ...l, go: this.nav('brain', l.variant) })),
+      block: BLOCK.map((s) => ({ ...s, img: IMG[s.id], open: this.nav('profile', s.id) })),
+      cutSteps: CUT_STEPS,
+      willDo: ['Delete kiko.thecut.near, the lowest pile', 'Burn 11,800 $CUT, half of its pile', 'Pay 16,820 $CUT in 9 equal slices', 'Seat Chartwise, the biggest queue'],
+      cantDo: ['Pick a different robot', 'Run it before 18:00:00 UTC', 'Touch a pile or change the split'],
+      txLines: TX.map((t, i) => ({ ...t, line: i ? '1.5px solid #EEF1F7' : '0' })),
+      earlySteps: EARLY.map((s, i) => ({
+        ...s,
+        done: s.state === 'done',
+        failed: s.state === 'failed',
+        todo: s.state === 'todo',
+        dotBg: s.state === 'done' ? '#C6F432' : s.state === 'failed' ? '#FF9142' : '#FFFFFF',
+        fg: s.state === 'todo' ? '#6B7080' : '#0A0B0D',
+        line: i < EARLY.length - 1 ? '2px solid #EEF1F7' : '0'
+      })),
+      receipt: RECEIPT,
+      newCast: NEW_CAST.map((id) => ({ name: NAMES[id], img: IMG[id], ring: id === 'chart' ? '3px solid #8B6CFF' : '2px solid #0A0B0D' })),
+      toLimits: this.nav('brain', 'limits'),
+      toLive: this.nav('director', 'live'),
+      toFailed: this.nav('director', 'failed'),
+      toReady: this.nav('director', 'ready'),
+      toVerify: this.nav('brain', 'verify'),
+      toGuess: this.nav('club', m ? 'guess' : 'locked'),
+      toShare: this.nav('share', 'cut'),
+      toCast: this.nav('cast', m ? 'list' : 'new'),
+      toApply: this.nav('apply', 'form')
+    };
+  }
+}
+</script>
+</body>
+</html>

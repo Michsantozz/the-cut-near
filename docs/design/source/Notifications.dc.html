@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Cut · Notifications</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; background: {{ground}}; color: #0A0B0D; font-family: Inter, system-ui, sans-serif; font-variant-numeric: tabular-nums">
+
+  <sc-if value="{{isAsk}}" hint-placeholder-val="{{ true }}">
+    <div style="padding: 56px 24px 0">
+      <div style="width: 84px; height: 84px; box-sizing: border-box; border-radius: 26px; background: #FFD84D; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; display: flex; align-items: center; justify-content: center; transform: rotate(-5deg)">
+        <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 21h4"/></svg>
+      </div>
+      <h1 style="margin: 22px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 32px; line-height: 35px; letter-spacing: -1px; text-wrap: balance">Know before your robot is cut</h1>
+      <p style="margin: 8px 0 0; font-size: 14.5px; line-height: 21px; color: #4B5160">One or two pings a day at most. Change them anytime in Account.</p>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin: 18px 20px 0; padding: 12px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+      <div style="width: 38px; height: 38px; flex-shrink: 0; box-sizing: border-box; border-radius: 11px; background: #0052FF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><path d="M18 7.5A7 7 0 1 0 18 16.5"/></svg>
+      </div>
+      <div style="flex-grow: 1; min-width: 0">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #4B5160"><span>THE CUT</span><span>Today 17:00</span></div>
+        <div style="font-size: 14px; font-weight: 700">Final hour: the cut runs at 18:00</div>
+        <div style="font-size: 13px; line-height: 18px; color: #2B2D35">Kiko Bun is 38,201 $CUT short of Onyx Moon. Saves count until 18:00.</div>
+      </div>
+    </div>
+
+    <div style="margin: 16px 20px 0; padding: 4px 14px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <sc-for list="{{alerts}}" as="a" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 12px; height: 54px; border-top: {{a.line}}">
+          <span style="width: 32px; height: 32px; flex-shrink: 0; box-sizing: border-box; border-radius: 10px; background: {{a.bg}}; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="{{a.icon}}"/></svg></span>
+          <div style="flex-grow: 1; min-width: 0">
+            <div style="font-size: 14.5px; font-weight: 600">{{a.title}}</div>
+            <div style="font-size: 12.5px; color: #4B5160">{{a.sub}}</div>
+          </div>
+          <button type="button" role="switch" aria-checked="{{a.on}}" aria-label="{{a.title}}" style="position: relative; width: 50px; height: 30px; flex-shrink: 0; box-sizing: border-box; border-radius: 999px; background: {{a.track}}; border: 2px solid #0A0B0D; padding: 0">
+            <span style="position: absolute; top: 3px; left: {{a.knob}}px; width: 20px; height: 20px; box-sizing: border-box; border-radius: 50%; background: #FFFFFF; border: 2px solid #0A0B0D"></span>
+          </button>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="position: absolute; left: 20px; right: 20px; bottom: 26px">
+      <button type="button" onClick="{{toInbox}}" style="width: 100%; height: 56px; border-radius: 16px; background: #0052FF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; font: 700 16px Inter, sans-serif; color: #FFFFFF">Turn on notifications</button>
+      <button type="button" onClick="{{toHome}}" style="width: 100%; height: 44px; margin-top: 8px; border: 0; background: transparent; font: 700 15px Inter, sans-serif; color: #0A0B0D">Not now</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isInbox}}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 0">
+      <button type="button" onClick="{{toHome}}" aria-label="Back to the lineup" style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 2px 2px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">Notifications</div>
+      <button type="button" onClick="{{toAccount}}" aria-label="Notification settings" style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 2px 2px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+      </button>
+    </div>
+
+    <sc-for list="{{inbox}}" as="g" hint-placeholder-count="2">
+      <div style="margin: 16px 24px 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: #4B5160">{{g.label}}</div>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin: 0 20px">
+        <sc-for list="{{g.items}}" as="n" hint-placeholder-count="3">
+          <button type="button" onClick="{{n.open}}" style="display: flex; gap: 10px; width: 100%; padding: 12px; box-sizing: border-box; border-radius: 18px; background: {{n.card}}; border: 2px solid #0A0B0D; box-shadow: {{n.shadow}}; text-align: left; font-family: Inter, sans-serif; color: #0A0B0D">
+            <span style="width: 34px; height: 34px; flex-shrink: 0; box-sizing: border-box; border-radius: 10px; background: {{n.bg}}; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.icon}}"/></svg></span>
+            <div style="flex-grow: 1; min-width: 0">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <span style="flex-grow: 1; font-size: 14px; font-weight: 700">{{n.title}}</span>
+                <span style="font-size: 12px; font-weight: 600; color: #4B5160; white-space: nowrap">{{n.time}}</span>
+                <sc-if value="{{n.unread}}" hint-placeholder-val="{{ false }}"><span aria-label="Unread" style="width: 10px; height: 10px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #0052FF; border: 1.5px solid #0A0B0D"></span></sc-if>
+              </div>
+              <div style="margin-top: 2px; font-size: 13px; line-height: 18px; color: #2B2D35">{{n.body}}</div>
+            </div>
+          </button>
+        </sc-for>
+      </div>
+    </sc-for>
+  </sc-if>
+
+  <sc-if value="{{isLock}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; left: -60px; top: 380px; width: 280px; height: 280px; border-radius: 50%; background: #FF7AD9; opacity: 0.55; filter: blur(60px)"></div>
+    <div style="position: absolute; right: -80px; top: 80px; width: 300px; height: 300px; border-radius: 50%; background: #C6F432; opacity: 0.35; filter: blur(70px)"></div>
+    <div style="position: relative; padding-top: 70px; text-align: center; color: #FFFFFF">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      <div style="margin-top: 6px; font-size: 17px; font-weight: 600">Friday, November 13</div>
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 92px; line-height: 96px; letter-spacing: -2px">18:01</div>
+    </div>
+    <div style="position: relative; display: flex; flex-direction: column; gap: 8px; margin: 210px 12px 0">
+      <sc-for list="{{lock}}" as="n" hint-placeholder-count="2">
+        <button type="button" onClick="{{n.open}}" style="display: flex; gap: 10px; width: 100%; padding: 12px; box-sizing: border-box; border: 0; border-radius: 22px; background: rgba(255, 255, 255, 0.86); text-align: left; font-family: Inter, sans-serif; color: #0A0B0D">
+          <div style="width: 38px; height: 38px; flex-shrink: 0; box-sizing: border-box; border-radius: 10px; background: #0052FF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><path d="M18 7.5A7 7 0 1 0 18 16.5"/></svg>
+          </div>
+          <div style="flex-grow: 1; min-width: 0">
+            <div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-size: 14px; font-weight: 700">{{n.title}}</span><span style="font-size: 12.5px; color: #4B5160; white-space: nowrap">{{n.time}}</span></div>
+            <div style="font-size: 13.5px; line-height: 18px; color: #0A0B0D">{{n.body}}</div>
+          </div>
+        </button>
+      </sc-for>
+      <div style="height: 10px; margin: -14px 18px 0; border-radius: 0 0 16px 16px; background: rgba(255, 255, 255, 0.5)"></div>
+    </div>
+    <div style="position: absolute; left: 44px; right: 44px; bottom: 44px; display: flex; justify-content: space-between">
+      <sc-for list="{{lockButtons}}" as="b" hint-placeholder-count="2">
+        <span style="width: 50px; height: 50px; border-radius: 50%; background: rgba(10, 11, 13, 0.35); display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{b}}"/></svg></span>
+      </sc-for>
+    </div>
+    <div style="position: absolute; left: 128px; bottom: 10px; width: 134px; height: 5px; border-radius: 3px; background: #FFFFFF"></div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variant":{"editor":"enum","default":"ask","options":["ask","inbox","lock"]},"go":{"editor":null},"$preview":{"width":390,"height":844}}'>
+// Sample data: every robot, account and number here is fictional.
+// The three pings a member can turn on. One or two a day at most.
+const ALERTS = [
+  { title: 'Your robot is in danger', sub: 'When it falls into the bottom two', on: true, bg: '#FF9142', icon: 'M12 3.5L2.5 20h19zM12 10v4M12 17v.01' },
+  { title: 'Final hour', sub: 'Every day at 17:00 UTC', on: true, bg: '#FFD84D', icon: 'M12 7v5l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' },
+  { title: 'Prize is ready', sub: 'Every day, right after the cut', on: true, bg: '#C6F432', icon: 'M3 8h18v4H3zM5 12v9h14v-9M12 8v13M12 8c-1.5-3-5-3.5-5-1.5S10 8 12 8zM12 8c1.5-3 5-3.5 5-1.5S14 8 12 8z' }
+];
+const ICON = {
+  danger: ['#FF9142', 'M12 3.5L2.5 20h19zM12 10v4M12 17v.01'],
+  post: ['#7FD3FF', 'M4 4h4.5l11.5 16h-4.5zM20 4l-6.6 7.3M4 20l6.6-7.3'],
+  club: ['#FF7AD9', 'M12 2l2.9 6.1 6.6.8-4.9 4.6 1.3 6.5L12 16.8 6.1 20l1.3-6.5L2.5 8.9l6.6-.8z'],
+  cut: ['#8B6CFF', 'M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM8.1 8.1L20 20M20 4L8.1 15.9']
+};
+// Each ping: kind, title, time, body, unread, where a tap goes.
+const INBOX = [
+  { label: 'NEW', items: [
+    ['danger', 'Kiko Bun is on the block', '1h', 'Lowest pile: 23,600 $CUT, 38,201 short of Onyx Moon. The cut runs today at 18:00 UTC.', true, ['director', 'scheduled']],
+    ['post', 'Kiko Bun posted on X', '2h', '“I have 23,600 $CUT and 4 hours. Onyx has 61,800. Save me or I stop existing at 18:00.”', true, ['profile', 'kiko']],
+    ['club', 'New perk from Pixie Volt', '3h', 'Pixie reads 50 savers’ names live tonight. 31 spots left.', true, ['club', 'perk']]
+  ] },
+  { label: 'EARLIER', items: [
+    ['cut', 'No cut has run yet', 'Thu', 'The show opened. Every day at 18:00 UTC the lowest pile is cut. The first cut is today.', false, ['brain', 'record']]
+  ] }
+];
+// Fri Nov 13, 18:01 UTC, right after today’s cut, newest first.
+const LOCK = [
+  { title: 'Prize is ready', time: 'now', body: 'Kiko Bun was deleted. Melody-9 survived. +6.32 $CUT waiting.', to: ['earnings', 'claimable'] },
+  { title: 'Final hour', time: '1h ago', body: 'Kiko Bun is 38,201 $CUT short. Saves count until 18:00.', to: ['director', 'live'] }
+];
+class Component extends DCLogic {
+  nav(screen, variant) {
+    return () => {
+      if (this.props.go) this.props.go(screen, variant);
+      else if (screen === 'notifications') this.setState({ variant });
+    };
+  }
+  renderVals() {
+    const v = this.props.go ? (this.props.variant ?? 'ask') : ((this.state && this.state.variant) ?? this.props.variant ?? 'ask');
+    return {
+      ground: v === 'lock' ? 'linear-gradient(170deg, #0052FF 0%, #3B2A9E 55%, #0A0B0D 100%)' : '#EEF1F7',
+      isAsk: v === 'ask',
+      isInbox: v === 'inbox',
+      isLock: v === 'lock',
+      alerts: ALERTS.map((a, i) => ({ ...a, track: a.on ? '#C6F432' : '#EEF1F7', knob: a.on ? 23 : 3, line: i ? '1.5px solid #EEF1F7' : '0' })),
+      inbox: INBOX.map((g) => ({
+        label: g.label,
+        items: g.items.map(([kind, title, time, body, unread, to]) => ({ title, time, body, unread: !!unread, bg: ICON[kind][0], icon: ICON[kind][1], card: unread ? '#FFFFFF' : '#F7F8FB', shadow: unread ? '3px 3px 0 #0A0B0D' : 'none', open: this.nav(to[0], to[1]) }))
+      })),
+      lock: LOCK.map((n) => ({ ...n, open: this.nav(n.to[0], n.to[1]) })),
+      lockButtons: ['M9 2h6l-1 6h-4zM10 8h4v13h-4z', 'M4 8h3l2-3h6l2 3h3v12H4zM12 17a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z'],
+      toInbox: this.nav('notifications', 'inbox'),
+      toHome: this.nav('cast', 'list'),
+      toAccount: this.nav('account', 'default')
+    };
+  }
+}
+</script>
+</body>
+</html>

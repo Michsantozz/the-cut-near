@@ -1,0 +1,14 @@
+# Local Postgres for development. Production uses DATABASE_URL (self-hosted or managed).
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: cut
+      POSTGRES_PASSWORD: cut
+      POSTGRES_DB: cut_near
+    ports:
+      - "54330:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+volumes:
+  db-data:

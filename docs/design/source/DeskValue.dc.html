@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Cut · Laptop · $CUT price</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; display: flex; overflow: hidden; background: #EEF1F7; color: #0A0B0D; font-family: Inter, system-ui, sans-serif; font-variant-numeric: tabular-nums">
+
+  <!-- Side menu: the phone's four tabs, the rest of the app, and who is signed in -->
+  <nav aria-label="Main" style="position: relative; width: 248px; flex-shrink: 0; box-sizing: border-box; padding: 22px 18px; background: #FFFFFF; border-right: 2px solid #0A0B0D">
+    <button type="button" onClick="{{toHome}}" style="display: flex; align-items: center; gap: 10px; padding: 0 0 0 4px; border: 0; background: none; color: #0A0B0D">
+      <span style="width: 36px; height: 36px; box-sizing: border-box; border-radius: 11px; background: #0052FF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><path d="M18 7.5A7 7 0 1 0 18 16.5"/></svg></span>
+      <span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px">the cut</span>
+    </button>
+    <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 26px">
+      <sc-for list="{{navMain}}" as="n" hint-placeholder-count="4">
+        <button type="button" onClick="{{n.pick}}" aria-current="{{n.current}}" style="display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 12px; box-sizing: border-box; border-radius: 14px; background: {{n.bg}}; border: {{n.border}}; font: {{n.weight}} 15.5px Inter, sans-serif; color: #0A0B0D; text-align: left">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.icon}}"/></svg>{{n.label}}
+        </button>
+      </sc-for>
+    </div>
+    <div style="margin: 14px 0 10px; border-top: 1.5px solid #E3E6EE"></div>
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <sc-for list="{{navMore}}" as="n" hint-placeholder-count="5">
+        <button type="button" onClick="{{n.pick}}" aria-current="{{n.current}}" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 12px; box-sizing: border-box; border-radius: 12px; background: {{n.bg}}; border: {{n.border}}; font: {{n.weight}} 14px Inter, sans-serif; color: #2A2D35; text-align: left">
+          <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4B5160" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.icon}}"/></svg>{{n.label}}
+        </button>
+      </sc-for>
+      <button type="button" onClick="{{toReceipts}}" style="display: flex; align-items: center; justify-content: space-between; height: 36px; padding: 0 12px; box-sizing: border-box; border: 2px solid transparent; border-radius: 12px; background: transparent; font: 600 14px Inter, sans-serif; color: #2A2D35; text-align: left">Receipts<span aria-hidden="true">↗</span></button>
+    </div>
+
+    <sc-if value="{{isMember}}" hint-placeholder-val="{{ true }}">
+      <button type="button" onClick="{{toAccount}}" style="position: absolute; left: 18px; right: 18px; bottom: 20px; display: block; padding: 12px 14px; box-sizing: border-box; border-radius: 18px; background: #EEF1F7; border: 2px solid #0A0B0D; text-align: left; color: #0A0B0D">
+        <span style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px"><span style="width: 20px; height: 20px; box-sizing: border-box; border-radius: 50%; background: #C6F432; border: 2px solid #0A0B0D"></span>{{acct.name}}</span>
+        <span style="display: block; margin-top: 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; line-height: 24px">{{acct.value}}</span>
+        <span style="display: block; margin-top: 2px; font-size: 12.5px; font-weight: 600; color: #4B5160">{{acct.label}}</span>
+      </button>
+    </sc-if>
+    <sc-if value="{{isVisitor}}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; left: 18px; right: 18px; bottom: 20px; padding: 14px; border-radius: 18px; background: #EEF1F7; border: 2px solid #0A0B0D">
+        <div style="font-weight: 800; font-size: 15px">Just looking</div>
+        <div style="margin-top: 4px; font-size: 12.5px; line-height: 17px; color: #4B5160; text-wrap: balance">Looking needs no wallet. Connecting never moves money.</div>
+        <button type="button" onClick="{{toConnect}}" style="width: 100%; height: 42px; margin-top: 10px; border-radius: 13px; background: #C6F432; border: 2px solid #0A0B0D; font: 800 14px Inter, sans-serif; color: #0A0B0D">Connect a wallet</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{isTest}}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; left: 18px; right: 18px; bottom: 20px; padding: 12px 14px; border-radius: 18px; border: 2px solid #0A0B0D; background: repeating-linear-gradient(-45deg, #FFD84D 0 10px, #FFE88A 10px 20px)">
+        <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.6px">TEST ACCOUNT</div>
+        <div style="margin-top: 2px; font-weight: 800; font-size: 15px">judge-7f3a.testnet</div>
+        <div style="margin-top: 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; line-height: 26px">{{testBalance}} <span style="font-size: 13px">test NEAR</span></div>
+        <button type="button" onClick="{{toCloseTest}}" style="display: block; margin-top: 8px; padding: 0; border: 0; background: none; font: 700 13px Inter, sans-serif; color: #0A0B0D; text-decoration: underline">Close test mode</button>
+      </div>
+    </sc-if>
+  </nav>
+
+  <!-- Page -->
+  <main style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column">
+    <sc-if value="{{isTest}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 32px; flex-shrink: 0; margin: 14px 32px 0; border-radius: 10px; border: 2px solid #0A0B0D; background: repeating-linear-gradient(-45deg, #FFD84D 0 12px, #FFE88A 12px 24px); font-size: 12px; font-weight: 800; letter-spacing: 0.6px">TESTNET · NOTHING HERE IS REAL MONEY · A CUT RUNS EVERY 2 MINUTES HERE</div>
+    </sc-if>
+    <header style="display: flex; align-items: center; gap: 14px; height: 76px; flex-shrink: 0; box-sizing: border-box; padding: 0 32px">
+      <sc-if value="{{page.back}}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{toBack}}" aria-label="Back" style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 13px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 2px 2px 0 #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      </sc-if>
+      <div style="min-width: 0">
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; line-height: 34px; letter-spacing: -0.8px; white-space: nowrap">{{page.title}}</div>
+        <div style="font-size: 13.5px; font-weight: 600; color: #4B5160; white-space: nowrap">{{page.sub}}</div>
+      </div>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 10px">
+        <span style="display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; box-sizing: border-box; border-radius: 999px; background: #FFFFFF; border: 2px solid #0A0B0D; font-size: 13.5px; font-weight: 700; white-space: nowrap"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM8.1 8.1L20 20M20 4L8.1 15.9"/></svg>{{page.cut}}</span>
+        <sc-if value="{{isMember}}" hint-placeholder-val="{{ true }}">
+          <button type="button" onClick="{{toBell}}" aria-label="Notifications" style="position: relative; width: 42px; height: 42px; border-radius: 13px; background: #FFFFFF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/></svg><span style="position: absolute; right: -4px; top: -4px; width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%; background: #FF3B3B; border: 2px solid #FFFFFF"></span></button>
+        </sc-if>
+        <button type="button" onClick="{{toBuy}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #0052FF; color: #FFFFFF; box-shadow: 3px 3px 0 #0A0B0D; height: 42px; padding: 0 18px; border-radius: 13px; opacity: {{buyOpacity}}"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Buy $CUT</button>
+        <sc-if value="{{canSell}}" hint-placeholder-val="{{ true }}">
+          <button type="button" onClick="{{toSell}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #FFFFFF; height: 42px; padding: 0 16px; border-radius: 13px; opacity: {{sellOpacity}}">Sell</button>
+        </sc-if>
+      </div>
+    </header>
+    <div data-scroll="body" style="flex-grow: 1; min-height: 0; position: relative; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: 4px 32px 28px">
+
+      <div style="display: flex; gap: 24px; align-items: flex-start">
+        <!-- Left: what you hold and the price chart -->
+        <section aria-label="Price chart" style="flex-grow: 1; min-width: 0; padding: 20px 24px 18px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+          <div style="display: flex; align-items: flex-start; gap: 20px">
+            <div>
+              <div style="font-size: 14px; font-weight: 600; color: #4B5160">Your 674.2 $CUT</div>
+              <div style="display: flex; align-items: center; gap: 14px">
+                <span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 52px; line-height: 58px; letter-spacing: -1.8px">$1,240.53</span>
+                <span style="display: inline-block; padding: 4px 11px; border-radius: 999px; background: #FFFFFF; border: 2px solid #0A0B0D; font-size: 13.5px; font-weight: 700; white-space: nowrap">274.2 free · 400 saved on Melody-9</span>
+              </div>
+            </div>
+            <div style="margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 10px">
+              <div role="tablist" aria-label="Range" style="display: flex; padding: 3px; border-radius: 14px; background: #EEF1F7; border: 2px solid #0A0B0D">
+                <sc-for list="{{ranges}}" as="r" hint-placeholder-count="3">
+                  <button type="button" role="tab" aria-selected="{{r.on}}" onClick="{{r.go}}" style="width: 56px; height: 34px; border-radius: 10px; border: 0; background: {{r.bg}}; color: {{r.fg}}; font: 800 14px Inter, sans-serif">{{r.label}}</button>
+                </sc-for>
+              </div>
+              <span style="font-size: 13.5px; font-weight: 600; color: #4B5160">1 $CUT = <b style="color: #0A0B0D">$1.84</b></span>
+            </div>
+          </div>
+
+          <div style="position: relative; width: 716px; height: 460px; margin-top: 14px">
+            <sc-for list="{{grid}}" as="g" hint-placeholder-count="4">
+              <span style="position: absolute; left: 0; top: {{g.top}}px; width: 44px; font-size: 12px; font-weight: 600; color: #4B5160">{{g.label}}</span>
+            </sc-for>
+            <svg role="img" aria-label="{{chartLabel}}" width="716" height="460" viewBox="0 0 716 460" style="position: absolute; left: 0; top: 0">
+              <defs><linearGradient id="deskValueFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0052FF" stop-opacity="0.22"/><stop offset="1" stop-color="#0052FF" stop-opacity="0"/></linearGradient></defs>
+              <path d="{{gridPath}}" fill="none" stroke="#E3E6EE" stroke-width="1.5"/>
+              <path d="{{area}}" fill="url(#deskValueFill)"/>
+              <path d="{{line}}" fill="none" stroke="#0052FF" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+              <path d="{{nowLine}}" fill="none" stroke="#0A0B0D" stroke-width="1.5" stroke-dasharray="3 4"/>
+              <circle cx="{{endX}}" cy="{{endY}}" r="8" fill="#C6F432" stroke="#0A0B0D" stroke-width="2.5"/>
+            </svg>
+            <span style="position: absolute; left: {{tagX}}px; top: {{tagY}}px; display: inline-flex; align-items: center; height: 30px; padding: 0 11px; box-sizing: border-box; border-radius: 10px; background: #0A0B0D; color: #FFFFFF; font-size: 13.5px; font-weight: 800; white-space: nowrap">$1.84 · now</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin: 6px 0 0 52px; font-size: 12.5px; font-weight: 600; color: #4B5160">
+            <sc-for list="{{ticks}}" as="t" hint-placeholder-count="3"><span>{{t}}</span></sc-for>
+          </div>
+          <div style="display: flex; gap: 22px; margin-top: 14px; padding-top: 12px; border-top: 1.5px solid #EEF1F7; font-size: 13.5px; font-weight: 600">
+            <span style="display: flex; align-items: center; gap: 8px"><span style="width: 20px; height: 4px; border-radius: 2px; background: #0052FF"></span>Price $1.84</span>
+            <span style="margin-left: auto; color: #4B5160">{{change}}</span>
+          </div>
+        </section>
+
+        <!-- Right: where the supply sits, the coin in numbers, then the risk -->
+        <aside aria-label="Numbers" style="width: 336px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px">
+          <section aria-label="Where all 10,000,000 $CUT are" style="padding: 16px 18px 18px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+            <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 18px; line-height: 24px; white-space: nowrap">Where all 10,000,000 $CUT are</div>
+            <div role="img" aria-label="Saved in piles 10.5%, free 89.5%, burned 0%" style="display: flex; height: 22px; margin-top: 12px; box-sizing: border-box; border-radius: 999px; border: 2px solid #0A0B0D; overflow: hidden; background: #EEF1F7">
+              <span style="width: 10.5%; background: #C6F432; border-right: 2px solid #0A0B0D"></span>
+            </div>
+            <div style="display: flex; flex-direction: column; margin-top: 8px; font-size: 14px">
+              <sc-for list="{{split}}" as="d" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: {{d.line}}">
+                  <span style="width: 14px; height: 14px; flex-shrink: 0; box-sizing: border-box; border-radius: 4px; background: {{d.bg}}; border: 2px solid #0A0B0D"></span>
+                  <span style="flex-grow: 1; min-width: 0"><span style="display: block; font-weight: 700">{{d.label}}</span><span style="display: block; font-size: 12.5px; color: #4B5160">{{d.sub}}</span></span>
+                  <span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px; white-space: nowrap">{{d.value}}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px; padding: 10px 12px; border-radius: 14px; background: #EEFBC8; border: 2px solid #0A0B0D"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M3 8h18v4H3zM5 12v9h14v-9M12 8v13"/></svg><span style="flex-grow: 1; min-width: 0"><span style="display: block; font-size: 12.5px; font-weight: 600; color: #2B2D35">Fees for today’s prize</span><span style="display: block; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 18px; line-height: 22px">4,100 $CUT so far</span></span></div>
+          </section>
+          <div style="padding: 2px 18px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+            <sc-for list="{{stats}}" as="s" hint-placeholder-count="3">
+              <div style="display: flex; align-items: center; gap: 14px; height: 62px; border-top: {{s.line}}">
+                <span style="width: 38px; height: 38px; flex-shrink: 0; box-sizing: border-box; border-radius: 12px; background: {{s.bg}}; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{s.icon}}"/></svg></span>
+                <span style="flex-grow: 1; font-size: 14.5px; font-weight: 600; color: #4B5160">{{s.label}}</span>
+                <span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.4px">{{s.value}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div role="note" style="display: flex; align-items: flex-start; gap: 9px; padding: 12px 14px; border-radius: 18px; background: #FFE7D6; border: 2px solid #0A0B0D; font-size: 13.5px; line-height: 19px; font-weight: 600"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><path d="M12 3.5L2.5 20h19zM12 10v4M12 17v.01"/></svg>$CUT has nothing behind it. Its price can fall close to zero.</div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variant":{"editor":"enum","default":"week","options":["day","week","all"]},"go":{"editor":null},"member":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+// Sample data: every robot, account and number here is fictional.
+// The $CUT price on a laptop: one wide chart with range tabs, the numbers beside it.
+const SCREEN = 'value';
+const DEFAULT = 'week';
+const ACTIVE = '$CUT price';
+// Full-body stickers (new art) and the older square head tiles, by robot id.
+const ART = {
+  pixie: '/_blob/9b6e1aaf263605b289360fc424b4f821', lila: '/_blob/83d1e9085c1fa3c23eaa210fda48bf87', oracle: '/_blob/2c93a196e05209fc1f1bc658ab00f527',
+  mabel: '/_blob/4d33b0465eb75f8cbb1fd8aaa7b52e92', melody: '/_blob/3e8b30e1496674b5eb3ea74393b2bd41', yuna: '/_blob/c0ce503439858eafc6975b9313e81cb6',
+  gremlin: '/_blob/c4b4ca3b1ca3fe0f2d8031a27e671aff', velvet: '/_blob/53d2bf7b4e6e81153f67c367535f534a', onyx: '/_blob/5fb11cd66b3931a5276c6acc1d4f5256',
+  kiko: '/_blob/6888365d7a39c899d74d6c4f610ff0dd', director: '/_blob/dc465a0f5290fdc774aca84baf5b75a9', stage: '/_blob/b83a20d40bab30f1f62339d81fe32673'
+};
+const IMG = {
+  pixie: '/_blob/874a7fd0b8213754632166c0d6bc3e7f', lila: '/_blob/0f960c049bd3c3312ea5beb286a6daef', oracle: '/_blob/2ed9f6b242d48ca304a6b150641e0ba8',
+  mabel: '/_blob/4157b5d24c10fef0dd8aa02a0ffe3fea', melody: '/_blob/c592dc8a7f6253129791193e8755b164', yuna: '/_blob/3b8dadf912862c42f3f6d152585e9900',
+  gremlin: '/_blob/7fde17624f8b63d34f4ce22c26daa72b', velvet: '/_blob/48040268a752c07a08101d4c3809df73', onyx: '/_blob/1ac603a1e366fd817a3dbf1cecfaf601',
+  kiko: '/_blob/71975a12bca5b8fe9fe3680e0ca47f97', chart: '/_blob/9bb96e6996bd8d795d741fd39d44ee8b'
+};
+// pile = $CUT saved on the robot, locked till the cut; savers counts are for show; today = $CUT saved today.
+const CAST = [
+  { id: 'pixie', name: 'Pixie Volt', kind: 'AI streamer', pile: 182400, savers: 412, today: 6200, bg: '#7FD3FF' },
+  { id: 'lila', name: 'Lila Loop', kind: 'Virtual influencer', pile: 151200, savers: 377, today: 3900, bg: '#FF7AD9' },
+  { id: 'oracle', name: 'Oracle Toad', kind: 'AI agent', pile: 139800, savers: 351, today: 4400, bg: '#8B6CFF' },
+  { id: 'mabel', name: 'Mabel Market', kind: 'Virtual influencer', pile: 121500, savers: 298, today: 1800, bg: '#FFD84D' },
+  { id: 'melody', name: 'Melody-9', kind: 'Virtual singer', pile: 112300, savers: 287, today: 2600, bg: '#FF9142' },
+  { id: 'yuna', name: 'Yuna Star', kind: 'AI idol', pile: 98700, savers: 264, today: 3100, bg: '#0052FF' },
+  { id: 'gremlin', name: 'Glitch Gremlin', kind: 'AI artist', pile: 86900, savers: 233, today: 900, bg: '#C6F432' },
+  { id: 'velvet', name: 'Velvet Vee', kind: 'Virtual model', pile: 74200, savers: 205, today: 1200, bg: '#2B2D35' },
+  { id: 'onyx', name: 'Onyx Moon', kind: 'Digital model', pile: 61800, savers: 187, today: 400, bg: '#1E2B57' },
+  { id: 'kiko', name: 'Kiko Bun', kind: 'VTuber', pile: 23600, savers: 96, today: 300, bg: '#FFC2E8' }
+];
+// The bench: Chartwise has the biggest queue, so it takes the seat of whoever is cut today.
+const BENCH = { id: 'chart', name: 'Chartwise', kind: 'AI analyst', pile: 88400, savers: 241, today: 0, bg: '#FFFFFF' };
+const DARK = ['#8B6CFF', '#0052FF', '#2B2D35', '#1E2B57'];
+const NAV = [
+  { label: 'Lineup', to: ['cast', 'list'], visitor: ['cast', 'new'], icon: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M13.5 8a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0zM20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4M15.5 4.6a3.5 3.5 0 0 1 0 6.8' },
+  { label: 'Club', to: ['club', 'card'], visitor: ['club', 'locked'], icon: 'M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM8.5 14l-1.5 7 5-3 5 3-1.5-7' },
+  { label: 'Prizes', to: ['earnings', 'claimable'], visitor: ['earnings', 'locked'], icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM14.5 9.5c-.4-.9-1.3-1.5-2.5-1.5-1.5 0-2.5.8-2.5 1.8 0 2.4 5 1.3 5 3.9 0 1.1-1 2-2.7 2-1.3 0-2.3-.6-2.7-1.6M12 6.5V8M12 16v1.5' },
+  { label: 'Director', to: ['director', 'scheduled'], icon: 'M5 9h14v10H5zM12 5v4M9.5 13.5v.01M14.5 13.5v.01M2 13v2M22 13v2' }
+];
+const MORE = [
+  { label: '$CUT price', to: ['value', 'week'], icon: 'M3 17l6-6 4 4 8-8M15 7h6v6' },
+  { label: 'Inside the cut', to: ['brain', 'live'], icon: 'M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z' },
+  { label: 'Activity', to: ['activity', 'list'], icon: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01' },
+  { label: 'For creators', to: ['apply', 'form'], icon: 'M13 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM2 21c0-4 3-7 7-7s7 3 7 7M19 8v6M16 11h6' },
+  { label: 'Settings', to: ['account', 'default'], icon: 'M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1M15 4v4M9 10v4M17 16v4' }
+];
+function isMemberState(v) { return true; }
+// Day 2: the coin launched Thu Nov 12 at 15:01 UTC, so 1W and All show the same 23 hours, about one point every 2 hours.
+const LAUNCH = [1.733, 1.75, 1.79, 1.77, 1.80, 1.826, 1.81, 1.78, 1.76, 1.79, 1.81, 1.83, 1.84];
+const RANGES = {
+  day: { label: '1D', points: [1.812, 1.815, 1.81, 1.818, 1.822, 1.83, 1.826, 1.829, 1.835, 1.832, 1.838, 1.836, 1.84], change: 'Today, Fri Nov 13', ticks: ['00:00', '07:00', '13:48'] },
+  week: { label: '1W', points: LAUNCH, change: 'Since launch, Thu Nov 12', ticks: ['Thu 15:01', 'Fri 02:24', 'Fri 13:48'] },
+  all: { label: 'All', points: LAUNCH, change: 'Since launch, Thu Nov 12', ticks: ['Thu 15:01', 'Fri 02:24', 'Fri 13:48'] }
+};
+// Where the supply sits: saved in the 10 piles, free in wallets and the pool, burned (none before the first cut).
+const SPLIT = [
+  { label: 'Saved in piles', sub: '10.5%', value: '1,052,400', bg: '#C6F432' },
+  { label: 'Free', sub: '89.5%', value: '8,947,600', bg: '#EEF1F7' },
+  { label: 'Burned', sub: 'first burn today, 18:00 UTC', value: '0', bg: '#FF3B3B' }
+];
+// Chart box: price labels on the left, the plot from X0 to X1.
+const W = 716;
+const H = 460;
+const X0 = 52;
+const X1 = W - 14;
+class Component extends DCLogic {
+  nav(screen, variant) {
+    return () => {
+      if (this.props.go) this.props.go(screen, variant);
+      else if (screen === SCREEN) this.setState({ variant });
+    };
+  }
+  shellVals(v) {
+    const member = this.props.go ? !!this.props.member : isMemberState(v);
+    const item = (n, small) => {
+      const on = n.label === ACTIVE;
+      const [s, t] = !member && n.visitor ? n.visitor : n.to;
+      return { label: n.label, icon: n.icon, current: on ? 'page' : 'false', pick: this.nav(s, t), bg: on ? (small ? '#EEF1F7' : '#C6F432') : 'transparent', border: on && !small ? '2px solid #0A0B0D' : '2px solid transparent', weight: on ? 800 : 600 };
+    };
+    return {
+      navMain: NAV.map((n) => item(n, false)),
+      navMore: MORE.map((n) => item(n, true)),
+      isMember: member,
+      isVisitor: !member,
+      isTest: false,
+      canSell: member,
+      sellOpacity: 1,
+      // The account card; a screen can pass its own acct for another person or a balance after a trade.
+      acct: { name: 'mika.near', value: '$1,240.53', label: '674.2 $CUT · 400 saved' },
+      testBalance: '15.99',
+      buyOpacity: 1,
+      toHome: this.nav('cast', member ? 'list' : 'new'),
+      toBuy: member ? this.nav('buy', 'amount') : this.nav('cast', 'connect'),
+      toSell: this.nav('sell', 'amount'),
+      toBell: this.nav('notifications', 'inbox'),
+      toAccount: this.nav('account', 'default'),
+      toConnect: this.nav('cast', 'connect'),
+      toCloseTest: this.nav('cast', 'new'),
+      toReceipts: this.nav('receipts', 'page'),
+      toBack: this.nav('cast', member ? 'list' : 'new')
+    };
+  }
+  screenVals(v) {
+    const r = RANGES[v] || RANGES.week;
+    const lo = Math.min(...r.points);
+    const hi = Math.max(...r.points);
+    const pad = (hi - lo) * 0.12;
+    const y = (p) => 14 + (1 - (p - lo + pad) / (hi - lo + pad * 2)) * (H - 28);
+    const x = (i) => X0 + (i / (r.points.length - 1)) * (X1 - X0);
+    const pts = r.points.map((p, i) => [x(i), y(p)]);
+    const line = pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)} ${py.toFixed(1)}`).join(' ');
+    const end = pts[pts.length - 1];
+    // Grid every 5 cents (1 cent for a single day) inside the visible range, counted in whole cents.
+    const step = hi - lo < 0.05 ? 1 : 5;
+    const steps = [];
+    for (let c = Math.ceil(((lo - pad) * 100) / step) * step; c <= (hi + pad) * 100; c += step) steps.push(c / 100);
+    return {
+      page: { title: '$CUT price', sub: 'Day 2 · trading since Thu, Nov 12, 15:01 UTC', cut: 'Next cut in 4h 12m · 18:00 UTC', back: false },
+      change: r.change,
+      chartLabel: `$CUT price, ${r.change}`,
+      ranges: Object.entries(RANGES).map(([id, o]) => ({ label: o.label, on: id === v ? 'true' : 'false', bg: id === v ? '#0A0B0D' : 'transparent', fg: id === v ? '#FFFFFF' : '#0A0B0D', go: this.nav('value', id) })),
+      line,
+      area: `${line} L${end[0].toFixed(1)} ${H} L${X0} ${H} Z`,
+      gridPath: steps.map((p) => `M${X0} ${y(p).toFixed(1)} H${X1}`).join(' '),
+      grid: steps.map((p) => ({ top: Math.round(y(p) - 8), label: `$${p.toFixed(2)}` })),
+      nowLine: `M${end[0].toFixed(1)} ${(end[1] + 12).toFixed(1)} V${H}`,
+      endX: end[0].toFixed(1),
+      endY: end[1].toFixed(1),
+      tagX: Math.round(end[0] - 112),
+      tagY: Math.round(end[1] - 44),
+      ticks: r.ticks,
+      split: SPLIT.map((d, i) => ({ ...d, line: i ? '1.5px solid #EEF1F7' : '0' })),
+      stats: [
+        { label: 'Market cap', value: '$18.4M', bg: '#7FD3FF', icon: 'M3 20h18M7 20v-6M12 20V8M17 20V4' },
+        { label: 'Holders', value: '2,140', bg: '#FF7AD9', icon: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M13.5 8a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0zM20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4M15.5 4.6a3.5 3.5 0 0 1 0 6.8' },
+        { label: 'Next cut', value: '4h 12m', bg: '#FFD84D', icon: 'M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM8.1 8.1L20 20M20 4L8.1 15.9' }
+      ].map((s, i) => ({ ...s, line: i ? '1.5px solid #EEF1F7' : '0' })),
+      toHome: this.nav('cast', 'list')
+    };
+  }
+  renderVals() {
+    const v = this.props.go ? (this.props.variant ?? DEFAULT) : ((this.state && this.state.variant) ?? this.props.variant ?? DEFAULT);
+    return { ...this.shellVals(v), ...this.screenVals(v) };
+  }
+}
+</script>
+</body>
+</html>

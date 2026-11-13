@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Cut · Laptop · Sell</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; display: flex; overflow: hidden; background: #EEF1F7; color: #0A0B0D; font-family: Inter, system-ui, sans-serif; font-variant-numeric: tabular-nums">
+
+  <!-- Side menu: the phone's four tabs, the rest of the app, and who is signed in -->
+  <nav aria-label="Main" style="position: relative; width: 248px; flex-shrink: 0; box-sizing: border-box; padding: 22px 18px; background: #FFFFFF; border-right: 2px solid #0A0B0D">
+    <button type="button" onClick="{{toHome}}" style="display: flex; align-items: center; gap: 10px; padding: 0 0 0 4px; border: 0; background: none; color: #0A0B0D">
+      <span style="width: 36px; height: 36px; box-sizing: border-box; border-radius: 11px; background: #0052FF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><path d="M18 7.5A7 7 0 1 0 18 16.5"/></svg></span>
+      <span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px">the cut</span>
+    </button>
+    <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 26px">
+      <sc-for list="{{navMain}}" as="n" hint-placeholder-count="4">
+        <button type="button" onClick="{{n.pick}}" aria-current="{{n.current}}" style="display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 12px; box-sizing: border-box; border-radius: 14px; background: {{n.bg}}; border: {{n.border}}; font: {{n.weight}} 15.5px Inter, sans-serif; color: #0A0B0D; text-align: left">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.icon}}"/></svg>{{n.label}}
+        </button>
+      </sc-for>
+    </div>
+    <div style="margin: 14px 0 10px; border-top: 1.5px solid #E3E6EE"></div>
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <sc-for list="{{navMore}}" as="n" hint-placeholder-count="5">
+        <button type="button" onClick="{{n.pick}}" aria-current="{{n.current}}" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 12px; box-sizing: border-box; border-radius: 12px; background: {{n.bg}}; border: {{n.border}}; font: {{n.weight}} 14px Inter, sans-serif; color: #2A2D35; text-align: left">
+          <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4B5160" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.icon}}"/></svg>{{n.label}}
+        </button>
+      </sc-for>
+      <button type="button" onClick="{{toReceipts}}" style="display: flex; align-items: center; justify-content: space-between; height: 36px; padding: 0 12px; box-sizing: border-box; border: 2px solid transparent; border-radius: 12px; background: transparent; font: 600 14px Inter, sans-serif; color: #2A2D35; text-align: left">Receipts<span aria-hidden="true">↗</span></button>
+    </div>
+
+    <sc-if value="{{isMember}}" hint-placeholder-val="{{ true }}">
+      <button type="button" onClick="{{toAccount}}" style="position: absolute; left: 18px; right: 18px; bottom: 20px; display: block; padding: 12px 14px; box-sizing: border-box; border-radius: 18px; background: #EEF1F7; border: 2px solid #0A0B0D; text-align: left; color: #0A0B0D">
+        <span style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px"><span style="width: 20px; height: 20px; box-sizing: border-box; border-radius: 50%; background: #C6F432; border: 2px solid #0A0B0D"></span>{{acct.name}}</span>
+        <span style="display: block; margin-top: 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; line-height: 24px">{{acct.value}}</span>
+        <span style="display: block; margin-top: 2px; font-size: 12.5px; font-weight: 600; color: #4B5160">{{acct.label}}</span>
+      </button>
+    </sc-if>
+    <sc-if value="{{isVisitor}}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; left: 18px; right: 18px; bottom: 20px; padding: 14px; border-radius: 18px; background: #EEF1F7; border: 2px solid #0A0B0D">
+        <div style="font-weight: 800; font-size: 15px">Just looking</div>
+        <div style="margin-top: 4px; font-size: 12.5px; line-height: 17px; color: #4B5160; text-wrap: balance">Looking needs no wallet. Connecting never moves money.</div>
+        <button type="button" onClick="{{toConnect}}" style="width: 100%; height: 42px; margin-top: 10px; border-radius: 13px; background: #C6F432; border: 2px solid #0A0B0D; font: 800 14px Inter, sans-serif; color: #0A0B0D">Connect a wallet</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{isTest}}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; left: 18px; right: 18px; bottom: 20px; padding: 12px 14px; border-radius: 18px; border: 2px solid #0A0B0D; background: repeating-linear-gradient(-45deg, #FFD84D 0 10px, #FFE88A 10px 20px)">
+        <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.6px">TEST ACCOUNT</div>
+        <div style="margin-top: 2px; font-weight: 800; font-size: 15px">judge-7f3a.testnet</div>
+        <div style="margin-top: 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; line-height: 26px">{{testBalance}} <span style="font-size: 13px">test NEAR</span></div>
+        <button type="button" onClick="{{toCloseTest}}" style="display: block; margin-top: 8px; padding: 0; border: 0; background: none; font: 700 13px Inter, sans-serif; color: #0A0B0D; text-decoration: underline">Close test mode</button>
+      </div>
+    </sc-if>
+  </nav>
+
+  <!-- Page -->
+  <main style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column">
+    <sc-if value="{{isTest}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 32px; flex-shrink: 0; margin: 14px 32px 0; border-radius: 10px; border: 2px solid #0A0B0D; background: repeating-linear-gradient(-45deg, #FFD84D 0 12px, #FFE88A 12px 24px); font-size: 12px; font-weight: 800; letter-spacing: 0.6px">TESTNET · NOTHING HERE IS REAL MONEY · A CUT RUNS EVERY 2 MINUTES HERE</div>
+    </sc-if>
+    <header style="display: flex; align-items: center; gap: 14px; height: 76px; flex-shrink: 0; box-sizing: border-box; padding: 0 32px">
+      <sc-if value="{{page.back}}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{toBack}}" aria-label="Back" style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 13px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 2px 2px 0 #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      </sc-if>
+      <div style="min-width: 0">
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; line-height: 34px; letter-spacing: -0.8px; white-space: nowrap">{{page.title}}</div>
+        <div style="font-size: 13.5px; font-weight: 600; color: #4B5160; white-space: nowrap">{{page.sub}}</div>
+      </div>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 10px">
+        <span style="display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; box-sizing: border-box; border-radius: 999px; background: #FFFFFF; border: 2px solid #0A0B0D; font-size: 13.5px; font-weight: 700; white-space: nowrap"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM8.1 8.1L20 20M20 4L8.1 15.9"/></svg>{{page.cut}}</span>
+        <sc-if value="{{isMember}}" hint-placeholder-val="{{ true }}">
+          <button type="button" onClick="{{toBell}}" aria-label="Notifications" style="position: relative; width: 42px; height: 42px; border-radius: 13px; background: #FFFFFF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/></svg><span style="position: absolute; right: -4px; top: -4px; width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%; background: #FF3B3B; border: 2px solid #FFFFFF"></span></button>
+        </sc-if>
+        <button type="button" onClick="{{toBuy}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #0052FF; color: #FFFFFF; box-shadow: 3px 3px 0 #0A0B0D; height: 42px; padding: 0 18px; border-radius: 13px; opacity: {{buyOpacity}}"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Buy $CUT</button>
+        <sc-if value="{{canSell}}" hint-placeholder-val="{{ true }}">
+          <button type="button" onClick="{{toSell}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #FFFFFF; height: 42px; padding: 0 16px; border-radius: 13px; opacity: {{sellOpacity}}">Sell</button>
+        </sc-if>
+      </div>
+    </header>
+    <div data-scroll="body" style="flex-grow: 1; min-height: 0; position: relative; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: 4px 32px 28px">
+
+      <div style="display: flex; gap: 24px; min-height: 100%">
+        <!-- Left: what you hold, then the robots ranked by pile -->
+        <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+          <sc-if value="{{isNew}}" hint-placeholder-val="{{ false }}">
+            <div style="position: relative; margin-top: 58px; padding: 20px 24px 22px; border-radius: 24px; background: #C6F432; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+              <div aria-hidden="true" style="position: absolute; right: 22px; top: -64px; display: flex; align-items: flex-end">
+                <sc-for list="{{peek}}" as="k" hint-placeholder-count="10"><img src="{{k.img}}" alt="" style="display: block; height: {{k.h}}px; width: auto; margin-left: -6px"></sc-for>
+              </div>
+              <div style="max-width: 640px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 38px; line-height: 41px; letter-spacing: -1.3px; text-wrap: balance">10 AI robots. One coin. Save yours, or it’s deleted today.</div>
+              <p style="margin: 8px 0 0; max-width: 700px; font-size: 16px; line-height: 23px; font-weight: 500">Fans keep them alive by saving $CUT into their piles. Every day at 18:00 UTC the robot with the lowest pile is cut: its NEAR account is deleted and half its pile burns.</p>
+              <div style="display: flex; align-items: center; gap: 12px; margin-top: 16px">
+                <button type="button" onClick="{{toConnect}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #C6F432; box-shadow: 3px 3px 0 #0A0B0D; background: #0A0B0D; color: #FFFFFF; box-shadow: none"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Buy $CUT · from $10</button>
+                <button type="button" onClick="{{toDirector}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #FFFFFF">How the daily cut works</button>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{isOffline}}" hint-placeholder-val="{{ false }}">
+            <div role="status" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 16px; background: #FFF3E8; border: 2px solid #FF9142">
+              <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF9142" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01M3 3l18 18"/></svg>
+              <div style="font-size: 14px"><b>No connection.</b> Piles as read at 13:48 UTC. Buying, selling and saving wait until you are back.</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{isHolder}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; align-items: center; gap: 20px; padding: 14px 18px 14px 22px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+              <div style="flex-grow: 1; min-width: 0">
+                <div style="font-size: 13.5px; font-weight: 600; color: #4B5160">Your {{hold.cut}} $CUT</div>
+                <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px; line-height: 48px; letter-spacing: -1.5px; white-space: nowrap">{{hold.usd}}</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px; flex-shrink: 0">
+                <button type="button" onClick="{{toMine}}" style="display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 14px; border-radius: 12px; background: #EEFBC8; border: 2px solid #0A0B0D; font: 600 14px Inter, sans-serif; color: #0A0B0D; white-space: nowrap"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4"/></svg><span style="flex-grow: 1; text-align: left"><b style="font-weight: 800">{{hold.saved}}</b> · {{hold.lock}}</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+                <button type="button" onClick="{{toPrize}}" style="display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 14px; border-radius: 12px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 14px Inter, sans-serif; color: #0A0B0D; white-space: nowrap"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18v4H3zM5 12v9h14v-9M12 8v13"/></svg><span style="flex-grow: 1; text-align: left">First prize: today, 18:00 UTC</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+              </div>
+              <button type="button" onClick="{{toValue}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #FFFFFF; height: 84px; flex-shrink: 0"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>Price</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{isPayout}}" hint-placeholder-val="{{ false }}">
+            <div style="position: relative; display: flex; align-items: center; gap: 22px; padding: 14px 22px; border-radius: 22px; background: #C6F432; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+              <svg aria-hidden="true" width="64" height="64" viewBox="0 0 24 24" style="position: absolute; right: 230px; top: -18px"><path d="M12 0C13 8 16 11 24 12C16 13 13 16 12 24C11 16 8 13 0 12C8 11 11 8 12 0Z" fill="#FFFFFF" stroke="#0A0B0D" stroke-width="0.8"/></svg>
+              <div style="min-width: 0">
+                <div style="font-size: 12px; font-weight: 800; letter-spacing: 0.6px">YOUR PRIZE · FRI, NOV 13 CUT</div>
+                <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px; line-height: 48px; letter-spacing: -1.5px; white-space: nowrap">+6.32 $CUT</div>
+                <div style="font-size: 14px; font-weight: 600">$11.63 · from Kiko Bun’s cut. Your 400 on Melody-9 survived.</div>
+              </div>
+              <button type="button" onClick="{{toEarnings}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #C6F432; box-shadow: 3px 3px 0 #0A0B0D; margin-left: auto; flex-shrink: 0; background: #0A0B0D; color: #FFFFFF; box-shadow: none">Collect 6.32 $CUT</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{isFinal}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; align-items: center; gap: 26px; padding: 14px 22px; border-radius: 22px; background: #0A0B0D; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #8B6CFF; color: #FFFFFF">
+              <div style="flex-shrink: 0">
+                <div style="display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 800; letter-spacing: 0.6px"><span style="width: 9px; height: 9px; border-radius: 50%; background: #FF3B3B"></span>FINAL HOUR · FRI, NOV 13</div>
+                <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 52px; line-height: 56px; letter-spacing: -2px; color: #C6F432; white-space: nowrap">0:42:10</div>
+              </div>
+              <div style="flex-grow: 1; min-width: 0; font-size: 14.5px; line-height: 21px; color: #D9DCE3">Saves count until the cut at <b style="color: #FFFFFF">18:00:00 UTC</b>, read from NEAR block time, so nobody can pick. <b style="color: #FFFFFF">Nobody is saving Kiko Bun.</b></div>
+              <button type="button" onClick="{{toReady}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #FFFFFF; flex-shrink: 0">The cut<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            </div>
+          </sc-if>
+          <sc-if value="{{isLoading}}" hint-placeholder-val="{{ false }}">
+            <div aria-busy="true" aria-label="Loading" style="height: 116px; box-sizing: border-box; padding: 20px 22px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+              <div style="width: 120px; height: 12px; border-radius: 6px; background: #DDE2EC"></div>
+              <div style="width: 240px; height: 36px; margin-top: 12px; border-radius: 10px; background: #DDE2EC"></div>
+            </div>
+          </sc-if>
+
+          <div style="padding: 14px 20px 8px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+            <div style="display: flex; align-items: center; gap: 12px; height: 32px">
+              <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; white-space: nowrap">{{tableTitle}}</div>
+              <sc-if value="{{isFinal}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 999px; background: #FF3B3B; border: 1.5px solid #0A0B0D; font-size: 11px; font-weight: 800; letter-spacing: 0.4px; color: #FFFFFF"><span style="width: 7px; height: 7px; border-radius: 50%; background: #FFFFFF"></span>LIVE</span></sc-if>
+              <span style="font-size: 13.5px; font-weight: 600; color: #4B5160; white-space: nowrap">{{tableSub}}</span>
+              <sc-if value="{{showSort}}" hint-placeholder-val="{{ true }}">
+                <div role="group" aria-label="Sort by" style="margin-left: auto; display: flex; gap: 6px">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; box-sizing: border-box; border-radius: 999px; border: 2px solid #0A0B0D; font-size: 12px; font-weight: 800; white-space: nowrap; height: 32px; background: #0A0B0D; color: #FFFFFF">Pile</span>
+                  <span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; box-sizing: border-box; border-radius: 999px; border: 2px solid #0A0B0D; font-size: 12px; font-weight: 800; white-space: nowrap; height: 32px; background: #FFFFFF">Savers</span>
+                  <span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; box-sizing: border-box; border-radius: 999px; border: 2px solid #0A0B0D; font-size: 12px; font-weight: 800; white-space: nowrap; height: 32px; background: #FFFFFF">Today</span>
+                </div>
+              </sc-if>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px; height: 34px; margin-top: 8px; border-bottom: 2px solid #0A0B0D; font-size: 11px; font-weight: 800; letter-spacing: 0.6px; color: #4B5160">
+              <span style="width: 230px; flex-shrink: 0">ROBOT</span><span style="flex-grow: 1">PILE · $CUT SAVED</span><span style="width: 64px; flex-shrink: 0; text-align: right">SAVERS</span><span style="width: 128px; flex-shrink: 0; text-align: right">{{colLast}}</span><span style="width: 70px; flex-shrink: 0"></span>
+            </div>
+            <sc-if value="{{isLoading}}" hint-placeholder-val="{{ false }}">
+              <sc-for list="{{skeleton}}" as="k" hint-placeholder-count="10">
+                <div style="display: flex; align-items: center; gap: 16px; height: 46px; border-top: 1.5px solid #EEF1F7">
+                  <span style="width: 230px; flex-shrink: 0; display: flex; align-items: center; gap: 12px">
+                    <span style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 11px; background: #E3E6EE"></span>
+                    <span style="width: {{k.w1}}; height: 12px; border-radius: 6px; background: #E3E6EE"></span>
+                  </span>
+                  <span style="flex-grow: 1; height: 10px; border-radius: 5px; background: #EEF1F7"></span>
+                  <span style="width: 64px; flex-shrink: 0; display: flex; justify-content: flex-end"><span style="width: 30px; height: 12px; border-radius: 6px; background: #E3E6EE"></span></span>
+                  <span style="width: 128px; flex-shrink: 0; display: flex; justify-content: flex-end"><span style="width: 50px; height: 12px; border-radius: 6px; background: #E3E6EE"></span></span>
+                  <span style="width: 70px; flex-shrink: 0; height: 32px; border-radius: 999px; background: #EEF1F7"></span>
+                </div>
+              </sc-for>
+              <div style="padding: 10px 0; font-size: 13px; font-weight: 600; color: #4B5160; text-align: center">Reading the piles from NEAR…</div>
+            </sc-if>
+            <sc-if value="{{isReady}}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{rows}}" as="c" hint-placeholder-count="10">
+                <sc-if value="{{c.cutAbove}}" hint-placeholder-val="{{ false }}">
+                  <div role="separator" aria-label="{{cutLabel}}" style="display: flex; align-items: center; gap: 10px; height: 26px">
+                    <span style="flex-grow: 1; border-top: 2px dashed #FF3B3B"></span>
+                    <span style="padding: 0 10px; border-radius: 999px; background: #FFE7D6; border: 1.5px solid #FF3B3B; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; line-height: 18px; white-space: nowrap">{{cutLabel}}</span>
+                    <span style="flex-grow: 1; border-top: 2px dashed #FF3B3B"></span>
+                  </div>
+                </sc-if>
+                <div style="display: flex; align-items: center; gap: 16px; height: 46px; padding: 0 8px; margin: 0 -8px; border-top: {{c.line}}; border-radius: {{c.radius}}; background: {{c.rowBg}}">
+                  <button type="button" onClick="{{c.open}}" style="flex-grow: 1; min-width: 0; display: flex; align-items: center; gap: 16px; height: 100%; padding: 0; border: 0; background: none; text-align: left; font-family: Inter, sans-serif; color: #0A0B0D">
+                    <span style="width: 230px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; min-width: 0">
+                      <img src="{{c.img}}" alt="" style="width: 36px; height: 36px; flex-shrink: 0; box-sizing: border-box; border-radius: 11px; border: 2px solid #0A0B0D; background: #FFFFFF; filter: {{c.filter}}">
+                      <span style="min-width: 0">
+                        <span style="display: flex; align-items: center; gap: 6px"><span style="font-weight: 700; font-size: 14.5px; white-space: nowrap; color: {{c.nameInk}}">{{c.name}}</span><sc-if value="{{c.hasTag}}" hint-placeholder-val="{{ false }}"><span style="padding: 1px 7px; border-radius: 999px; background: {{c.tagBg}}; color: {{c.tagInk}}; border: 1.5px solid #0A0B0D; font-size: 10px; font-weight: 800; letter-spacing: 0.4px; white-space: nowrap">{{c.tag}}</span></sc-if></span>
+                        <span style="display: block; font-size: 12px; color: #4B5160; white-space: nowrap">{{c.kind}}</span>
+                      </span>
+                    </span>
+                    <span style="flex-grow: 1; display: flex; align-items: center; gap: 12px; min-width: 0">
+                      <span style="flex-grow: 1; height: 10px; border-radius: 5px; background: #EEF1F7; overflow: hidden"><span style="display: block; width: {{c.bar}}%; height: 100%; border-radius: 5px; background: {{c.barBg}}"></span></span>
+                      <span style="width: 78px; flex-shrink: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px; text-align: right; white-space: nowrap; color: {{c.nameInk}}">{{c.pileText}}</span>
+                    </span>
+                    <span style="width: 64px; flex-shrink: 0; text-align: right; font-weight: 700; font-size: 14.5px">{{c.savers}}</span>
+                    <span style="width: 128px; flex-shrink: 0; text-align: right; font-weight: 700; font-size: 14px; white-space: nowrap; color: {{c.lastInk}}">{{c.last}}</span>
+                  </button>
+                  <sc-if value="{{c.canSave}}" hint-placeholder-val="{{ true }}">
+                    <button type="button" onClick="{{c.save}}" aria-label="{{c.saveLabel}}" style="width: 70px; height: 32px; flex-shrink: 0; padding: 0; border-radius: 999px; background: {{c.saveBg}}; border: 2px solid #0A0B0D; font: 800 13px Inter, sans-serif; color: #0A0B0D; opacity: {{tradeOpacity}}">Save</button>
+                  </sc-if>
+                  <sc-if value="{{c.isGone}}" hint-placeholder-val="{{ false }}">
+                    <span style="width: 70px; flex-shrink: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.4px; text-align: center; color: #4B5160">GONE</span>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </sc-if>
+          </div>
+        </div>
+
+        <!-- Right: who is on the block, the bench, and the Director -->
+        <aside aria-label="Today’s cut" style="width: 336px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px">
+          <div style="border-radius: 22px; background: #8B6CFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; overflow: hidden; color: #FFFFFF">
+            <button type="button" onClick="{{toShow}}" aria-label="See the show" style="display: flex; align-items: flex-end; justify-content: center; width: 100%; height: 150px; padding: 0; border: 0; border-bottom: 2px solid #0A0B0D; background: radial-gradient(circle at 50% 0%, {{blockGlow}} 0%, rgba(255, 59, 59, 0) 70%), #2A1F5C"><img src="{{art.kiko}}" alt="Kiko Bun" style="display: block; height: 138px; width: auto; filter: {{blockFilter}}"></button>
+            <div style="padding: 12px 16px 14px">
+              <div style="font-size: 11.5px; font-weight: 800; letter-spacing: 0.6px">{{blockLabel}}</div>
+              <div style="margin-top: 2px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; line-height: 26px; white-space: nowrap">{{blockTitle}}</div>
+              <div style="margin-top: 4px; font-size: 13px; line-height: 18px; font-weight: 600; color: #EDE8FF; text-wrap: pretty">{{blockSub}}</div>
+              <div style="display: flex; gap: 8px; margin-top: 12px">
+                <sc-if value="{{showSaveKiko}}" hint-placeholder-val="{{ true }}">
+                  <button type="button" onClick="{{toSaveKiko}}" style="flex: 1 1 0; height: 40px; border-radius: 12px; background: #C6F432; border: 2px solid #0A0B0D; font: 800 14px Inter, sans-serif; color: #0A0B0D; opacity: {{tradeOpacity}}">Save Kiko</button>
+                </sc-if>
+                <button type="button" onClick="{{toShow}}" style="flex: 1 1 0; display: flex; align-items: center; justify-content: center; gap: 6px; height: 40px; border-radius: 12px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 800 14px Inter, sans-serif; color: #0A0B0D">{{showLabel}}<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <button type="button" onClick="{{toBench}}" style="display: block; padding: 14px 16px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D; text-align: left; font-family: Inter, sans-serif; color: #0A0B0D">
+            <span style="display: flex; align-items: center; gap: 10px">
+              <img src="{{img.chart}}" alt="" style="width: 40px; height: 40px; box-sizing: border-box; border-radius: 12px; border: 2px solid #0A0B0D">
+              <span style="flex-grow: 1"><span style="display: block; font-weight: 800; font-size: 15px">{{benchTitle}}</span><span style="display: block; font-size: 12.5px; color: #4B5160">{{benchSub}}</span></span>
+            </span>
+            <sc-if value="{{showQueues}}" hint-placeholder-val="{{ true }}">
+              <span style="display: block; margin-top: 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.6px; color: #4B5160">BENCH QUEUES · $CUT</span>
+              <sc-for list="{{queues}}" as="q" hint-placeholder-count="3">
+                <span style="display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 12.5px; font-weight: 700"><span style="width: 64px; white-space: nowrap">{{q.name}}</span><span style="flex-grow: 1; height: 10px; border-radius: 5px; background: #EEF1F7; overflow: hidden"><span style="display: block; width: {{q.bar}}%; height: 100%; background: {{q.bg}}"></span></span><span style="width: 50px; text-align: right">{{q.pile}}</span></span>
+              </sc-for>
+            </sc-if>
+            <span style="display: block; margin-top: 10px; font-size: 12.5px; line-height: 17px; color: #4B5160">{{benchNote}}</span>
+          </button>
+          <div style="display: flex; align-items: flex-end; gap: 6px">
+            <img src="{{art.director}}" alt="The Director" style="display: block; height: 78px; width: auto; flex-shrink: 0">
+            <button type="button" onClick="{{toVerify}}" style="flex-grow: 1; padding: 10px 14px; border-radius: 18px 18px 18px 4px; background: #FF7AD9; border: 2px solid #0A0B0D; text-align: left; font-family: Inter, sans-serif; color: #0A0B0D">
+              <span style="display: block; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 17px; line-height: 21px; text-wrap: balance">“{{dirLine}}”</span>
+              <span style="display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.4px"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></svg>VERIFIED · NEAR AI</span>
+            </button>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <sc-if value="{{sv.amountView}}" hint-placeholder-val="{{ true }}">
+    <div style="position: absolute; inset: 0; background: rgba(10, 11, 13, 0.55)"></div>
+
+    <div role="dialog" aria-label="Sell $CUT" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; border-radius: 26px; background: #FFFFFF; border: 3px solid #0A0B0D; box-shadow: 8px 8px 0 #0A0B0D; width: 940px; padding: 24px 30px 28px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <span style="width: 40px; height: 40px; box-sizing: border-box; border-radius: 12px; background: #FFFFFF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3" stroke-linecap="round"><path d="M5 12h14"/></svg></span>
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; line-height: 34px; letter-spacing: -0.8px">Sell $CUT</div>
+        <div style="margin-left: auto"><button type="button" onClick="{{sv.toHome}}" aria-label="Close" style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 2px 2px 0 #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      </div>
+      <sc-if value="{{sv.isMoved}}" hint-placeholder-val="{{ false }}">
+        <div role="alert" style="display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 12px 16px; border-radius: 18px; background: #FF9142; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font-size: 15px">
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M12 3.5L2.5 20h19zM12 10v4M12 17v.01"/></svg>
+          <span><b>Price moved 2.1% while you waited.</b> Here is a fresh quote.</span>
+        </div>
+      </sc-if>
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 384px; gap: 30px; margin-top: 20px">
+
+        <!-- Left: how much, and what stays yours -->
+        <div>
+          <div style="font-size: 12px; font-weight: 800; letter-spacing: 0.6px; color: #4B5160">YOU SELL</div>
+          <div style="display: flex; align-items: baseline; height: 112px; margin-top: 8px; padding: 14px 24px 0; box-sizing: border-box; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 0 0 0 4px rgba(139, 108, 255, 0.22)">
+            <span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 70px; line-height: 80px; letter-spacing: -2.4px">137.1</span>
+            <span style="margin-left: 12px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -0.8px">$CUT</span>
+            <span aria-hidden="true" style="align-self: center; width: 3px; height: 54px; margin: -10px 0 0 6px; border-radius: 2px; background: #8B6CFF"></span>
+          </div>
+          <div style="margin-top: 10px; font-size: 15px; font-weight: 600; color: #4B5160">half of your 274.2 free · worth {{sv.worth}}</div>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 16px">
+            <sc-for list="{{sv.chips}}" as="p" hint-placeholder-count="4">
+              <button type="button" aria-pressed="{{p.pressed}}" style="height: 44px; border-radius: 14px; background: {{p.bg}}; border: 2px solid #0A0B0D; font: {{p.weight}} 15px Inter, sans-serif; color: #0A0B0D">{{p.label}}</button>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center; margin-top: 22px; padding: 14px 16px; border-radius: 18px; background: #C6F432; border: 2px solid #0A0B0D">
+            <span style="width: 40px; height: 40px; flex-shrink: 0; box-sizing: border-box; border-radius: 12px; background: #FFFFFF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14v10H5zM8 11V7.5a4 4 0 0 1 8 0V11"/></svg></span>
+            <div style="font-size: 14.5px; line-height: 20px; font-weight: 600">274.2 free · 400 saved on Melody-9, locked till 18:00 UTC. Only free $CUT can be sold.</div>
+          </div>
+        </div>
+
+        <!-- Right: the quote, then sell -->
+        <div style="display: flex; flex-direction: column">
+          <div style="padding: 18px 20px 18px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+            <div style="font-size: 13.5px; font-weight: 600; color: #4B5160">You get</div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline">
+              <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; line-height: 46px; letter-spacing: -1.2px">{{sv.getNear}}</div>
+              <div style="font-size: 17px; font-weight: 700">{{sv.getUsd}}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; margin-top: 10px; font-size: 14px">
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-top: 1.5px solid #EEF1F7"><span style="color: #4B5160">Fee (1%) · to today’s prize</span><span style="font-weight: 700">{{sv.fee}}</span></div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-top: 1.5px solid #EEF1F7"><span style="color: #4B5160">Network fee</span><span style="font-weight: 700">about $0.01</span></div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-top: 1.5px solid #EEF1F7"><span style="color: #4B5160">Price per $CUT</span><span style="font-weight: 700">{{sv.price}}</span></div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0 0; border-top: 1.5px solid #EEF1F7"><span style="color: #4B5160">Free $CUT left</span><span style="font-weight: 700">137.1 $CUT</span></div>
+            </div>
+          </div>
+          <div style="margin-top: auto; padding-top: 16px">
+            <button type="button" onClick="{{sv.toWallet}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; width: 100%; height: 56px; border-radius: 18px; background: #0A0B0D; color: #FFFFFF; font-size: 16px; box-shadow: 3px 3px 0 #8B6CFF">{{sv.sellLabel}}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{sv.isWallet}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; background: rgba(10, 11, 13, 0.38)"></div>
+
+    <div role="dialog" aria-label="Approve sale" style="position: absolute; right: 22px; top: 16px; width: 380px; box-sizing: border-box; border-radius: 18px; background: #0A0B0D; border: 1.5px solid #2B2D35; box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06); color: #FFFFFF; font-family: Inter, sans-serif">
+      <div aria-hidden="true" style="position: absolute; right: 34px; top: -8px; width: 14px; height: 14px; background: #0A0B0D; border-left: 1.5px solid #2B2D35; border-top: 1.5px solid #2B2D35; transform: rotate(45deg)"></div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #23252C">
+        <div style="width: 34px; height: 34px; flex-shrink: 0; box-sizing: border-box; border-radius: 10px; background: #0A0B0D; border: 1.5px solid #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px; color: #FFFFFF">M</div>
+        <div style="flex-grow: 1; min-width: 0">
+          <div style="font-weight: 700; font-size: 15px">Meteor Wallet</div>
+          <div style="font-size: 12px; color: #9AA0AE">mika.near · thecut.app</div>
+        </div>
+        <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px; background: #1C1E24; font-size: 11.5px; font-weight: 700; color: #C9CDD6"><span style="width: 7px; height: 7px; border-radius: 50%; background: #C6F432"></span>NEAR</span>
+      </div>
+      <div style="padding: 16px 16px 18px">
+        <div style="font-size: 24px; line-height: 30px; font-weight: 800; letter-spacing: -0.4px">Approve sale</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: #1C1E24; font-size: 13.5px">
+          <div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9AA0AE">You send</span><span style="font-weight: 700">137.1 $CUT</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9AA0AE">You get at least</span><span style="font-weight: 700">98.9 NEAR</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9AA0AE">Fee (1%)</span><span style="font-weight: 700">$2.52</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9AA0AE">Network fee</span><span style="font-weight: 700">about $0.01</span></div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 16px">
+          <button type="button" onClick="{{sv.toAmount}}" style="flex: 1 1 0; height: 48px; border-radius: 14px; background: #1C1E24; border: 1.5px solid #3A3D46; font: 700 15px Inter, sans-serif; color: #FFFFFF">Reject</button>
+          <button type="button" onClick="{{sv.toSelling}}" style="flex: 1 1 0; height: 48px; border-radius: 14px; background: #0052FF; border: 1.5px solid #0052FF; font: 700 15px Inter, sans-serif; color: #FFFFFF">Approve</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{sv.isSelling}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; background: rgba(10, 11, 13, 0.55)"></div>
+
+    <div role="dialog" aria-label="Selling" aria-busy="true" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; border-radius: 26px; background: #FFFFFF; border: 3px solid #0A0B0D; box-shadow: 8px 8px 0 #0A0B0D; width: 900px; padding: 34px 36px 36px; display: flex; gap: 36px; align-items: center">
+      <div style="flex-grow: 1; min-width: 0">
+        <div style="font-size: 12px; font-weight: 800; letter-spacing: 0.6px; font-size: 13px; color: #4B5160">ON NEAR · ABOUT 1 SECOND</div>
+        <div style="margin-top: 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px; line-height: 48px; letter-spacing: -1.5px">Selling 137.1 $CUT</div>
+        <div style="display: flex; align-items: center; gap: 20px; margin-top: 30px">
+          <div style="width: 112px; height: 112px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #C6F432; border: 2px solid #0A0B0D; box-shadow: 5px 5px 0 #0A0B0D; display: flex; flex-direction: column; align-items: center; justify-content: center"><div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; line-height: 28px">$CUT</div><div style="margin-top: 2px; font-size: 15px; font-weight: 700; color: #0A0B0D">137.1</div></div>
+          <svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+          <div style="width: 112px; height: 112px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 5px 5px 0 #0A0B0D; display: flex; flex-direction: column; align-items: center; justify-content: center"><div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; line-height: 28px">NEAR</div><div style="margin-top: 2px; font-size: 15px; font-weight: 700; color: #4B5160">99.9</div></div>
+        </div>
+      </div>
+      <ol style="width: 380px; flex-shrink: 0; margin: 0; padding: 6px 18px; list-style: none; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+        <sc-for list="{{sv.steps}}" as="s" hint-placeholder-count="3">
+          <li style="display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: {{s.line}}">
+            <span style="width: 30px; height: 30px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: {{s.dotBg}}; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center">
+              <sc-if value="{{s.done}}" hint-placeholder-val="{{ true }}"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></sc-if>
+              <sc-if value="{{s.active}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg></sc-if>
+            </span>
+            <span style="flex-grow: 1; min-width: 0">
+              <span style="display: block; font-size: 15px; font-weight: 700; color: {{s.fg}}">{{s.title}}</span>
+              <span style="display: block; margin-top: 1px; font-size: 13px; color: #4B5160">{{s.sub}}</span>
+            </span>
+          </li>
+        </sc-for>
+      </ol>
+    </div>
+  </sc-if>
+  <sc-if value="{{sv.isSold}}" hint-placeholder-val="{{ false }}">
+    
+    <div style="position: absolute; inset: 0; background: rgba(10, 11, 13, 0.55)"></div>
+
+    <div role="dialog" aria-label="Sold" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; border-radius: 26px; background: #FFFFFF; border: 3px solid #0A0B0D; box-shadow: 8px 8px 0 #0A0B0D; width: 860px; padding: 34px 36px 34px; display: flex; gap: 36px">
+      <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center">
+        <div style="width: 68px; height: 68px; box-sizing: border-box; border-radius: 21px; background: #C6F432; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+          <svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>
+        </div>
+        <div style="margin-top: 22px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 64px; line-height: 64px; letter-spacing: -2.2px">Sold.</div>
+        <p style="margin: 12px 0 0; font-size: 18px; line-height: 26px">99.9 NEAR ($249.74) is in your wallet. Your save on Melody-9 is untouched.</p>
+      </div>
+      <div style="width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: 18px">
+        <div style="padding: 18px 20px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+          <div style="font-size: 13.5px; font-weight: 600; color: #4B5160">Still yours</div>
+          <div style="margin-top: 2px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; line-height: 34px; letter-spacing: -0.6px">537.1 $CUT</div>
+          <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; line-height: 26px; color: #0052FF">$988.26</div>
+          <div style="margin-top: 10px; font-size: 14px; line-height: 20px; text-wrap: balance">137.1 free · 400 saved on Melody-9, locked till 18:00 UTC.</div>
+        </div>
+        <button type="button" onClick="{{sv.toHome}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #FFFFFF; width: 100%; height: 56px; margin-top: auto; border-radius: 18px; font-size: 16px; box-shadow: 3px 3px 0 #0A0B0D">Back to the lineup</button>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{sv.isFailed}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; background: rgba(10, 11, 13, 0.55)"></div>
+
+    <div role="dialog" aria-label="The sale didn't go through" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; border-radius: 26px; background: #FFFFFF; border: 3px solid #0A0B0D; box-shadow: 8px 8px 0 #0A0B0D; width: 880px; padding: 32px 34px 32px; display: flex; gap: 34px">
+      <div style="flex-grow: 1; min-width: 0">
+        <div style="width: 64px; height: 64px; box-sizing: border-box; border-radius: 20px; background: #FF9142; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+          <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3" stroke-linecap="round"><path d="M12 6v8"/><path d="M12 18.5v.5"/></svg>
+        </div>
+        <div style="margin-top: 20px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; line-height: 44px; letter-spacing: -1.3px; text-wrap: balance">The sale didn't go through.</div>
+        <p style="margin: 12px 0 0; font-size: 16px; line-height: 24px; text-wrap: pretty">The $CUT price dropped more than your 1% limit <span style="white-space: nowrap">mid-sale</span>, so nothing was sold. Your $CUT is untouched.</p>
+      </div>
+      <div style="width: 330px; flex-shrink: 0; display: flex; flex-direction: column">
+        <div style="padding: 6px 16px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D; background: #EEF1F7; font-size: 14px">
+          <div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1.5px solid #DDE2EC"><span style="color: #4B5160">Your $CUT</span><b>274.2 free + 400 saved</b></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 0"><span style="color: #4B5160">Cost of trying</span><b>$0.01 network fee</b></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: auto; padding-top: 20px">
+          <button type="button" onClick="{{sv.toWallet}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #C6F432; box-shadow: 3px 3px 0 #0A0B0D; width: 100%; height: 54px; border-radius: 17px; font-size: 16px">Try again</button>
+          <button type="button" onClick="{{sv.toHome}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; box-sizing: border-box; border-radius: 16px; border: 2px solid #0A0B0D; font: 800 15px Inter, sans-serif; color: #0A0B0D; white-space: nowrap; background: #FFFFFF; width: 100%; height: 54px; border-radius: 17px; font-size: 16px">Back to the lineup</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variant":{"editor":"enum","default":"amount","options":["amount","wallet","moved","selling","failed","success"]},"go":{"editor":null},"member":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+// Sample data: every robot, account and number here is fictional.
+// Selling $CUT on a laptop: dialogs over the dimmed lineup, the NEAR wallet as its own popup.
+const SCREEN = 'sell';
+const DEFAULT = 'amount';
+const ACTIVE = 'Lineup';
+// Full-body stickers (new art) and the older square head tiles, by robot id.
+const ART = {
+  pixie: '/_blob/9b6e1aaf263605b289360fc424b4f821', lila: '/_blob/83d1e9085c1fa3c23eaa210fda48bf87', oracle: '/_blob/2c93a196e05209fc1f1bc658ab00f527',
+  mabel: '/_blob/4d33b0465eb75f8cbb1fd8aaa7b52e92', melody: '/_blob/3e8b30e1496674b5eb3ea74393b2bd41', yuna: '/_blob/c0ce503439858eafc6975b9313e81cb6',
+  gremlin: '/_blob/c4b4ca3b1ca3fe0f2d8031a27e671aff', velvet: '/_blob/53d2bf7b4e6e81153f67c367535f534a', onyx: '/_blob/5fb11cd66b3931a5276c6acc1d4f5256',
+  kiko: '/_blob/6888365d7a39c899d74d6c4f610ff0dd', director: '/_blob/dc465a0f5290fdc774aca84baf5b75a9', stage: '/_blob/b83a20d40bab30f1f62339d81fe32673'
+};
+const IMG = {
+  pixie: '/_blob/874a7fd0b8213754632166c0d6bc3e7f', lila: '/_blob/0f960c049bd3c3312ea5beb286a6daef', oracle: '/_blob/2ed9f6b242d48ca304a6b150641e0ba8',
+  mabel: '/_blob/4157b5d24c10fef0dd8aa02a0ffe3fea', melody: '/_blob/c592dc8a7f6253129791193e8755b164', yuna: '/_blob/3b8dadf912862c42f3f6d152585e9900',
+  gremlin: '/_blob/7fde17624f8b63d34f4ce22c26daa72b', velvet: '/_blob/48040268a752c07a08101d4c3809df73', onyx: '/_blob/1ac603a1e366fd817a3dbf1cecfaf601',
+  kiko: '/_blob/71975a12bca5b8fe9fe3680e0ca47f97', chart: '/_blob/9bb96e6996bd8d795d741fd39d44ee8b'
+};
+// Friday Nov 13, 13:48 UTC. pile = $CUT saved on the robot, today = $CUT saved today (piles never go down before the cut).
+// hour = $CUT saved in the last hour and live = the pile today at 17:18 UTC, during the Final hour.
+const STAGE = [
+  { id: 'pixie', name: 'Pixie Volt', kind: 'AI streamer', pile: 182400, savers: 412, today: 6200, live: 182400, hour: 0 },
+  { id: 'lila', name: 'Lila Loop', kind: 'Virtual influencer', pile: 151200, savers: 377, today: 3900, live: 151200, hour: 0 },
+  { id: 'oracle', name: 'Oracle Toad', kind: 'AI agent', pile: 139800, savers: 351, today: 4400, live: 139800, hour: 0 },
+  { id: 'mabel', name: 'Mabel Market', kind: 'Virtual influencer', pile: 121500, savers: 298, today: 1800, live: 121500, hour: 0 },
+  { id: 'melody', name: 'Melody-9', kind: 'Virtual singer', pile: 112300, savers: 287, today: 2600, live: 112300, hour: 0 },
+  { id: 'yuna', name: 'Yuna Star', kind: 'AI idol', pile: 98700, savers: 264, today: 3100, live: 98700, hour: 0 },
+  { id: 'gremlin', name: 'Glitch Gremlin', kind: 'AI artist', pile: 86900, savers: 233, today: 900, live: 86900, hour: 0 },
+  { id: 'velvet', name: 'Velvet Vee', kind: 'Virtual model', pile: 74200, savers: 205, today: 1200, live: 74200, hour: 0 },
+  { id: 'onyx', name: 'Onyx Moon', kind: 'Digital model', pile: 61800, savers: 187, today: 400, live: 61800, hour: 0 },
+  { id: 'kiko', name: 'Kiko Bun', kind: 'VTuber', pile: 23600, savers: 96, today: 300, live: 23600, hour: 0 }
+];
+// On the bench: the biggest queue takes the empty seat at the cut, and its queue becomes its pile.
+const BENCH = { id: 'chart', name: 'Chartwise', kind: 'AI analyst', pile: 88400, savers: 241, today: 1500, live: 88400, hour: 0 };
+const QUEUES = [['Chartwise', 88400, 88400, '#0A0B0D'], ['Bloop', 31200, 31200, '#FF7AD9'], ['Pixel Kit', 12600, 12600, '#FF9142']];
+// Today's cut, Fri Nov 13 18:00 UTC: half of Kiko Bun's 23,600 burns; 11,800 + 5,020 fees = 16,820; 95% (15,979)
+// goes to savers as 9 equal slices of 1,775.4, one per surviving robot, shared by that robot's savers by $CUT saved.
+const SLICE = 1775.4;
+const fmt = (n) => n.toLocaleString('en-US');
+const NAV = [
+  { label: 'Lineup', to: ['cast', 'list'], visitor: ['cast', 'new'], icon: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M13.5 8a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0zM20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4M15.5 4.6a3.5 3.5 0 0 1 0 6.8' },
+  { label: 'Club', to: ['club', 'card'], visitor: ['club', 'locked'], icon: 'M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM8.5 14l-1.5 7 5-3 5 3-1.5-7' },
+  { label: 'Prizes', to: ['earnings', 'claimable'], visitor: ['earnings', 'locked'], icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM14.5 9.5c-.4-.9-1.3-1.5-2.5-1.5-1.5 0-2.5.8-2.5 1.8 0 2.4 5 1.3 5 3.9 0 1.1-1 2-2.7 2-1.3 0-2.3-.6-2.7-1.6M12 6.5V8M12 16v1.5' },
+  { label: 'Director', to: ['director', 'scheduled'], icon: 'M5 9h14v10H5zM12 5v4M9.5 13.5v.01M14.5 13.5v.01M2 13v2M22 13v2' }
+];
+const MORE = [
+  { label: '$CUT price', to: ['value', 'week'], icon: 'M3 17l6-6 4 4 8-8M15 7h6v6' },
+  { label: 'Inside the cut', to: ['brain', 'live'], icon: 'M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z' },
+  { label: 'Activity', to: ['activity', 'list'], icon: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01' },
+  { label: 'For creators', to: ['apply', 'form'], icon: 'M13 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM2 21c0-4 3-7 7-7s7 3 7 7M19 8v6M16 11h6' },
+  { label: 'Settings', to: ['account', 'default'], icon: 'M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1M15 4v4M9 10v4M17 16v4' }
+];
+// Only a member holds $CUT to sell, and only free $CUT: mika.near holds 274.2 free and 400 saved on Melody-9, locked till the cut.
+function isMemberState(v) { return true; }
+const PEEK = ['pixie', 'lila', 'oracle', 'mabel', 'melody', 'yuna', 'gremlin', 'velvet', 'onyx', 'kiko'];
+const STEPS = [
+  { title: 'Swap $CUT for NEAR in The Cut’s pool', sub: 'The 1% fee goes to today’s prize', state: 'done' },
+  { title: 'Confirm on NEAR', sub: 'about 1 second', state: 'active' },
+  { title: 'Send the NEAR to your wallet', sub: 'mika.near', state: 'todo' }
+];
+class Component extends DCLogic {
+  nav(screen, variant) {
+    return () => {
+      if (this.props.go) this.props.go(screen, variant);
+      else if (screen === SCREEN) this.setState({ variant });
+    };
+  }
+  shellVals(v) {
+    const member = this.props.go ? !!this.props.member : isMemberState(v);
+    const item = (n, small) => {
+      const on = n.label === ACTIVE;
+      const [s, t] = !member && n.visitor ? n.visitor : n.to;
+      return { label: n.label, icon: n.icon, current: on ? 'page' : 'false', pick: this.nav(s, t), bg: on ? (small ? '#EEF1F7' : '#C6F432') : 'transparent', border: on && !small ? '2px solid #0A0B0D' : '2px solid transparent', weight: on ? 800 : 600 };
+    };
+    return {
+      navMain: NAV.map((n) => item(n, false)),
+      navMore: MORE.map((n) => item(n, true)),
+      isMember: member,
+      isVisitor: !member,
+      isTest: false,
+      canSell: member,
+      sellOpacity: 1,
+      // The account card; a screen can pass its own acct for another person or a balance after a trade.
+      acct: { name: 'mika.near', value: '$1,240.53', label: '674.2 $CUT · 400 saved' },
+      testBalance: '15.99',
+      buyOpacity: 1,
+      toHome: this.nav('cast', member ? 'list' : 'new'),
+      toBuy: member ? this.nav('buy', 'amount') : this.nav('cast', 'connect'),
+      toSell: this.nav('sell', 'amount'),
+      toBell: this.nav('notifications', 'inbox'),
+      toAccount: this.nav('account', 'default'),
+      toConnect: this.nav('cast', 'connect'),
+      toCloseTest: this.nav('cast', 'new'),
+      toReceipts: this.nav('receipts', 'page'),
+      toBack: this.nav('cast', member ? 'list' : 'new')
+    };
+  }
+  // The lineup page behind the dialogs, as DeskLineup draws it: a visitor's first look ('new'), a member's day ('list')
+  // or today after the cut ('payout'). mine = false hides the YOUR 400 tag for someone with nothing saved yet.
+  lineupVals(v, mine = true) {
+    const isNew = v === 'new' || v === 'connect';
+    const final = v === 'rebalance';
+    // After the cut: today, a minute past 18:00 UTC. Kiko Bun is deleted and Chartwise sits in its seat.
+    const after = v === 'payout';
+    const offline = v === 'offline';
+    const kiko = STAGE.find((c) => c.id === 'kiko');
+    const pileOf = (c) => (final ? c.live : c.pile);
+    const list = after ? [...STAGE.filter((c) => c !== kiko), BENCH].sort((a, b) => b.pile - a.pile).concat([kiko]) : STAGE;
+    const top = Math.max(...list.map(pileOf));
+    const lowest = after ? 'onyx' : 'kiko';
+    const save = offline ? this.nav('cast', 'offline') : isNew ? this.nav('cast', 'connect') : this.nav('club', 'vote');
+    const rows = list.map((c, i) => {
+      const gone = after && c.id === 'kiko';
+      const fresh = after && c.id === 'chart';
+      const block = !gone && c.id === lowest;
+      const isMine = mine && !isNew && c.id === 'melody';
+      const tinted = gone || fresh || block;
+      const prevTinted = i > 0 && (list[i - 1].id === lowest || (after && list[i - 1].id === 'chart'));
+      return {
+        name: c.name,
+        kind: gone ? 'kiko.thecut.near · deleted' : c.kind,
+        img: IMG[c.id],
+        pileText: gone ? '0' : fmt(pileOf(c)),
+        bar: gone ? 0 : Math.max(3, Math.round((pileOf(c) / top) * 100)),
+        barBg: block ? '#FF3B3B' : fresh ? '#2E7D32' : '#0A0B0D',
+        savers: fmt(c.savers),
+        last: gone ? '11,800 burned' : fresh ? 'new in the seat' : after ? `+${SLICE.toLocaleString('en-US', { minimumFractionDigits: 1 })}` : final ? `+${fmt(c.hour)}` : `+${fmt(c.today)}`,
+        lastInk: gone ? '#B4380B' : fresh ? '#0A0B0D' : '#2F6B00',
+        hasTag: gone || fresh || block || isMine,
+        tag: gone ? 'DELETED' : fresh ? 'NEW' : block ? 'ON THE BLOCK' : 'YOUR 400',
+        tagBg: gone ? '#0A0B0D' : fresh || isMine ? '#C6F432' : '#FF3B3B',
+        tagInk: gone ? '#FFFFFF' : fresh || isMine ? '#0A0B0D' : '#FFFFFF',
+        rowBg: fresh ? '#EEFBC8' : block ? '#FFF1E8' : gone ? '#EEF1F7' : 'transparent',
+        radius: tinted ? '12px' : '0',
+        line: i === 0 || tinted || prevTinted || c.id === lowest ? '0' : '1.5px solid #EEF1F7',
+        filter: gone ? 'grayscale(1)' : 'none',
+        nameInk: gone ? '#6B7080' : '#0A0B0D',
+        cutAbove: c.id === lowest,
+        canSave: !gone,
+        isGone: gone,
+        saveBg: block ? '#C6F432' : '#FFFFFF',
+        saveLabel: `Save ${c.name}`,
+        save,
+        open: this.nav('profile', c.id)
+      };
+    });
+    const qTop = final ? QUEUES[0][2] : QUEUES[0][1];
+    return {
+      page: {
+        title: 'The lineup',
+        sub: isNew ? '10 AI robots · one coin · the poorest is deleted every day · on NEAR' : final ? 'Final hour · saves count until 18:00:00 UTC' : after ? 'Day 2 · Chartwise took the empty seat' : 'Day 2 · 10 robots on the stage · 1,052,400 $CUT saved',
+        cut: final ? 'Cut in 0:42:10 · 18:00 UTC' : after ? 'Next cut tomorrow · 18:00 UTC' : 'Next cut in 4h 12m · 18:00 UTC',
+        back: false
+      },
+      buyOpacity: offline ? 0.45 : 1,
+      sellOpacity: offline ? 0.45 : 1,
+      tradeOpacity: offline ? 0.45 : 1,
+      // Offline: buying, selling and saving wait, so those buttons stay put.
+      ...(offline ? { toBuy: this.nav('cast', 'offline'), toSell: this.nav('cast', 'offline') } : {}),
+      art: ART,
+      img: IMG,
+      isNew,
+      isConnect: v === 'connect',
+      isHolder: v === 'list' || offline,
+      isPayout: after,
+      isFinal: final,
+      isLoading: v === 'loading',
+      isOffline: offline,
+      isReady: v !== 'loading',
+      peek: PEEK.map((id, i) => ({ img: ART[id], h: i % 2 ? 66 : 74 })),
+      tableTitle: final ? 'Live piles' : 'The lineup',
+      tableSub: final ? 'Piles at 17:18 UTC, moving' : after ? 'Day 2 · each of the 9 survivors got an equal slice' : offline ? 'Piles as read at 13:48 UTC' : 'Ranked by pile · small piles pay more per $CUT',
+      colLast: final ? 'LAST HOUR' : after ? 'SLICE TO SAVERS' : 'TODAY',
+      cutLabel: after ? 'CUT LINE · NEXT CUT TOMORROW · 18:00 UTC' : 'CUT LINE · LOWEST PILE AT 18:00 UTC TODAY',
+      showSort: v === 'list' || isNew || v === 'loading' || offline,
+      rows,
+      skeleton: ['62%', '48%', '70%', '55%', '66%', '44%', '58%', '50%', '64%', '52%'].map((w) => ({ w1: `${Math.round(parseInt(w, 10) * 2)}px` })),
+      blockGlow: after ? '#6B7080' : '#FF3B3B',
+      blockFilter: after ? 'grayscale(1)' : 'none',
+      blockLabel: final ? 'ON THE BLOCK · NOBODY IS SAVING' : after ? 'THE CUT RAN · TODAY 18:00 UTC' : 'ON THE BLOCK · CUT IN 4H 12M',
+      blockTitle: final ? 'Kiko Bun · 23,600 $CUT' : after ? 'Kiko Bun is deleted.' : 'Kiko Bun · 23,600 $CUT',
+      blockSub: final ? 'Not one save this hour. Still 38,201 short of Onyx Moon, 42 minutes left.' : after ? 'Its NEAR account is gone. 11,800 $CUT burned and 16,820 $CUT went out as the prize.' : '38,201 short of Onyx Moon. If nothing moves by 18:00 UTC today, its NEAR account is deleted.',
+      showSaveKiko: !after,
+      showLabel: final ? 'The cut' : 'See the show',
+      toShow: this.nav('director', final ? 'ready' : after ? 'live' : 'scheduled'),
+      toSaveKiko: save,
+      benchTitle: after ? 'In the empty seat: Chartwise' : 'On the bench: Chartwise',
+      benchSub: after ? 'AI analyst · 241 savers · new yesterday' : `AI analyst · queue ${fmt(final ? BENCH.live : BENCH.pile)} · 241 savers`,
+      showQueues: !after,
+      queues: QUEUES.map(([name, pile, live, bg]) => ({ name, pile: fmt(final ? live : pile), bar: Math.round(((final ? live : pile) / qTop) * 100), bg })),
+      benchNote: after ? 'Its queue of 88,400 $CUT became its pile. Bloop and Pixel Kit stay on the bench, and their queues unlock.' : 'The biggest queue takes the empty seat at the cut, and its queue becomes its pile.',
+      dirLine: final ? 'Forty-two minutes. Not one save. Kiko, start packing.' : after ? '23,600 $CUT between Kiko and oblivion. Pack your buns.' : 'Kiko Bun needs 38,201 $CUT by 18:00. The math does not do favors.',
+      wallets: [
+        { name: 'Meteor Wallet', sub: 'Browser and phone', initial: 'M', bg: '#0A0B0D', fg: '#FFFFFF' },
+        { name: 'HOT Wallet', sub: 'Inside Telegram', initial: 'H', bg: '#FF9142', fg: '#0A0B0D' },
+        { name: 'MyNearWallet', sub: 'Web wallet', initial: 'N', bg: '#7FD3FF', fg: '#0A0B0D' }
+      ],
+      toConnect: this.nav('cast', 'connect'),
+      toNew: this.nav('cast', 'new'),
+      toBuyNow: this.nav('buy', 'amount'),
+      toEarnings: this.nav('earnings', 'claimable'),
+      toPrize: this.nav('earnings', 'empty'),
+      toMine: this.nav('profile', 'melody'),
+      toValue: this.nav('value', 'week'),
+      toDirector: this.nav('director', 'scheduled'),
+      toReady: this.nav('director', 'ready'),
+      toBench: this.nav('profile', 'chart'),
+      // Before the cut the Director's line explains the block; after it, the signed cut line can be checked.
+      toVerify: this.nav('brain', after ? 'verify' : 'why')
+    };
+  }
+  // mika.near's numbers on the lineup and the account card; a finished trade passes the balance it leaves.
+  holdVals(h) {
+    const hold = { show: false, cut: '674.2', usd: '$1,240.53', saved: '400 saved on Melody-9', lock: 'locked till 18:00 UTC', label: '674.2 $CUT · 400 saved', ...h };
+    return { hold, ...(hold.show ? { acct: { name: 'mika.near', value: hold.usd, label: hold.label } } : {}) };
+  }
+  screenVals(v) {
+    const member = this.props.go ? !!this.props.member : isMemberState(v);
+    const moved = v === 'moved';
+    return {
+      ...this.lineupVals(member ? 'list' : 'new'),
+      // Sold: behind the dialog the lineup and account card show the 537.1 $CUT still held, 400 of it saved.
+      ...this.holdVals(member && v === 'success' ? { show: true, cut: '537.1', usd: '$988.26', label: '537.1 $CUT · 400 saved' } : {}),
+      sv: {
+        amountView: v === 'amount' || v === 'wallet' || moved,
+        isMoved: moved,
+        isWallet: v === 'wallet',
+        isSelling: v === 'selling',
+        isFailed: v === 'failed',
+        isSold: v === 'success',
+        getNear: moved ? '97.7 NEAR' : '99.9 NEAR',
+        getUsd: moved ? '$244.31' : '$249.74',
+        // 137.1 at $1.84 is $252.26, less the 1% fee is $249.74. After a 2.1% drop: 137.1 at $1.80 is $246.78, less the fee is $244.31.
+        worth: moved ? '$246.78' : '$252.26',
+        fee: moved ? '$2.47' : '$2.52',
+        price: moved ? '$1.80' : '$1.84',
+        sellLabel: moved ? 'Accept new price' : 'Sell 137.1 $CUT',
+        steps: STEPS.map((s, i) => ({
+          ...s,
+          done: s.state === 'done',
+          active: s.state === 'active',
+          dotBg: s.state === 'done' ? '#C6F432' : s.state === 'active' ? '#0A0B0D' : '#FFFFFF',
+          fg: s.state === 'todo' ? '#6B7080' : '#0A0B0D',
+          line: i < STEPS.length - 1 ? '2px solid #EEF1F7' : '0'
+        })),
+        chips: ['25%', '50%', '75%', 'All free'].map((label) => ({ label, pressed: label === '50%' ? 'true' : 'false', bg: label === '50%' ? '#C6F432' : '#FFFFFF', weight: label === '50%' ? 800 : 700 })),
+        toWallet: this.nav('sell', 'wallet'),
+        toAmount: this.nav('sell', 'amount'),
+        toSelling: this.nav('sell', 'selling'),
+        toHome: this.nav('cast', 'list')
+      }
+    };
+  }
+  renderVals() {
+    const v = this.props.go ? (this.props.variant ?? DEFAULT) : ((this.state && this.state.variant) ?? this.props.variant ?? DEFAULT);
+    return { ...this.shellVals(v), ...this.screenVals(v) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Cut · Test mode</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; background: #EEF1F7; color: #0A0B0D; font-family: Inter, system-ui, sans-serif; font-variant-numeric: tabular-nums">
+
+  <sc-if value="{{showHead}}" hint-placeholder-val="{{ true }}">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 0">
+      <button type="button" onClick="{{toLineup}}" aria-label="Close test mode" style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 2px 2px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">Test mode</div>
+      <div style="width: 44px"></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{showAppBar}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 0">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <div style="width: 34px; height: 34px; box-sizing: border-box; border-radius: 10px; background: #0052FF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><path d="M18 7.5A7 7 0 1 0 18 16.5"/></svg></div>
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">the cut</div>
+      </div>
+      <span style="display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 999px; border: 2px solid #0A0B0D; background: repeating-linear-gradient(-45deg, #FFD84D 0 8px, #FFE88A 8px 16px); font-size: 13px; font-weight: 800">judge-7f3a.testnet</span>
+    </div>
+  </sc-if>
+
+  <!-- Striped band: shown on every test-mode screen so nobody mistakes it for real money -->
+  <div style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 30px; margin: {{bandMargin}}; border-radius: 10px; border: 2px solid #0A0B0D; background: repeating-linear-gradient(-45deg, #FFD84D 0 12px, #FFE88A 12px 24px); font-size: 11.5px; font-weight: 800; letter-spacing: 0.6px">
+    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/></svg>
+    TESTNET · NOTHING HERE IS REAL MONEY
+  </div>
+
+  <!-- Creating the account -->
+  <sc-if value="{{isCreating}}" hint-placeholder-val="{{ true }}">
+    <div style="display: flex; flex-direction: column; align-items: center; padding: 26px 24px 0; text-align: center">
+      <img src="{{art.director}}" alt="The Director, holding a sealed envelope" style="display: block; height: 196px; width: auto; transform: rotate(-3deg)">
+      <h1 style="margin: 16px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; line-height: 32px; letter-spacing: -0.8px">Making your test account</h1>
+      <p style="margin: 8px 0 0; font-size: 14.5px; line-height: 21px; color: #4B5160">About five seconds. No sign-up, no wallet, no seed phrase.</p>
+    </div>
+    <div style="margin: 20px 20px 0; padding: 4px 14px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+      <sc-for list="{{making}}" as="m" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 12px; height: 62px; border-top: {{m.line}}">
+          <span style="width: 30px; height: 30px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: {{m.bg}}; border: {{m.border}}; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{m.ink}}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.icon}}"/></svg></span>
+          <div style="flex-grow: 1; min-width: 0; text-align: left">
+            <div style="font-size: 15px; font-weight: 700; color: {{m.fg}}">{{m.title}}</div>
+            <div style="font-size: 12.5px; color: #4B5160">{{m.sub}}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display: flex; gap: 10px; margin: 16px 24px 0; font-size: 13px; line-height: 18px; color: #4B5160">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M5 11h14v10H5zM8 11V7.5a4 4 0 0 1 8 0V11"/></svg>
+      <span>The key is made in this tab and never leaves it. Close the tab and the account is gone.</span>
+    </div>
+  </sc-if>
+
+  <!-- Account ready: the five-minute tour -->
+  <sc-if value="{{isReady}}" hint-placeholder-val="{{ false }}">
+    <div style="position: relative; margin: 16px 20px 0; padding: 16px; border-radius: 22px; background: #C6F432; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; overflow: hidden">
+      <img src="{{art.pixie}}" alt="" aria-hidden="true" style="position: absolute; right: -6px; top: 8px; height: 132px; width: auto; transform: rotate(6deg)">
+      <div style="position: relative; font-size: 12px; font-weight: 800; letter-spacing: 0.6px">YOU’RE IN · TEST ACCOUNT</div>
+      <div style="position: relative; margin-top: 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 25px; line-height: 28px">judge-7f3a.testnet</div>
+      <div style="position: relative; margin-top: 10px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; line-height: 36px">20.00 <span style="font-size: 18px">test NEAR</span></div>
+      <button type="button" style="position: relative; display: inline-flex; align-items: center; gap: 6px; height: 32px; margin-top: 10px; padding: 0 12px; border-radius: 10px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 13px Inter, sans-serif; color: #0A0B0D"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>Copy account name</button>
+    </div>
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 18px 24px 8px">
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">The 5-minute tour</div>
+      <div style="font-size: 13px; font-weight: 700; color: #4B5160">1 of 5 done</div>
+    </div>
+    <div style="margin: 0 20px; padding: 2px 14px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <sc-for list="{{tour}}" as="t" hint-placeholder-count="5">
+        <div style="display: flex; align-items: center; gap: 12px; height: 58px; border-top: {{t.line}}">
+          <span style="width: 30px; height: 30px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: {{t.bg}}; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800">{{t.mark}}</span>
+          <div style="flex-grow: 1; min-width: 0">
+            <div style="font-size: 14.5px; font-weight: 700; text-decoration: {{t.strike}}">{{t.title}}</div>
+            <div style="font-size: 12.5px; color: #4B5160; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">You see: {{t.see}}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin: 8px 24px 0; font-size: 12.5px; line-height: 17px; font-weight: 600; color: #4B5160">On testnet a cut runs every 2 minutes.</div>
+    <div style="position: absolute; left: 20px; right: 20px; bottom: 24px; display: flex; flex-direction: column; gap: 10px">
+      <button type="button" onClick="{{toTour}}" style="height: 56px; border-radius: 18px; background: #0052FF; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font: 700 16px Inter, sans-serif; color: #FFFFFF">Step 2: buy $10 of $CUT</button>
+      <button type="button" onClick="{{toLineup}}" style="height: 48px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 15px Inter, sans-serif; color: #0A0B0D">Look around first</button>
+    </div>
+  </sc-if>
+
+  <!-- In the app, mid-tour -->
+  <sc-if value="{{isTour}}" hint-placeholder-val="{{ false }}">
+    <div style="margin: 12px 20px 0; padding: 14px 16px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <div style="font-size: 13px; font-weight: 600; color: #4B5160">Your 5.38 $CUT</div>
+        <span style="padding: 2px 8px; border-radius: 999px; background: #FFD84D; border: 1.5px solid #0A0B0D; font-size: 11px; font-weight: 800">TEST MONEY</span>
+      </div>
+      <div style="margin-top: 2px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 32px; line-height: 36px; letter-spacing: -1px">$9.90</div>
+      <div style="margin-top: 4px; font-size: 12.5px; color: #4B5160">Paid 4.00 test NEAR · 1% fee to the next prize</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; margin: 12px 20px 0; padding: 10px 14px; border-radius: 20px; background: #8B6CFF; border: 2px solid #0A0B0D; color: #FFFFFF">
+      <div style="width: 40px; height: 40px; flex-shrink: 0; box-sizing: border-box; border-radius: 12px; background: #FFC2E8; border: 2px solid #0A0B0D; overflow: hidden; display: flex; align-items: flex-end; justify-content: center"><img src="{{art.kiko}}" alt="Kiko Bun" style="display: block; height: 38px; width: auto"></div>
+      <div style="flex-grow: 1; min-width: 0">
+        <div style="font-size: 11.5px; font-weight: 800; letter-spacing: 0.5px">TEST CUT · IN 1:12</div>
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 17px">On the block: Kiko Bun</div>
+        <div style="font-size: 12px; font-weight: 600; color: #EDE8FF">Pile 23,600 · 38,201 short of Onyx Moon</div>
+      </div>
+    </div>
+    <div style="margin: 14px 24px 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 19px">Save a robot</div>
+    <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 0 20px">
+      <sc-for list="{{picks}}" as="p" hint-placeholder-count="10">
+        <div style="height: 76px; box-sizing: border-box; border-radius: 14px; background: {{p.bg}}; border: {{p.border}}; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; overflow: hidden; padding-bottom: 4px">
+          <img src="{{p.img}}" alt="{{p.name}}" style="display: block; height: 50px; width: auto">
+          <div style="font-size: 10px; font-weight: 800; color: {{p.ink}}">{{p.tick}}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; margin: 12px 20px 0; padding: 10px 14px; border-radius: 18px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <div style="width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 12px; background: #FF9142; border: 2px solid #0A0B0D; overflow: hidden; display: flex; align-items: flex-end; justify-content: center"><img src="{{art.melody}}" alt="Melody-9" style="display: block; height: 42px; width: auto"></div>
+      <div style="flex-grow: 1; min-width: 0">
+        <div style="font-weight: 700; font-size: 15px">Your save: 5 $CUT on Melody-9</div>
+        <div style="font-size: 12.5px; line-height: 17px; color: #4B5160">Locked until the test cut. If it survives, you share its slice of the prize.</div>
+      </div>
+    </div>
+    <div style="position: absolute; left: 16px; right: 16px; bottom: 20px; padding: 14px 16px; border-radius: 22px; background: #0A0B0D; color: #FFFFFF; box-shadow: 4px 4px 0 #C6F432">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.6px; color: #C6F432">TOUR · STEP 3 OF 5</span>
+        <span style="font-size: 12px; font-weight: 600; color: #B9BECB">2 done</span>
+      </div>
+      <div style="display: flex; gap: 4px; margin-top: 8px">
+        <sc-for list="{{dots}}" as="d" hint-placeholder-count="5"><div style="flex: 1 1 0; height: 6px; border-radius: 3px; background: {{d.bg}}"></div></sc-for>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; margin-top: 10px">
+        <div style="flex-grow: 1; min-width: 0">
+          <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">Save a robot</div>
+          <div style="margin-top: 2px; font-size: 13px; line-height: 18px; color: #C9CDD6">Your SAVE line lands in Receipts. A test cut runs every 2 minutes.</div>
+        </div>
+        <button type="button" onClick="{{toCut}}" style="flex-shrink: 0; height: 44px; padding: 0 18px; border-radius: 14px; background: #C6F432; border: 0; font: 800 15px Inter, sans-serif; color: #0A0B0D">Save</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Tour step 4: the judge ran the cut; on testnet a cut runs every 2 minutes -->
+  <sc-if value="{{isCut}}" hint-placeholder-val="{{ false }}">
+    <div style="margin: 12px 20px 0; padding: 14px 16px 16px; border-radius: 22px; background: #0A0B0D; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #8B6CFF; color: #FFFFFF">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px; background: #FF3B3B; font-size: 11px; font-weight: 800; letter-spacing: 0.6px"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM8.1 8.1L20 20M20 4L8.1 15.9"/></svg>CUT RAN · TEST CUT 214</span>
+        <span style="font-size: 12px; font-weight: 600; color: #9AA0AE">just now</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 12px">
+        <div style="position: relative; width: 100px; height: 100px; flex-shrink: 0; box-sizing: border-box; border-radius: 16px; background: #E3E6EE; border: 2px solid #FFFFFF; overflow: hidden; display: flex; align-items: flex-end; justify-content: center">
+          <img src="{{art.kiko}}" alt="Kiko Bun, deleted" style="display: block; height: 94px; width: auto; filter: grayscale(1); opacity: 0.75">
+          <svg aria-hidden="true" width="100" height="100" viewBox="0 0 100 100" style="position: absolute; left: -2px; top: -2px"><line x1="-4" y1="74" x2="104" y2="30" stroke="#FF3B3B" stroke-width="3" stroke-dasharray="8 6" stroke-linecap="round"/></svg>
+          <span style="position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%) rotate(-14deg); padding: 0 7px; border-radius: 8px; border: 3px solid #FF3B3B; background: rgba(255, 255, 255, 0.9); color: #FF3B3B; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 17px; line-height: 26px; white-space: nowrap">DELETED</span>
+        </div>
+        <div style="width: 46px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 4px">
+          <svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#C6F432" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+          <span style="font-size: 10.5px; font-weight: 800; line-height: 13px; text-align: center; color: #C6F432">seat</span>
+        </div>
+        <div style="position: relative; width: 100px; height: 100px; flex-shrink: 0; box-sizing: border-box; border-radius: 16px; background: #FFFFFF; border: 3px solid #C6F432; overflow: hidden">
+          <img src="{{art.chart}}" alt="Chartwise, the newcomer" style="display: block; width: 100%; height: 100%; object-fit: cover">
+          <span style="position: absolute; right: 6px; top: 6px; padding: 1px 7px; border-radius: 999px; background: #C6F432; border: 1.5px solid #0A0B0D; color: #0A0B0D; font-size: 10.5px; font-weight: 800">NEW</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 6px; font-size: 12px; line-height: 15px; font-weight: 700; color: #B9BECB">
+        <span style="width: 100px; text-align: center; white-space: nowrap">Kiko · 23,600</span><span style="width: 46px"></span><span style="width: 100px; text-align: center; white-space: nowrap; color: #C6F432">Chartwise · 88,400</span>
+      </div>
+      <div style="margin-top: 10px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 23px; line-height: 26px">Kiko Bun is deleted. Chartwise is in.</div>
+    </div>
+    <div style="margin: 12px 20px 0; padding: 12px 14px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <div style="display: flex; align-items: baseline; justify-content: space-between">
+        <span style="font-size: 14.5px; font-weight: 700">One transaction</span>
+        <span style="font-size: 12px; font-weight: 600; color: #4B5160">block 213,402,318</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 8px">
+        <sc-for list="{{txn}}" as="x" hint-placeholder-count="4">
+          <div style="padding: 6px 10px; border-radius: 12px; background: {{x.bg}}; border: 2px solid #0A0B0D">
+            <div style="font-size: 10px; font-weight: 800; letter-spacing: 0.5px; color: {{x.ink}}">{{x.label}}</div>
+            <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px; line-height: 20px; white-space: nowrap; color: {{x.ink}}">{{x.value}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; margin: 12px 20px 0; padding: 10px 14px; border-radius: 18px; background: #C6F432; border: 2px solid #0A0B0D">
+      <span style="width: 32px; height: 32px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #FFFFFF; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{check}}"/></svg></span>
+      <div style="flex-grow: 1; min-width: 0">
+        <div style="font-weight: 700; font-size: 15px">You ran the cut</div>
+        <div style="font-size: 12.5px; color: #2A2D35">Left in Kiko’s deleted account.</div>
+      </div>
+      <div style="flex-shrink: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 17px; line-height: 19px; text-align: right">+0.50<br><span style="font-size: 12px">test NEAR</span></div>
+    </div>
+    <div style="display: flex; align-items: flex-end; gap: 8px; margin: 8px 20px 0">
+      <img src="{{art.director}}" alt="The Director" style="display: block; height: 56px; width: auto; flex-shrink: 0">
+      <div style="flex-grow: 1; min-width: 0; padding: 9px 12px; border-radius: 16px 16px 16px 4px; background: #FF7AD9; border: 2px solid #0A0B0D">
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 15.5px; line-height: 19px">“23,600 $CUT between Kiko and oblivion. Pack your buns.”</div>
+        <div style="margin-top: 2px; font-size: 11px; font-weight: 800; letter-spacing: 0.4px">THE DIRECTOR · SIGNED ON NEAR AI</div>
+      </div>
+    </div>
+    <div style="position: absolute; left: 16px; right: 16px; bottom: 20px; padding: 14px 16px; border-radius: 22px; background: #0A0B0D; color: #FFFFFF; box-shadow: 4px 4px 0 #C6F432">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.6px; color: #C6F432">TOUR · STEP 4 OF 5</span>
+        <span style="font-size: 12px; font-weight: 600; color: #B9BECB">3 done</span>
+      </div>
+      <div style="display: flex; gap: 4px; margin-top: 8px">
+        <sc-for list="{{dots}}" as="d" hint-placeholder-count="5"><div style="flex: 1 1 0; height: 6px; border-radius: 3px; background: {{d.bg}}"></div></sc-for>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; margin-top: 10px">
+        <div style="flex-grow: 1; min-width: 0">
+          <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">Run the cut</div>
+          <div style="margin-top: 2px; font-size: 13px; line-height: 18px; color: #C9CDD6">Next: your lines in Receipts. Real cuts run every day at 18:00 UTC.</div>
+        </div>
+        <button type="button" onClick="{{toLineup}}" style="flex-shrink: 0; height: 44px; padding: 0 18px; border-radius: 14px; background: #C6F432; border: 0; font: 800 15px Inter, sans-serif; color: #0A0B0D">Next</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Testnet trouble -->
+  <sc-if value="{{isFailed}}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; flex-direction: column; align-items: center; padding: 56px 28px 0; text-align: center">
+      <div style="width: 96px; height: 96px; box-sizing: border-box; border-radius: 28px; background: #FF9142; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; display: flex; align-items: center; justify-content: center; transform: rotate(-4deg)">
+        <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+      </div>
+      <h1 style="margin: 22px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; line-height: 31px; letter-spacing: -0.5px">The test network is slow</h1>
+      <p style="margin: 8px 0 0; font-size: 14.5px; line-height: 21px; color: #4B5160">We couldn’t fund judge-7f3a.testnet yet. Nothing was charged: this is test money.</p>
+    </div>
+    <div style="margin: 22px 20px 0; padding: 14px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <div style="font-weight: 700; font-size: 15px">This still works without an account</div>
+      <div style="margin-top: 4px; font-size: 13px; line-height: 18px; color: #4B5160">Receipts and the audit read the real contract. The 60-day simulation runs from the repo.</div>
+      <button type="button" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 44px; margin-top: 10px; border-radius: 14px; background: #EEF1F7; border: 2px solid #0A0B0D; font: 700 14px Inter, sans-serif; color: #0A0B0D">Open Receipts<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></button>
+    </div>
+    <div style="position: absolute; left: 20px; right: 20px; bottom: 24px; display: flex; flex-direction: column; gap: 10px">
+      <button type="button" onClick="{{toCreating}}" style="height: 56px; border-radius: 18px; background: #0A0B0D; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font: 700 16px Inter, sans-serif; color: #FFFFFF">Try again</button>
+      <button type="button" onClick="{{toLineup}}" style="height: 48px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 15px Inter, sans-serif; color: #0A0B0D">Watch without an account</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variant":{"editor":"enum","default":"ready","options":["creating","ready","tour","cut","failed"]},"go":{"editor":null},"$preview":{"width":390,"height":844}}'>
+// Sample data: every robot, account and number is fictional.
+// Judges' test mode: a throwaway testnet account made in the browser tab, then the five-minute tour from the landing page.
+// The testnet copy runs the same code with a cut every 2 minutes, so a judge can run a real cut.
+const ART = {
+  director: '/_blob/dc465a0f5290fdc774aca84baf5b75a9',
+  pixie: '/_blob/9b6e1aaf263605b289360fc424b4f821',
+  kiko: '/_blob/6888365d7a39c899d74d6c4f610ff0dd',
+  lila: '/_blob/83d1e9085c1fa3c23eaa210fda48bf87',
+  oracle: '/_blob/2c93a196e05209fc1f1bc658ab00f527',
+  mabel: '/_blob/4d33b0465eb75f8cbb1fd8aaa7b52e92',
+  melody: '/_blob/3e8b30e1496674b5eb3ea74393b2bd41',
+  yuna: '/_blob/c0ce503439858eafc6975b9313e81cb6',
+  gremlin: '/_blob/c4b4ca3b1ca3fe0f2d8031a27e671aff',
+  velvet: '/_blob/53d2bf7b4e6e81153f67c367535f534a',
+  onyx: '/_blob/5fb11cd66b3931a5276c6acc1d4f5256',
+  chart: '/_blob/9bb96e6996bd8d795d741fd39d44ee8b'
+};
+const CHECK = 'M5 12.5l4.5 4.5L19 7.5';
+const MAKING = [
+  { title: 'A key, made in this tab', sub: 'Only this browser tab holds it', state: 'done' },
+  { title: 'judge-7f3a.testnet', sub: 'Creating the account on testnet', state: 'doing' },
+  { title: '20 test NEAR', sub: 'From the testnet faucet', state: 'waiting' }
+];
+const TOUR = [
+  { title: 'Get a test account', see: 'judge-7f3a.testnet, 20 test NEAR' },
+  { title: 'Buy $10 of $CUT', see: 'your BUY line and its FEE line' },
+  { title: 'Save a robot', see: 'your SAVE line, locked till the test cut' },
+  { title: 'Run the cut', see: 'Kiko deleted, +0.5 test NEAR' },
+  { title: 'Open Receipts', see: 'your lines, then run the Audit: PASS' }
+];
+// The stage by pile ($CUT saved on each robot), shown in thousands.
+const PICKS = [
+  ['pixie', 'Pixie Volt', '182k', '#7FD3FF'], ['lila', 'Lila Loop', '151k', '#FF7AD9'], ['oracle', 'Oracle Toad', '140k', '#8B6CFF'], ['mabel', 'Mabel Market', '122k', '#FFD84D'], ['melody', 'Melody-9', '112k', '#FF9142'],
+  ['yuna', 'Yuna Star', '99k', '#0052FF'], ['gremlin', 'Glitch Gremlin', '87k', '#C6F432'], ['velvet', 'Velvet Vee', '74k', '#2B2D35'], ['onyx', 'Onyx Moon', '62k', '#1E2B57'], ['kiko', 'Kiko Bun', '24k', '#FFC2E8']
+];
+const DARK = ['#8B6CFF', '#0052FF', '#2B2D35', '#1E2B57'];
+class Component extends DCLogic {
+  nav(screen, variant) {
+    return () => {
+      if (this.props.go) this.props.go(screen, variant);
+      else if (screen === 'testmode') this.setState({ variant });
+    };
+  }
+  renderVals() {
+    const v = this.props.go ? (this.props.variant ?? 'ready') : ((this.state && this.state.variant) ?? this.props.variant ?? 'ready');
+    const tour = v === 'tour';
+    const cut = v === 'cut';
+    const done = cut ? 3 : 2;
+    return {
+      isCreating: v === 'creating',
+      isReady: v === 'ready',
+      isTour: tour,
+      isCut: cut,
+      isFailed: v === 'failed',
+      showHead: !tour && !cut,
+      showAppBar: tour || cut,
+      bandMargin: tour || cut ? '66px 20px 0' : '14px 20px 0',
+      check: CHECK,
+      art: ART,
+      making: MAKING.map((m, i) => ({
+        ...m,
+        line: i ? '1.5px solid #EEF1F7' : '0',
+        bg: m.state === 'done' ? '#C6F432' : '#FFFFFF',
+        border: m.state === 'waiting' ? '2px dashed #9AA0AE' : m.state === 'doing' ? '3px solid #0052FF' : '2px solid #0A0B0D',
+        ink: m.state === 'done' ? '#0A0B0D' : 'transparent',
+        icon: CHECK,
+        fg: m.state === 'waiting' ? '#9AA0AE' : '#0A0B0D'
+      })),
+      tour: TOUR.map((t, i) => ({ ...t, line: i ? '1.5px solid #EEF1F7' : '0', mark: i ? String(i + 1) : '✓', bg: i ? '#FFFFFF' : '#C6F432', strike: i ? 'none' : 'line-through' })),
+      picks: PICKS.map(([id, name, tick, bg]) => ({ img: ART[id], name, tick, bg, ink: DARK.includes(bg) ? '#FFFFFF' : '#0A0B0D', border: id === 'melody' ? '3px solid #0A0B0D' : id === 'kiko' ? '2.5px dashed #FF3B3B' : '2px solid #0A0B0D' })),
+      dots: [0, 1, 2, 3, 4].map((i) => ({ bg: i < done ? '#C6F432' : i === done ? '#FFFFFF' : '#3A3D45' })),
+      txn: [
+        { label: 'KIKO BUN', value: 'Deleted', bg: '#0A0B0D', ink: '#FFFFFF' },
+        { label: 'HALF ITS PILE', value: '11,800 burned', bg: '#FFE7D6', ink: '#0A0B0D' },
+        { label: 'PRIZE', value: '16,820 $CUT', bg: '#EEFBC8', ink: '#0A0B0D' },
+        { label: 'CHARTWISE JOINS', value: '88,400 pile', bg: '#FFFFFF', ink: '#0A0B0D' }
+      ],
+      toCut: this.nav('testmode', 'cut'),
+      toLineup: this.nav('cast', 'new'),
+      toTour: this.nav('testmode', 'tour'),
+      toCreating: this.nav('testmode', 'creating')
+    };
+  }
+}
+</script>
+</body>
+</html>

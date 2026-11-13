@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Cut · User flows</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 2000px; height: 1060px; box-sizing: border-box; padding: 40px 48px; background: #EEF1F7; color: #0A0B0D; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 22px">
+
+  <sc-for list="{{lanes}}" as="lane" hint-placeholder-count="8">
+    <section style="display: flex; align-items: stretch; gap: 20px">
+      <div style="width: 170px; flex-shrink: 0; padding-top: 8px">
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; line-height: 26px">{{lane.title}}</div>
+        <div style="margin-top: 4px; font-size: 13px; line-height: 18px; color: #4B5160">{{lane.sub}}</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap">
+        <sc-for list="{{lane.items}}" as="it" hint-placeholder-count="9">
+          <sc-if value="{{it.isStep}}" hint-placeholder-val="{{ true }}">
+            <div style="width: 152px; box-sizing: border-box; padding: 10px 11px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D">
+              <div style="display: inline-block; padding: 1px 8px; border-radius: 999px; background: {{it.badge}}; border: 1.5px solid #0A0B0D; font-size: 11px; font-weight: 700; color: {{it.badgeFg}}">{{it.screen}}</div>
+              <div style="margin-top: 6px; font-weight: 700; font-size: 14.5px; line-height: 18px">{{it.state}}</div>
+              <div style="margin-top: 2px; font-size: 12px; line-height: 16px; color: #4B5160">{{it.note}}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{it.isArrow}}" hint-placeholder-val="{{ true }}">
+            <svg aria-hidden="true" width="26" height="20" viewBox="0 0 26 20" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M2 10h20M15 3l7 7-7 7"/></svg>
+          </sc-if>
+          <sc-if value="{{it.isGap}}" hint-placeholder-val="{{ false }}">
+            <div style="width: 2px; height: 76px; margin: 0 14px; flex-shrink: 0; background: #B9BFCC"></div>
+          </sc-if>
+        </sc-for>
+      </div>
+    </section>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2000,"height":1060}}'>
+// The eight journeys through The Cut mini app, in the order a user meets them.
+const BADGE = {
+  Lineup: ['#A8F0D0', '#0A0B0D'], Club: ['#FF7AD9', '#0A0B0D'], Robot: ['#FF9142', '#0A0B0D'], Buy: ['#0052FF', '#FFFFFF'], Prizes: ['#C6F432', '#0A0B0D'],
+  Director: ['#8B6CFF', '#FFFFFF'], Inside: ['#D9CCFF', '#0A0B0D'], Sell: ['#FFFFFF', '#0A0B0D'], Share: ['#0A0B0D', '#FFFFFF'], Register: ['#FFD84D', '#0A0B0D'],
+  Pings: ['#FFF3B0', '#0A0B0D'], Account: ['#EEFBC8', '#0A0B0D'], Activity: ['#FFE7D6', '#0A0B0D']
+};
+const S = (screen, state, note) => ({ screen, state, note });
+const GAP = 'gap';
+const LANES = [
+  { title: 'First time', sub: 'From a link on X to saving a robot', steps: [
+    S('Lineup', 'First open', 'Look, no wallet'), S('Lineup', 'Connect', 'Pick a NEAR wallet'), S('Buy', 'Amount', 'From $10'),
+    S('Buy', 'Review', '1% fee to the prize'), S('Buy', 'Wallet', '1 transaction'), S('Buy', 'Done', 'Now save a robot'),
+    S('Club', 'Save a robot', '400 on Melody-9'), S('Share', 'Saved', 'X first'), S('Pings', 'Ask', '1 or 2 pings a day')
+  ] },
+  { title: 'Every day at 18:00 UTC', sub: 'The poorest is deleted, survivors get equal slices', steps: [
+    S('Director', 'On the block', 'Countdown to 18:00'), S('Robot', 'Kiko Bun', 'Begs on X'), S('Lineup', 'Final hour', 'Saves count till 18:00'),
+    S('Director', 'Run the cut', 'Anyone, +0.5 NEAR'), S('Director', 'The cut', 'Delete, burn, pay'), S('Pings', 'Lock screen', 'Kiko Bun deleted'),
+    S('Prizes', 'Ready to collect', '6.32 $CUT'), S('Inside', 'Check this line', 'Signed by NEAR AI'), S('Share', 'The cut', 'No dollar amounts')
+  ] },
+  { title: 'In the club', sub: 'Every holder is a member', steps: [
+    S('Club', 'Member card', 'Perks, save, guess'), S('Club', 'Perk', 'Pixie reads 50 names'), S('Club', 'Spot saved', 'Ping 10 min before'),
+    S('Club', 'Perk check', 'Members confirm it'), S('Club', 'Top savers', 'Points, not size'), GAP,
+    S('Lineup', 'First open', 'Taps Club'), S('Club', 'Not a member', 'The card waits'), S('Buy', 'Amount', 'Join from $10')
+  ] },
+  { title: 'Exploring', sub: 'Getting to know the robots', steps: [
+    S('Lineup', 'Member', 'Today’s cut board'), S('Robot', 'Kiko Bun', 'On the block'), S('Inside', 'Why Kiko Bun', '38,201 short'), GAP,
+    S('Lineup', 'Final hour', 'Chartwise waits'), S('Robot', 'Chartwise', 'Bench, 88,400'), S('Inside', 'Live piles', 'Every pile'), S('Inside', 'House rules', 'No owner key')
+  ] },
+  { title: 'When it goes wrong', sub: 'Every error has a way out', steps: [
+    S('Buy', 'Low balance', 'Add NEAR or buy less'), GAP, S('Buy', 'Price moved', 'New quote shown'), GAP, S('Buy', 'Failed', 'Only $0.01 spent'), GAP,
+    S('Prizes', 'Collect failed', 'Prize still there'), GAP, S('Director', 'Too early', 'Refused at 17:59'), GAP, S('Register', 'Not eligible', 'No X proof'), GAP,
+    S('Lineup', 'Offline', 'Last piles kept')
+  ] },
+  { title: 'Leaving', sub: 'Selling free $CUT', steps: [
+    S('Lineup', 'Member', 'Taps Sell'), S('Sell', 'Amount', 'Only free $CUT'), S('Sell', 'Wallet', 'Shows NEAR back'), S('Sell', 'Selling', 'One swap'),
+    S('Sell', 'Sold', 'Save untouched'), S('Lineup', 'Member', 'Melody-9 still saved')
+  ] },
+  { title: 'Creators', sub: 'Register an AI robot', steps: [
+    S('Register', 'Form', 'Name, voice, X'), S('Register', 'Perks and rights', 'Perks + image OK'), S('Register', 'Approving', '5 NEAR deposit'),
+    S('Register', 'Robot is live', 'Own NEAR account'), S('Register', 'On the bench', 'Queue 88,400'), S('Share', 'Creator', 'Rally savers'), S('Register', 'Made the cut', 'Took Kiko Bun’s seat'), GAP,
+    S('Register', 'Not eligible', 'No X proof'), S('Register', 'Removed', 'X went dark')
+  ] },
+  { title: 'Access', sub: 'Location, settings, records', steps: [
+    S('Buy', 'Amount', 'Taps Buy in the US'), S('Buy', 'US blocked', 'Watch, no trading'), S('Lineup', 'First open', 'Keeps watching'), GAP,
+    S('Account', 'Settings', 'USD or BRL, pings'), S('Account', 'Risks', '4 plain risks'), S('Activity', 'History', 'Receipts on NEAR')
+  ] }
+];
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      lanes: LANES.map((lane) => {
+        const items = [];
+        lane.steps.forEach((s, i) => {
+          if (s === GAP) { items.push({ isGap: true }); return; }
+          const prev = lane.steps[i - 1];
+          if (i > 0 && prev !== GAP) items.push({ isArrow: true });
+          const [badge, badgeFg] = BADGE[s.screen];
+          items.push({ ...s, isStep: true, badge, badgeFg });
+        });
+        return { ...lane, items };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

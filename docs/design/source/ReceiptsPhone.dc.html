@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Cut · Receipts on a phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 3652px; box-sizing: border-box; position: relative; overflow: hidden; background: radial-gradient(#D5DAE6 1.6px, transparent 1.8px) 0 0 / 22px 22px, #EEF1F7; color: #0A0B0D; font-family: Inter, system-ui, sans-serif; font-variant-numeric: tabular-nums">
+
+  <!-- Header -->
+  <header style="height: 60px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: #0A0B0D">
+    <div style="width: 32px; height: 32px; box-sizing: border-box; border-radius: 10px; background: #0052FF; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><path d="M18 7.5A7 7 0 1 0 18 16.5"/></svg></div>
+    <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 21px; color: #FFFFFF">the cut</div>
+    <button type="button" style="margin-left: auto; height: 36px; padding: 0 14px; border-radius: 999px; background: #C6F432; border: 0; font: 800 14px Inter, sans-serif; color: #0A0B0D">Open the app</button>
+    <button type="button" aria-label="Menu" style="width: 36px; height: 36px; border-radius: 10px; background: transparent; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </header>
+
+  <!-- Title -->
+  <div style="padding: 22px 16px 0">
+    <span style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; box-sizing: border-box; border-radius: 999px; background: #FFFFFF; border: 2px solid #0A0B0D; font-size: 12.5px; font-weight: 800; white-space: nowrap"><span style="width: 9px; height: 9px; border-radius: 50%; background: #2FBF4A; box-shadow: 0 0 0 4px rgba(47, 191, 74, 0.25)"></span>LIVE · read 12 s ago from thecut.near</span>
+    <h1 style="margin: 14px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 60px; line-height: 58px; letter-spacing: -2.5px">The Receipts.</h1>
+    <p style="margin: 10px 0 0; font-size: 16px; line-height: 23px; font-weight: 500">Every buy, sell, save, cut, burn and prize since launch, read straight from the contract by your browser. No server in between.</p>
+    <div style="margin-top: 8px; font-size: 12.5px; line-height: 17px; font-weight: 600; color: #4B5160">Block 186,920,114 · 6,148 entries since launch, Thu Nov 12 · Sample data, 1 NEAR = $2.50</div>
+  </div>
+
+  <!-- Right now -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 16px 0">
+    <sc-for list="{{stats}}" as="s" hint-placeholder-count="6">
+      <div style="min-width: 0; box-sizing: border-box; padding: 11px 12px 12px; border-radius: 18px; background: {{s.bg}}; color: {{s.ink}}; border: 2.5px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+        <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; white-space: nowrap"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{s.icon}}"/></svg>{{s.label}}</div>
+        <div style="margin-top: 4px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 27px; line-height: 32px; letter-spacing: -0.8px; white-space: nowrap">{{s.value}}</div>
+        <div style="margin-top: 2px; font-size: 12px; line-height: 16px; font-weight: 600; opacity: 0.8">{{s.sub}}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- Supply: where all 10,000,000 $CUT are -->
+  <section aria-label="Supply" style="margin: 22px 16px 0; padding: 16px; border-radius: 22px; background: #FFFFFF; border: 3px solid #0A0B0D; box-shadow: 5px 5px 0 #0A0B0D">
+    <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; line-height: 28px; letter-spacing: -0.8px">Where all 10,000,000 $CUT are</div>
+    <div style="margin-top: 2px; font-size: 13px; font-weight: 600; color: #4B5160">Minted once at launch. Supply only drops, at a cut.</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 10px; margin-top: 12px">
+      <sc-for list="{{supply}}" as="u" hint-placeholder-count="4">
+        <div style="display: flex; gap: 8px; align-items: flex-start; min-width: 0">
+          <span style="width: 14px; height: 14px; margin-top: 2px; flex-shrink: 0; box-sizing: border-box; border-radius: 5px; background: {{u.bg}}; border: 2px solid #0A0B0D"></span>
+          <div style="min-width: 0"><div style="font-size: 10.5px; font-weight: 800; letter-spacing: 0.7px; color: #4B5160; white-space: nowrap">{{u.label}}</div><div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; line-height: 26px; white-space: nowrap">{{u.value}}</div><div style="font-size: 11.5px; line-height: 15px; font-weight: 600; color: #4B5160">{{u.sub}}</div></div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display: flex; height: 26px; margin-top: 14px; border: 2.5px solid #0A0B0D; border-radius: 10px; overflow: hidden">
+      <div style="width: 10.52%; background: #C6F432; border-right: 2.5px solid #0A0B0D"></div>
+      <div style="flex-grow: 1; display: flex; align-items: center; padding-left: 8px; background: repeating-linear-gradient(135deg, #FFFFFF 0 8px, #EEF1F7 8px 16px); font-size: 11px; font-weight: 800; color: #4B5160; white-space: nowrap">10.5% saved · 89.5% free · 0 burned</div>
+    </div>
+  </section>
+
+  <!-- Journal -->
+  <section aria-label="Journal" style="margin: 22px 16px 0; padding: 16px 16px 6px; border-radius: 22px; background: #FFFFFF; border: 3px solid #0A0B0D; box-shadow: 5px 5px 0 #0A0B0D">
+    <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; line-height: 30px; letter-spacing: -0.8px">The journal</div>
+    <div style="margin-top: 2px; font-size: 13px; font-weight: 600; color: #4B5160">Newest first · every entry links to NEAR</div>
+    <div style="display: flex; gap: 6px; margin: 12px -16px 0 0; overflow: hidden">
+      <sc-for list="{{filters}}" as="f" hint-placeholder-count="7">
+        <span style="flex-shrink: 0; height: 32px; padding: 0 12px; box-sizing: border-box; display: inline-flex; align-items: center; border-radius: 999px; border: 2px solid #0A0B0D; background: {{f.bg}}; color: {{f.ink}}; font-size: 13.5px; font-weight: 700">{{f.label}}</span>
+      </sc-for>
+    </div>
+    <div style="margin-top: 10px">
+      <sc-for list="{{journal}}" as="j" hint-placeholder-count="12">
+        <div style="padding: 11px 0; border-top: 1.5px solid #E3E6EE">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="flex-shrink: 0; padding: 3px 8px; border-radius: 7px; border: 2px {{j.border}} #0A0B0D; background: {{j.bg}}; color: {{j.ink}}; font-size: 10.5px; font-weight: 800; letter-spacing: 0.5px; white-space: nowrap">{{j.type}}</span>
+            <span style="flex-grow: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: #4B5160; white-space: nowrap">{{j.when}}</span>
+            <span style="flex-shrink: 0; font-size: 12.5px; font-weight: 700; text-decoration: underline">{{j.link}}</span>
+          </div>
+          <div style="margin-top: 6px; font-size: 14.5px; line-height: 20px; font-weight: 700">{{j.what}}</div>
+          <div style="margin-top: 1px; font-size: 13px; line-height: 18px; color: #4B5160">{{j.detail}}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- Audit -->
+  <section aria-label="Audit" style="margin: 22px 16px 0; padding: 16px; border-radius: 22px; background: #0A0B0D; color: #FFFFFF; border: 3px solid #0A0B0D; box-shadow: 5px 5px 0 #C6F432">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; line-height: 30px; letter-spacing: -0.8px">Audit</div>
+      <span style="padding: 4px 12px; border-radius: 999px; background: #C6F432; color: #0A0B0D; font-size: 13px; font-weight: 800; letter-spacing: 1px">PASS · 5 of 5</span>
+    </div>
+    <p style="margin: 6px 0 0; font-size: 14px; line-height: 20px; color: #C9CDD6">Replays all 6,148 entries in your browser and checks them against what the contract holds now.</p>
+    <div style="margin-top: 10px">
+      <sc-for list="{{checks}}" as="c" hint-placeholder-count="5">
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-top: 1.5px solid #23252B">
+          <span style="width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; background: #C6F432; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          <span style="font-size: 14px; line-height: 20px"><b style="font-weight: 700">{{c.title}}</b><br><span style="color: #C9CDD6">{{c.detail}}</span></span>
+        </div>
+      </sc-for>
+    </div>
+    <button type="button" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 52px; margin-top: 10px; border-radius: 16px; background: #C6F432; border: 0; font: 800 16px Inter, sans-serif; color: #0A0B0D"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>Run the audit again</button>
+    <div style="margin-top: 10px; font-size: 12.5px; color: #9AA0AE">1.4 s · block 186,920,114 · same result for everyone</div>
+  </section>
+
+  <!-- Contract -->
+  <section aria-label="Contract" style="margin: 22px 16px 0; padding: 16px 16px 14px; border-radius: 22px; background: #FFFFFF; border: 3px solid #0A0B0D; box-shadow: 5px 5px 0 #0A0B0D">
+    <div style="display: flex; align-items: center; gap: 8px">
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">thecut.near</div>
+      <span style="padding: 2px 9px; border-radius: 999px; background: #C6F432; border: 2px solid #0A0B0D; font-size: 11.5px; font-weight: 800">0 keys</span>
+      <span style="padding: 2px 9px; border-radius: 999px; background: #EEF1F7; border: 2px solid #0A0B0D; font-size: 11.5px; font-weight: 800">NEP-141</span>
+    </div>
+    <div style="margin-top: 8px">
+      <sc-for list="{{params}}" as="p" hint-placeholder-count="9">
+        <div style="display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: {{p.rule}}; font-size: 13.5px; line-height: 19px"><span style="flex-shrink: 0; color: #4B5160">{{p.label}}</span><span style="font-weight: 700; text-align: right">{{p.value}}</span></div>
+      </sc-for>
+    </div>
+    <div style="margin-top: 6px; padding-top: 10px; border-top: 2px dashed #0A0B0D; font-size: 13px; line-height: 18px; font-weight: 600">Set once at launch. The contract has no method to change them.</div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="margin-top: 28px; padding: 20px 16px 24px; background: #0A0B0D; color: #9AA0AE; font-size: 13px; line-height: 18px">
+    <div style="color: #FFFFFF; font-weight: 700; font-size: 15px; text-decoration: underline">Back to the show</div>
+    <div style="margin-top: 10px">Sample data. Every robot, account and number here is fictional. A $CUT transfer between two wallets is not in the journal.</div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":3652}}'>
+// Sample data. Every robot, account and number here is fictional.
+// The same journal and audit as the desktop Receipts, laid out in one column for a 390px phone.
+const STATS = [
+  { label: '$CUT PRICE', value: '$1.84', sub: '0.736 NEAR · 1 NEAR = $2.50', bg: '#FFFFFF', icon: 'M3 17l6-6 4 4 8-8M15 7h6v6' },
+  { label: 'HOLDERS', value: '2,140', sub: 'Day 2 · since Thu Nov 12', bg: '#FFFFFF', icon: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M13.5 8a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0zM20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4M15.5 4.6a3.5 3.5 0 0 1 0 6.8' },
+  { label: 'FEES TODAY', value: '4,100', sub: '$CUT · about 5,020 by 18:00', bg: '#FFD84D', icon: 'M3 7h15a3 3 0 0 1 3 3v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l12-4v4M16.5 14h.01' },
+  { label: 'ON THE BLOCK', value: 'Kiko Bun', sub: 'Pile 23,600 · 38,201 short', bg: '#FFC2E8', icon: 'M12 3L2 21h20L12 3zM12 10v5M12 18v.01' },
+  { label: 'NEXT CUT', value: '4h 12m', sub: 'Today, 18:00 UTC', bg: '#C6F432', icon: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 7v5l3 2' },
+  { label: 'CUTS SO FAR', value: '0', sub: 'The first one is today', bg: '#FF7AD9', icon: 'M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM8.1 8.1L20 20M20 4L8.1 15.9' }
+];
+const SUPPLY = [
+  { label: 'MINTED', value: '10,000,000', sub: 'Once, Thu Nov 12, 15:01', bg: '#0A0B0D' },
+  { label: 'BURNED', value: '0', sub: 'First burn at today’s cut', bg: '#FF3B3B' },
+  { label: 'SAVED IN PILES', value: '1,052,400', sub: 'Locked till the cut', bg: '#C6F432' },
+  { label: 'FREE', value: '8,947,600', sub: 'In wallets and the pool', bg: '#FFFFFF' }
+];
+const TYPE = {
+  fee: { type: 'FEE', bg: '#FFD84D', ink: '#0A0B0D' },
+  buy: { type: 'BUY', bg: '#7FD3FF', ink: '#0A0B0D' },
+  sell: { type: 'SELL', bg: '#D9DCE3', ink: '#0A0B0D' },
+  save: { type: 'SAVE', bg: '#FF7AD9', ink: '#0A0B0D' },
+  cut: { type: 'CUT', bg: '#FFFFFF', ink: '#D2261E', border: 'dashed' },
+  join: { type: 'JOIN', bg: '#C6F432', ink: '#0A0B0D' },
+  launch: { type: 'LAUNCH', bg: '#0A0B0D', ink: '#FFFFFF' }
+};
+// Day 2, before the first cut: no CUT, BURN, PRIZE or DELETE lines yet. Today's cut shows as the next entry.
+const JOURNAL = [
+  { k: 'cut', when: 'Next · Today 18:00 UTC', what: 'First cut: the lowest pile is cut', detail: 'Right now Kiko Bun, 23,600 $CUT. Half burns; half plus the day’s fees: 9 equal slices, one per survivor.' },
+  { k: 'save', when: 'Today 13:41', what: 'mika.near saved 400 $CUT on Melody-9', detail: 'Melody-9’s pile: 112,300 · locked till 18:00 UTC' },
+  { k: 'fee', when: 'Today 13:22', what: '19.6 $CUT fee from a 1,960 $CUT sell', detail: 'To today’s prize · fees today: 4,100' },
+  { k: 'sell', when: 'Today 13:22', what: 'lumen.near sold 1,960 $CUT for 1,428.1 NEAR', detail: 'Only free $CUT can be sold. Saves stay locked.' },
+  { k: 'save', when: 'Today 12:58', what: 'bunfan.near saved 300 $CUT on Kiko Bun', detail: 'Kiko Bun’s pile: 23,600 · still 38,201 short of Onyx Moon' },
+  { k: 'fee', when: 'Today 11:30', what: '48.5 $CUT fee from a 4,800 $CUT buy', detail: 'To today’s prize' },
+  { k: 'buy', when: 'Today 11:30', what: 'pixfan.near bought 4,800 $CUT for 3,568.5 NEAR', detail: 'Swapped in The Cut’s own pool' },
+  { k: 'buy', when: 'Today 09:14', what: 'mika.near bought 120.0 $CUT for 85.9 NEAR', detail: '1% fee, 1.2 $CUT, to today’s prize' },
+  { k: 'join', when: 'Thu Nov 12, 16:12', what: 'Chartwise joined the bench', detail: 'chartwise.thecut.near created by the contract · 5 NEAR deposit' },
+  { k: 'buy', when: 'Thu Nov 12, 15:20', what: 'mika.near bought 554.2 $CUT for 383.5 NEAR', detail: '1% fee, 5.6 $CUT, to the first prize' },
+  { k: 'join', when: 'Thu Nov 12, 15:01', what: '10 robots took the stage', detail: 'pixie.thecut.near to kiko.thecut.near, each created by the contract' },
+  { k: 'launch', when: 'Thu Nov 12, 15:01', what: '10,000,000 $CUT minted, once', detail: 'Owner key deleted at 15:03. The contract has no mint method.' }
+];
+const FILTERS = ['All', 'Saves', 'Cuts', 'Burns', 'Prizes', 'Fees', 'Mine'];
+const CHECKS = [
+  { title: 'No full-access key on thecut.near', detail: 'Deleted Thu Nov 12, 15:03. Nobody can change or pause it.' },
+  { title: 'Minted − burned = supply', detail: '10,000,000 − 0 = 10,000,000 $CUT' },
+  { title: 'Sum of piles = saved total', detail: 'The 10 piles add up to 1,052,400 $CUT.' },
+  { title: 'Every robot account made by the contract', detail: 'Each *.thecut.near robot traces back to a create call by thecut.near.' },
+  { title: 'Parameters equal launch values', detail: 'Cut every day 18:00 UTC · burn 50% · fee 1% · 9 equal slices · deposit 5 NEAR · 10 seats' }
+];
+const PARAMS = [
+  { label: 'Supply, minted once', value: '10,000,000 $CUT' },
+  { label: 'The cut', value: 'Every day, 18:00:00 UTC' },
+  { label: 'Who is cut', value: 'Lowest pile · tie: newer robot' },
+  { label: 'Burn', value: '50% of the cut pile' },
+  { label: 'Fee on every buy and sell', value: '1% · to the prize' },
+  { label: 'Prize split', value: '95% savers · 5% creators' },
+  { label: 'Savers’ 95%', value: '9 equal slices, one per survivor' },
+  { label: 'Run the cut', value: 'Anyone · keeps 0.5 NEAR' },
+  { label: 'Robot deposit', value: '5 NEAR · 4.5 back' },
+  { label: 'Seats on the stage', value: '10' }
+];
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      stats: STATS.map((s) => ({ ...s, ink: '#0A0B0D' })),
+      supply: SUPPLY,
+      filters: FILTERS.map((label, i) => ({ label, bg: i ? '#FFFFFF' : '#0A0B0D', ink: i ? '#0A0B0D' : '#FFFFFF' })),
+      journal: JOURNAL.map((j) => ({ border: 'solid', ...TYPE[j.k], ...j, link: j.k === 'cut' ? 'In 4h 12m' : 'NEAR ↗' })),
+      checks: CHECKS,
+      params: PARAMS.map((p, i) => ({ ...p, rule: i ? '1.5px solid #EEF1F7' : '0' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

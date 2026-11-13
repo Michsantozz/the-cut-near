@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Cut · Activity</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; background: #EEF1F7; color: #0A0B0D; font-family: Inter, system-ui, sans-serif; font-variant-numeric: tabular-nums">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 0">
+    <button type="button" onClick="{{toAccount}}" aria-label="Back to account" style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 2px 2px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">Activity</div>
+    <div style="width: 44px"></div>
+  </div>
+
+  <sc-if value="{{hasItems}}" hint-placeholder-val="{{ true }}">
+    <div style="display: flex; gap: 6px; margin: 14px 20px 0">
+      <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+        <button type="button" aria-pressed="{{f.on}}" style="height: 34px; padding: 0 10px; border-radius: 999px; background: {{f.bg}}; color: {{f.fg}}; border: 2px solid #0A0B0D; font: 700 12.5px Inter, sans-serif; white-space: nowrap">{{f.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="6">
+      <div style="margin: 12px 24px 5px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: #4B5160">{{g.date}}</div>
+      <div style="margin: 0 20px; padding: 0 12px; border-radius: 18px; background: #FFFFFF; border: 2px solid #0A0B0D">
+        <sc-for list="{{g.rows}}" as="r" hint-placeholder-count="2">
+          <div style="display: flex; align-items: center; gap: 10px; height: 52px; border-top: {{r.line}}">
+            <span style="width: 32px; height: 32px; flex-shrink: 0; box-sizing: border-box; border-radius: 10px; background: {{r.bg}}; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{r.icon}}"/></svg></span>
+            <div style="flex-grow: 1; min-width: 0">
+              <div style="font-size: 14px; font-weight: 700; white-space: nowrap">{{r.title}}</div>
+              <div style="font-size: 12.5px; color: #4B5160; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.sub}}</div>
+            </div>
+            <span style="font-size: 14px; font-weight: 700; color: {{r.amountFg}}; white-space: nowrap">{{r.amount}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-for>
+
+    <div style="margin-top: 14px; text-align: center; font-size: 13px; font-weight: 700; text-decoration: underline">See every receipt on NEAR</div>
+  </sc-if>
+
+  <sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; flex-direction: column; align-items: center; padding: 120px 36px 0; text-align: center">
+      <div style="width: 96px; height: 96px; box-sizing: border-box; border-radius: 28px; background: #7FD3FF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; display: flex; align-items: center; justify-content: center; transform: rotate(-4deg)">
+        <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+      </div>
+      <div style="margin-top: 22px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; line-height: 31px; letter-spacing: -0.5px">Nothing here yet</div>
+      <p style="margin: 8px 0 0; font-size: 14.5px; line-height: 21px; color: #4B5160">Your buys, sells, saves, prizes and every daily cut show here, each with a receipt on NEAR.</p>
+      <button type="button" onClick="{{toBuy}}" style="width: 100%; height: 54px; margin-top: 24px; border-radius: 16px; background: #0052FF; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font: 700 16px Inter, sans-serif; color: #FFFFFF">Buy $CUT</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variant":{"editor":"enum","default":"list","options":["list","empty"]},"go":{"editor":null},"$preview":{"width":390,"height":844}}'>
+// Sample data: every robot, account and number here is fictional.
+const KIND = {
+  buy: { bg: '#FFD84D', icon: 'M12 5v14M5 12h14' },
+  sell: { bg: '#FF9142', icon: 'M5 12h14' },
+  save: { bg: '#FF7AD9', icon: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z' },
+  prize: { bg: '#C6F432', icon: 'M3 8h18v4H3zM5 12v9h14v-9M12 8v13M12 8c-1.5-3-5-3.5-5-1.5S10 8 12 8zM12 8c1.5-3 5-3.5 5-1.5S14 8 12 8z' },
+  cut: { bg: '#8B6CFF', icon: 'M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM8.1 8.1L20 20M20 4L8.1 15.9' }
+};
+// Day 2: mika.near bought on launch day and this morning, then saved 400 on Melody-9. The first cut is today at 18:00 UTC, so no cut or prize yet.
+const GROUPS = [
+  { date: 'TODAY · FRI, NOV 13', rows: [
+    ['save', 'Saved 400 $CUT on Melody-9', '13:41 · locked till 18:00 UTC', '$736.00'],
+    ['buy', 'Bought 120.0 $CUT', '09:14 · paid 85.9 NEAR', '$214.80']
+  ] },
+  { date: 'THU, NOV 12 · LAUNCH DAY', rows: [
+    ['buy', 'Bought 554.2 $CUT', '15:20 · paid 383.5 NEAR', '$958.77'],
+    ['cut', 'The show opened', '15:01 · first cut tomorrow, 18:00 UTC', 'Auto']
+  ] }
+];
+class Component extends DCLogic {
+  nav(screen, variant) {
+    return () => {
+      if (this.props.go) this.props.go(screen, variant);
+      else if (screen === 'activity') this.setState({ variant });
+    };
+  }
+  renderVals() {
+    const v = this.props.go ? (this.props.variant ?? 'list') : ((this.state && this.state.variant) ?? this.props.variant ?? 'list');
+    return {
+      hasItems: v === 'list',
+      isEmpty: v === 'empty',
+      filters: ['All', 'Saves', 'Buys & sells', 'Cuts & prizes'].map((label, i) => ({ label, on: i === 0, bg: i === 0 ? '#0A0B0D' : '#FFFFFF', fg: i === 0 ? '#FFFFFF' : '#0A0B0D' })),
+      groups: GROUPS.map((g) => ({
+        date: g.date,
+        rows: g.rows.map(([kind, title, sub, amount, gain], i) => ({ ...KIND[kind], title, sub, amount, amountFg: gain ? '#0A0B0D' : amount === 'Auto' ? '#4B5160' : '#0A0B0D', line: i ? '1.5px solid #EEF1F7' : '0' }))
+      })),
+      toAccount: this.nav('account', 'default'),
+      toBuy: this.nav('buy', 'amount')
+    };
+  }
+}
+</script>
+</body>
+</html>

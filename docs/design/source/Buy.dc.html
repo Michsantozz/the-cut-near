@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Cut · Buy</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; background: {{ground}}; color: #0A0B0D; font-family: Inter, system-ui, sans-serif; font-variant-numeric: tabular-nums">
+
+  <sc-if value="{{showHeader}}" hint-placeholder-val="{{ true }}">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 0">
+      <button type="button" onClick="{{headerBack}}" aria-label="{{headerBackLabel}}" style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 2px 2px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{headerIcon}}"/></svg>
+      </button>
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{headerTitle}}</div>
+      <div style="width: 44px"></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{amountView}}" hint-placeholder-val="{{ true }}">
+    <div style="text-align: center; padding: 14px 20px 0">
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 64px; line-height: 68px; letter-spacing: -2px; color: {{amountColor}}">{{amount}}</div>
+      <div style="margin-top: 4px; font-size: 15px; font-weight: 600; color: #4B5160">{{amountSub}}</div>
+    </div>
+    <div role="group" aria-label="Pay with" style="display: flex; gap: 4px; margin: 18px 70px 0; padding: 4px; border-radius: 999px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <button type="button" aria-pressed="true" style="flex: 1 1 0; height: 34px; border: 0; border-radius: 999px; background: #0A0B0D; color: #FFFFFF; font: 700 13px Inter, sans-serif">Pay with NEAR</button>
+      <button type="button" aria-pressed="false" style="flex: 1 1 0; height: 34px; border: 0; border-radius: 999px; background: transparent; color: #4B5160; font: 700 13px Inter, sans-serif">USDC</button>
+    </div>
+    <div style="margin-top: 8px; text-align: center; font-size: 13px; color: #4B5160">Balance 1,156 NEAR · $2,890</div>
+    <div style="display: flex; justify-content: center; gap: 8px; margin-top: 14px">
+      <sc-for list="{{chips}}" as="p" hint-placeholder-count="4">
+        <button type="button" aria-pressed="{{p.pressed}}" style="height: 36px; padding: 0 16px; border-radius: 999px; background: {{p.bg}}; border: 2px solid #0A0B0D; font: 700 14px Inter, sans-serif; color: #0A0B0D">{{p.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{isLow}}" hint-placeholder-val="{{ false }}">
+      <div style="margin: 18px 20px 0; padding: 14px; border-radius: 18px; background: #FFE7D6; border: 2px solid #0A0B0D">
+        <div style="display: flex; align-items: center; gap: 8px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 18px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M12 3.5L2.5 20h19zM12 10v4M12 17v.01"/></svg>Not enough NEAR</div>
+        <div style="margin-top: 4px; font-size: 14px; line-height: 20px">$3,000 is more than your 1,156 NEAR ($2,890). Add NEAR, or buy up to $2,880 now.</div>
+        <button type="button" style="margin-top: 10px; height: 40px; padding: 0 14px; border-radius: 12px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 14px Inter, sans-serif; color: #0A0B0D">Buy $2,880 instead</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isAmount}}" hint-placeholder-val="{{ true }}">
+      <div style="margin: 18px 20px 0; padding: 12px 14px; border-radius: 20px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+        <div style="display: flex; justify-content: space-between; align-items: baseline">
+          <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 17px">What $250 gets you</div>
+          <div style="font-size: 12px; font-weight: 600; color: #4B5160">after 1% fee</div>
+        </div>
+        <div style="margin-top: 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; color: #0052FF">134.5 $CUT</div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px">
+          <div style="padding: 8px 10px; border-radius: 12px; background: #EEF1F7">
+            <div style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #4B5160"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>Price</div>
+            <div style="font-size: 16px; font-weight: 800">$1.84</div>
+          </div>
+          <div style="padding: 8px 10px; border-radius: 12px; background: #EEF1F7">
+            <div style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #4B5160"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M3 8h18v4H3zM5 12v9h14v-9M12 8v13"/></svg>To today’s prize</div>
+            <div style="font-size: 16px; font-weight: 800">$2.50</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <div role="group" aria-label="Keypad" style="position: absolute; left: 20px; right: 20px; bottom: 112px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px">
+      <sc-for list="{{keys}}" as="k" hint-placeholder-count="12">
+        <button type="button" aria-label="{{k.aria}}" style="height: 42px; border: 0; border-radius: 12px; background: transparent; display: flex; align-items: center; justify-content: center; font: 700 24px 'Bricolage Grotesque', sans-serif; color: #0A0B0D">
+          <sc-if value="{{k.del}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h11a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H9l-6-7z"/><path d="M12 9.5l5 5M17 9.5l-5 5"/></svg></sc-if>
+          {{k.label}}
+        </button>
+      </sc-for>
+    </div>
+    <div style="position: absolute; left: 20px; right: 20px; bottom: 22px; display: flex; flex-direction: column; gap: 8px">
+      <button type="button" onClick="{{amountCta}}" style="width: 100%; height: 56px; border-radius: 18px; background: {{amountCtaBg}}; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font: 700 16px Inter, sans-serif; color: #0A0B0D">{{amountCtaLabel}}</button>
+      <div style="text-align: center; font-size: 12px; font-weight: 600; color: #4B5160">$CUT has nothing behind it. The game is the point.</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{reviewView}}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{isMoved}}" hint-placeholder-val="{{ false }}">
+      <div style="margin: 14px 20px 0; padding: 12px 14px; border-radius: 18px; background: #FF9142; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D">
+        <div style="display: flex; align-items: center; gap: 8px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 17px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M12 3.5L2.5 20h19zM12 10v4M12 17v.01"/></svg>Price moved 2.4%</div>
+        <div style="margin-top: 2px; font-size: 13px; font-weight: 500">While you waited. You now get 131.4 $CUT instead of 134.5.</div>
+      </div>
+    </sc-if>
+    <div style="margin: 14px 20px 0; padding: 14px 16px; border-radius: 22px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: #4B5160">You pay</div>
+          <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">100 NEAR</div>
+        </div>
+        <div style="font-size: 15px; font-weight: 700">$250.00</div>
+      </div>
+      <div style="height: 2px; margin: 10px 0; background: #EEF1F7"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: #4B5160">You get</div>
+          <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; color: #0052FF">{{getAmount}} $CUT</div>
+        </div>
+        <span style="padding: 3px 9px; border-radius: 999px; background: #EEF1F7; font-size: 12px; font-weight: 700; color: #4B5160">free $CUT</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 13.5px">
+        <div style="display: flex; justify-content: space-between"><span style="color: #4B5160">Price per $CUT</span><span style="font-weight: 600">{{price}}</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #4B5160">Fee (1%) · to today’s prize</span><span style="font-weight: 600">$2.50</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #4B5160">Network fee</span><span style="font-weight: 600">about $0.01</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #4B5160">Most the price can move</span><span style="font-weight: 600">1%</span></div>
+      </div>
+    </div>
+    <div style="margin: 12px 20px 0; padding: 12px 14px; border-radius: 20px; background: #FFE7D6; border: 2px solid #0A0B0D">
+      <div style="display: flex; align-items: center; gap: 8px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M12 3.5L2.5 20h19zM12 10v4M12 17v.01"/></svg>The risk in one line</div>
+      <div style="margin-top: 4px; font-size: 13.5px; line-height: 19px; font-weight: 600">$CUT has nothing behind it. You can lose what you put in.</div>
+      <div style="margin-top: 8px; padding-top: 8px; border-top: 1.5px solid rgba(10, 11, 13, 0.15); font-size: 12.5px; line-height: 17px; color: #2B2D35">Free $CUT wins nothing at the cut. Save it on a robot to share today’s prize.</div>
+    </div>
+    <div style="position: absolute; left: 20px; right: 20px; bottom: 22px; display: flex; flex-direction: column; gap: 8px">
+      <button type="button" onClick="{{toWallet}}" style="width: 100%; height: 56px; border-radius: 18px; background: #C6F432; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font: 700 16px Inter, sans-serif; color: #0A0B0D">{{confirmLabel}}</button>
+      <div style="text-align: center; font-size: 12px; font-weight: 600; color: #4B5160">One swap in The Cut’s pool, on NEAR.</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isWallet}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; background: rgba(10, 11, 13, 0.55)"></div>
+    <div role="dialog" aria-label="Meteor Wallet" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 20px 20px 24px; border-radius: 28px 28px 0 0; background: #FFFFFF; border-top: 2px solid #0A0B0D">
+      <div style="width: 44px; height: 5px; margin: -8px auto 14px; border-radius: 3px; background: #D9DCE3"></div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <div style="width: 36px; height: 36px; flex-shrink: 0; box-sizing: border-box; border-radius: 10px; background: #0A0B0D; border: 2px solid #0A0B0D; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 16px; color: #FFFFFF">M</div>
+        <div>
+          <div style="font-weight: 700; font-size: 15px">Meteor Wallet</div>
+          <div style="font-size: 12px; color: #4B5160">mika.near</div>
+        </div>
+      </div>
+      <div style="margin-top: 16px; font-size: 13px; font-weight: 600; color: #4B5160">thecut.app wants to</div>
+      <div style="margin-top: 2px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">Buy {{getAmount}} $CUT</div>
+      <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 12px; border-radius: 14px; background: #EEF1F7; font-size: 13.5px">
+        <div style="display: flex; justify-content: space-between"><span style="color: #4B5160">Send</span><span style="font-weight: 700">100 NEAR</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #4B5160">Network</span><span style="font-weight: 700">NEAR</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #4B5160">Network fee</span><span style="font-weight: 700">$0.01</span></div>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 16px">
+        <button type="button" onClick="{{toReview}}" style="flex: 1 1 0; height: 52px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 15px Inter, sans-serif; color: #0A0B0D">Cancel</button>
+        <button type="button" onClick="{{toBuying}}" style="flex: 1 1 0; height: 52px; border-radius: 16px; background: #0052FF; border: 2px solid #0A0B0D; font: 700 15px Inter, sans-serif; color: #FFFFFF">Approve</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isBuying}}" hint-placeholder-val="{{ false }}">
+    <div style="padding: 70px 24px 0; text-align: center">
+      <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.5px; color: #4B5160">CONFIRMING ON NEAR</div>
+      <div style="margin-top: 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; line-height: 38px; letter-spacing: -1px">Swapping NEAR for $CUT</div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 18px; margin: 40px 24px 0">
+      <div style="width: 96px; height: 96px; box-sizing: border-box; border-radius: 50%; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; display: flex; flex-direction: column; align-items: center; justify-content: center">
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">NEAR</div>
+        <div style="font-size: 12px; font-weight: 700; color: #4B5160">100</div>
+      </div>
+      <svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+      <div style="width: 96px; height: 96px; box-sizing: border-box; border-radius: 50%; background: #C6F432; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; display: flex; flex-direction: column; align-items: center; justify-content: center">
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">$CUT</div>
+        <div style="font-size: 12px; font-weight: 700">134.5</div>
+      </div>
+    </div>
+    <div style="margin: 30px 24px 0">
+      <div style="height: 14px; box-sizing: border-box; border-radius: 999px; background: #FFFFFF; border: 2px solid #0A0B0D; overflow: hidden">
+        <div style="width: 60%; height: 100%; background: #0052FF"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px; font-weight: 600; color: #4B5160">
+        <span>One swap in The Cut’s pool</span><span>about 1 second</span>
+      </div>
+      <div style="display: flex; justify-content: center; margin-top: 22px">
+        <span style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: #EEFBC8; border: 2px solid #0A0B0D; font-size: 13px; font-weight: 700"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M3 8h18v4H3zM5 12v9h14v-9M12 8v13"/></svg>The 1% fee, $2.50, goes to today’s prize</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isSuccess}}" hint-placeholder-val="{{ false }}">
+    <div style="padding: 54px 24px 0">
+      <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.5px">134.5 $CUT · FREE IN YOUR WALLET</div>
+      <div style="margin-top: 6px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 50px; line-height: 50px; letter-spacing: -2px">Now keep one alive.</div>
+    </div>
+    <div style="position: relative; height: 262px; margin: 16px 20px 0; box-sizing: border-box; overflow: hidden; border-radius: 22px; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; background: radial-gradient(rgba(255, 255, 255, 0.25) 1.6px, transparent 1.8px) 0 0 / 18px 18px, #8B6CFF">
+      <div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 40px; background: #FF7AD9; border-top: 2px solid #0A0B0D"></div>
+      <sc-for list="{{collage}}" as="s" hint-placeholder-count="10">
+        <img src="{{s.art}}" alt="{{s.name}}" style="position: absolute; left: {{s.x}}; bottom: {{s.y}}; height: {{s.size}}; width: auto; display: block; transform: rotate({{s.r}})">
+      </sc-for>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 10px; margin: 14px 20px 0; padding: 10px 12px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><path d="M3 8h18v4H3zM5 12v9h14v-9M12 8v13"/></svg>
+      <div style="font-size: 13.5px; line-height: 19px; font-weight: 600; text-wrap: pretty">Free $CUT wins nothing at the cut. Save a robot before <span style="white-space: nowrap">18:00 UTC</span> to share today’s prize.</div>
+    </div>
+    <div style="position: absolute; left: 20px; right: 20px; bottom: 18px; display: flex; flex-direction: column; gap: 10px">
+      <button type="button" onClick="{{toSave}}" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 56px; border-radius: 18px; background: #0A0B0D; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #8B6CFF; font: 700 16px Inter, sans-serif; color: #FFFFFF"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Save a robot</button>
+      <div style="display: flex; gap: 10px">
+        <button type="button" onClick="{{toShare}}" style="display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1 1 0; height: 50px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 15px Inter, sans-serif; color: #0A0B0D"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M12 15V3M7 8l5-5 5 5M5 13v7h14v-7"/></svg>Share it</button>
+        <button type="button" onClick="{{toPings}}" style="display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1 1 0; height: 50px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 15px Inter, sans-serif; color: #0A0B0D"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/></svg>Pings</button>
+      </div>
+      <button type="button" onClick="{{toHome}}" style="height: 26px; padding: 0; border: 0; background: none; font: 700 14px Inter, sans-serif; color: #0A0B0D; text-decoration: underline">See the lineup</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isFailed}}" hint-placeholder-val="{{ false }}">
+    <div style="padding: 90px 24px 0">
+      <div style="width: 72px; height: 72px; box-sizing: border-box; border-radius: 22px; background: #FF9142; border: 2px solid #0A0B0D; box-shadow: 4px 4px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="3" stroke-linecap="round"><path d="M12 6v8"/><path d="M12 18.5v.5"/></svg>
+      </div>
+      <div style="margin-top: 22px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; line-height: 40px; letter-spacing: -1px">The purchase didn't go through</div>
+      <p style="margin: 12px 0 0; font-size: 15px; line-height: 22px">The $CUT price moved more than 1% before the swap confirmed, so it was cancelled. Nothing left your wallet except the network fee, $0.01.</p>
+      <div style="margin-top: 16px; padding: 12px 14px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D; font-size: 13.5px; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between"><span style="color: #4B5160">Transaction</span><span style="font-weight: 700">8Bq2…3aR6</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #4B5160">Status</span><span style="font-weight: 700">Cancelled, no $CUT bought</span></div>
+      </div>
+    </div>
+    <div style="position: absolute; left: 20px; right: 20px; bottom: 22px; display: flex; gap: 10px">
+      <button type="button" onClick="{{toHome}}" style="flex: 1 1 0; height: 56px; border-radius: 18px; background: #FFFFFF; border: 2px solid #0A0B0D; font: 700 15px Inter, sans-serif; color: #0A0B0D">Back to the lineup</button>
+      <button type="button" onClick="{{toReview}}" style="flex: 1 1 0; height: 56px; border-radius: 18px; background: #C6F432; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font: 700 15px Inter, sans-serif; color: #0A0B0D">Try again</button>
+    </div>
+  </sc-if>
+  <sc-if value="{{isBlocked}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; background: rgba(10, 11, 13, 0.55)"></div>
+    <div role="dialog" aria-label="Not available where you are" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 20px 20px 26px; border-radius: 28px 28px 0 0; background: #FFFFFF; border-top: 2px solid #0A0B0D">
+      <div style="width: 44px; height: 5px; margin: -8px auto 14px; border-radius: 3px; background: #D9DCE3"></div>
+      <div style="width: 56px; height: 56px; box-sizing: border-box; border-radius: 18px; background: #FF9142; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
+      </div>
+      <div style="margin-top: 14px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; line-height: 28px">Not available in the United States</div>
+      <p style="margin: 8px 0 0; font-size: 14px; line-height: 20px; color: #2B2D35">Buying, selling and saving $CUT are closed to people in the US. You can still watch the robots, read the Director and follow the cut every day at <span style="white-space: nowrap">18:00 UTC</span>.</p>
+      <button type="button" onClick="{{toBrowse}}" style="width: 100%; height: 52px; margin-top: 16px; border-radius: 16px; background: #FFFFFF; border: 2px solid #0A0B0D; box-shadow: 3px 3px 0 #0A0B0D; font: 700 15px Inter, sans-serif; color: #0A0B0D">Keep watching</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variant":{"editor":"enum","default":"amount","options":["amount","review","wallet","buying","success","low","moved","failed","blocked"]},"go":{"editor":null},"$preview":{"width":390,"height":844}}'>
+// Sample data: every robot, account and number here is fictional.
+const ROBOTS = [
+  ['pixie', 'Pixie Volt'], ['lila', 'Lila Loop'], ['oracle', 'Oracle Toad'], ['mabel', 'Mabel Market'], ['melody', 'Melody-9'],
+  ['yuna', 'Yuna Star'], ['gremlin', 'Glitch Gremlin'], ['velvet', 'Velvet Vee'], ['onyx', 'Onyx Moon'], ['kiko', 'Kiko Bun']
+].map(([id, name]) => ({ id, name }));
+// All 10 robots on stage: back row first, front row last so it draws on top.
+const ART = {
+  pixie: '/_blob/9b6e1aaf263605b289360fc424b4f821', lila: '/_blob/83d1e9085c1fa3c23eaa210fda48bf87', oracle: '/_blob/2c93a196e05209fc1f1bc658ab00f527',
+  mabel: '/_blob/4d33b0465eb75f8cbb1fd8aaa7b52e92', melody: '/_blob/3e8b30e1496674b5eb3ea74393b2bd41', yuna: '/_blob/c0ce503439858eafc6975b9313e81cb6',
+  gremlin: '/_blob/c4b4ca3b1ca3fe0f2d8031a27e671aff', velvet: '/_blob/53d2bf7b4e6e81153f67c367535f534a', onyx: '/_blob/5fb11cd66b3931a5276c6acc1d4f5256',
+  kiko: '/_blob/6888365d7a39c899d74d6c4f610ff0dd'
+};
+const COLLAGE = [
+  ['8px', '112px', '108px', '-5deg'], ['76px', '118px', '104px', '4deg'], ['144px', '112px', '108px', '-3deg'], ['212px', '118px', '104px', '5deg'], ['278px', '112px', '108px', '-4deg'],
+  ['-4px', '6px', '128px', '3deg'], ['66px', '10px', '124px', '-4deg'], ['136px', '6px', '128px', '2deg'], ['206px', '10px', '124px', '-3deg'], ['272px', '6px', '128px', '4deg']
+];
+class Component extends DCLogic {
+  nav(screen, variant) {
+    return () => {
+      if (this.props.go) this.props.go(screen, variant);
+      else if (screen === 'buy') this.setState({ variant });
+    };
+  }
+  renderVals() {
+    const v = this.props.go ? (this.props.variant ?? 'amount') : ((this.state && this.state.variant) ?? this.props.variant ?? 'amount');
+    const amountView = v === 'amount' || v === 'low' || v === 'blocked';
+    const reviewView = v === 'review' || v === 'moved' || v === 'wallet';
+    const low = v === 'low';
+    const chipVals = ['$50', '$100', '$250', 'Max'];
+    const picked = low ? '' : '$250';
+    return {
+      ground: v === 'success' ? '#C6F432' : '#EEF1F7',
+      showHeader: amountView || reviewView,
+      headerTitle: amountView ? 'Buy $CUT' : 'Review',
+      headerIcon: amountView ? 'M6 6l12 12M18 6L6 18' : 'M15 6l-6 6 6 6',
+      headerBackLabel: amountView ? 'Close' : 'Back',
+      headerBack: amountView ? this.nav('cast', 'list') : this.nav('buy', 'amount'),
+      amountView,
+      reviewView,
+      isAmount: v === 'amount' || v === 'blocked',
+      isBlocked: v === 'blocked',
+      isLow: low,
+      isMoved: v === 'moved',
+      isWallet: v === 'wallet',
+      isBuying: v === 'buying',
+      isSuccess: v === 'success',
+      isFailed: v === 'failed',
+      amount: low ? '$3,000' : '$250',
+      amountColor: low ? '#B4380B' : '#0A0B0D',
+      amountSub: low ? 'More than you have' : '≈ 134.5 $CUT at $1.84',
+      chips: chipVals.map((label) => ({ label, pressed: label === picked ? 'true' : 'false', bg: label === picked ? '#C6F432' : '#FFFFFF' })),
+      amountCta: low ? this.nav('buy', 'amount') : this.nav('buy', 'review'),
+      amountCtaLabel: low ? 'Add NEAR' : 'Review',
+      amountCtaBg: low ? '#FFFFFF' : '#C6F432',
+      getAmount: v === 'moved' ? '131.4' : '134.5',
+      price: v === 'moved' ? '$1.884' : '$1.84',
+      confirmLabel: v === 'moved' ? 'Accept new price' : 'Confirm purchase',
+      keys: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', ''].map((label) => ({ label, del: label === '', aria: label === '' ? 'Delete' : label })),
+      collage: ROBOTS.map((s, i) => ({ ...s, art: ART[s.id], x: COLLAGE[i][0], y: COLLAGE[i][1], size: COLLAGE[i][2], r: COLLAGE[i][3] })),
+      toReview: this.nav('buy', 'review'),
+      toWallet: this.nav('buy', 'wallet'),
+      toBuying: this.nav('buy', 'buying'),
+      toHome: this.nav('cast', 'list'),
+      // Done: saving comes first, because free $CUT wins nothing at the cut.
+      toSave: this.nav('club', 'vote'),
+      toShare: this.nav('share', 'joined'),
+      toPings: this.nav('notifications', 'ask'),
+      toBrowse: this.nav('cast', 'new')
+    };
+  }
+}
+</script>
+</body>
+</html>
