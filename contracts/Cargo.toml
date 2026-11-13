@@ -1,0 +1,23 @@
+[workspace]
+resolver = "3"
+members = ["robot", "thecut"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+license = "MIT"
+repository = "https://github.com/michsantoz/the-cut-near"
+
+[workspace.dependencies]
+near-sdk = "~5.29"
+near-sdk-contract-tools = "4.0.0"
+uint = { version = "0.10", default-features = false }
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true
