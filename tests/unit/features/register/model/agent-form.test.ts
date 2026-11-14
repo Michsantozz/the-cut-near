@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { formErrors, normalizeXHandle, registerArgs, agentIdError, suggestAgentId, textError, xHandleError } from "@/features/register/model/agent-form";
+import {
+  agentIdError,
+  charterError,
+  formErrors,
+  normalizeXHandle,
+  registerArgs,
+  seedError,
+  suggestAgentId,
+  textError,
+  xHandleError,
+} from "@/features/register/model/agent-form";
+import { units } from "@/shared/lib/amount";
 
 const CONTRACT = "thecut.testnet";
 
@@ -40,10 +51,10 @@ describe("suggestAgentId", () => {
 });
 
 describe("text and X handle", () => {
-  it("limits names and kinds to 32 bytes", () => {
+  it("limits names and taglines to 32 bytes", () => {
     expect(textError("Chartwise", "name")).toBeNull();
     expect(textError("  ", "name")).toBe("Name cannot be empty");
-    expect(textError("é".repeat(17), "kind")).toBe("Kind can be at most 32 bytes");
+    expect(textError("é".repeat(17), "tagline")).toBe("Tagline can be at most 32 bytes");
   });
 
   it("checks X handles", () => {
@@ -54,14 +65,51 @@ describe("text and X handle", () => {
   });
 });
 
+describe("charter and seed", () => {
+  it("limits the charter to 600 bytes and allows new lines only", () => {
+    expect(charterError("An owl.\nOnly moves on data.")).toBeNull();
+    expect(charterError("  ")).toBe("Write who your agent is");
+    expect(charterError("é".repeat(301))).toBe("A charter can be at most 600 bytes");
+    expect(charterError("é".repeat(300))).toBeNull();
+    expect(charterError("tab\there")).not.toBeNull();
+  });
+
+  it("asks for a whole seed of at least min_seed, within the wallet", () => {
+    const min = units(1_000);
+    expect(seedError("1,000", min, null)).toBeNull();
+    expect(seedError("999", min, null)).toBe("The seed is at least 1,000 $CUT");
+    expect(seedError("1000.5", min, null)).toBe("Type a whole number of $CUT");
+    expect(seedError("1500", min, units(1_200))).toBe("That is more $CUT than your wallet holds");
+  });
+});
+
 describe("formErrors and registerArgs", () => {
-  it("passes the design's Chartwise and sends the contract's argument names", () => {
-    const form = { id: "chartwise", name: "Chartwise", kind: "AI analyst", xHandle: "ChartwiseCut" };
-    expect(formErrors(form, CONTRACT)).toEqual({});
-    expect(registerArgs(form)).toEqual({ id: "chartwise", name: "Chartwise", kind: "AI analyst", x_handle: "@ChartwiseCut" });
+  const limits = { contractId: CONTRACT, minSeed: units(1_000), balance: null };
+  const chartwise = {
+    id: "chartwise",
+    name: "Chartwise",
+    tagline: "Reads every chart twice",
+    xHandle: "ChartwiseCut",
+    personality: "miser" as const,
+    charter: "Chartwise only moves on data.",
+    seed: "1,500",
+  };
+
+  it("passes the sample Chartwise and sends the contract's v2 argument names", () => {
+    expect(formErrors(chartwise, limits)).toEqual({});
+    expect(registerArgs(chartwise)).toEqual({
+      id: "chartwise",
+      name: "Chartwise",
+      tagline: "Reads every chart twice",
+      x_handle: "@ChartwiseCut",
+      personality: "miser",
+      charter: "Chartwise only moves on data.",
+      seed: units(1_500).toString(),
+    });
   });
 
   it("lists every field that is wrong", () => {
-    expect(Object.keys(formErrors({ id: "C", name: "", kind: "AI", xHandle: "" }, CONTRACT)).sort()).toEqual(["id", "name", "xHandle"]);
+    const empty = { id: "C", name: "", tagline: "AI", xHandle: "", personality: null, charter: "", seed: "10" };
+    expect(Object.keys(formErrors(empty, limits)).sort()).toEqual(["charter", "id", "name", "personality", "seed", "xHandle"]);
   });
 });

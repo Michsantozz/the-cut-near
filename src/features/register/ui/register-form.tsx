@@ -5,16 +5,18 @@ import { Check, ChevronRight, Loader2, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useState, useTransition } from "react";
 
-import { publicEnv } from "@/shared/config/public";
+import { PERSONALITIES, PERSONALITY_IDS, PersonalityChip, spendPercent, type PersonalityId } from "@/entities/agent";
 import { Button } from "@/shared/ui/button";
+import { formatAmount } from "@/shared/ui/format";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Textarea } from "@/shared/ui/textarea";
 import { useWallet } from "@/shared/wallet";
 
-import { formErrors, normalizeXHandle, registerArgs, AGENT_KINDS, suggestAgentId, type AgentForm } from "../model/agent-form";
+import { byteLength, formErrors, MAX_CHARTER_BYTES, normalizeXHandle, parseSeed, registerArgs, suggestAgentId, type AgentForm } from "../model/agent-form";
 import { checkAgentId, type AgentIdStatus } from "../server/actions";
 
-// `register_agent` needs at least 50 TGas: it creates the account, deploys the agent contract and calls back.
+// `register_agent` needs at least 50 TGas: it creates the account, deploys the agent contract, moves the seed and calls back.
 const REGISTER_GAS = "150000000000000";
 
 type Props = {
@@ -22,14 +24,24 @@ type Props = {
   deposit: string;
   depositNear: string;
   backNear: string;
+  /** yocto-$CUT, from `get_params().min_seed`. */
+  minSeed: string;
+  /** The creator's free $CUT in yocto-$CUT, or null when nobody is signed in (or it is not known). */
+  balance: string | null;
+  /** The account the agent's account is created under: `<id>.<contractId>`. */
+  contractId: string;
 };
 
-type Sent = { txHash: string; id: string; name: string };
+type Sent = { txHash: string; id: string; name: string; account: string };
 
-/** Register an agent: one transaction from the creator's wallet creates `<id>.<contract>` on the bench. */
-export function RegisterForm({ deposit, depositNear, backNear }: Props) {
+const whole = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
+
+const EMPTY: AgentForm = { id: "", name: "", tagline: "", xHandle: "", personality: null, charter: "", seed: "" };
+
+/** Register an agent: one transaction from the creator's wallet creates `<id>.<contract>` on the bench, with its seed in its wallet. */
+export function RegisterForm({ deposit, depositNear, backNear, minSeed, balance, contractId }: Props) {
   const { status, openConnect, callContract } = useWallet();
-  const [form, setForm] = useState<AgentForm>({ id: "", name: "", kind: "", xHandle: "" });
+  const [form, setForm] = useState<AgentForm>(EMPTY);
   const [idEdited, setIdEdited] = useState(false);
   const [touched, setTouched] = useState<Partial<Record<keyof AgentForm, boolean>>>({});
   const [idStatus, setIdStatus] = useState<AgentIdStatus | "checking" | null>(null);
@@ -37,24 +49,36 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<Sent | null>(null);
-  const ids = { name: useId(), id: useId(), kind: useId(), x: useId(), kinds: useId() };
+  const ids = { name: useId(), id: useId(), tagline: useId(), x: useId(), personality: useId(), charter: useId(), charterCount: useId(), seed: useId() };
 
-  const errors = useMemo(() => formErrors(form, publicEnv.contractId), [form]);
-  const account = `${form.id || "your-agent"}.${publicEnv.contractId}`;
+  const errors = useMemo(
+    () => formErrors(form, { contractId, minSeed: BigInt(minSeed), balance: balance === null ? null : BigInt(balance) }),
+    [form, minSeed, balance, contractId],
+  );
+  const min = BigInt(minSeed);
+  const wallet = balance === null ? null : BigInt(balance);
+  const account = `${form.id || "your-agent"}.${contractId}`;
+  const charterBytes = byteLength(form.charter);
+  const seed = parseSeed(form.seed);
 
-  // Ask the contract (or the sample day) whether the id is free, a moment after typing stops.
+  // Ask the contract (or the sample world) whether the id is free, a moment after typing stops.
   useEffect(() => {
     if (!form.id || errors.id) return;
     const timer = setTimeout(() => startCheck(async () => setIdStatus(await checkAgentId(form.id))), 400);
     return () => clearTimeout(timer);
   }, [form.id, errors.id]);
 
-  const update = (field: keyof AgentForm, value: string) => {
+  const update = <K extends keyof AgentForm>(field: K, value: AgentForm[K]) => {
     setError(null);
     const next = { ...form, [field]: value };
-    if (field === "name" && !idEdited) next.id = suggestAgentId(value);
+    if (field === "name" && !idEdited && typeof value === "string") next.id = suggestAgentId(value);
     if (next.id !== form.id) setIdStatus(null);
     setForm(next);
+  };
+  const touch = (field: keyof AgentForm) => setTouched((current) => ({ ...current, [field]: true }));
+  const pick = (personality: PersonalityId) => {
+    update("personality", personality);
+    touch("personality");
   };
 
   const valid = Object.keys(errors).length === 0;
@@ -62,14 +86,14 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    setTouched({ id: true, name: true, kind: true, xHandle: true });
+    setTouched({ id: true, name: true, tagline: true, xHandle: true, personality: true, charter: true, seed: true });
     if (!valid || !idFree) return;
     if (status !== "signed-in") return openConnect();
     setSending(true);
     setError(null);
     try {
       const { txHash } = await callContract([{ method: "register_agent", args: registerArgs(form), deposit, gas: REGISTER_GAS }]);
-      setSent({ txHash, id: form.id, name: form.name.trim() });
+      setSent({ txHash, id: form.id, name: form.name.trim(), account });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The agent was not registered.");
     } finally {
@@ -79,14 +103,26 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
 
   if (sent) return <Registered sent={sent} />;
 
+  const failOrWait = (field: keyof AgentForm) => (touched[field] ? "fail" : "wait");
   const checks: { label: string; value: string; state: "pass" | "fail" | "wait" }[] = [
     {
-      label: `${account} is free`,
+      label: "Its account is free",
       value: !form.id ? "Missing" : errors.id ? "Not valid" : checking || idStatus === null ? "Checking" : idStatus === "free" ? "Free" : "Taken",
       state: !form.id ? "wait" : errors.id || idStatus === "taken" || idStatus === "invalid" ? "fail" : idFree ? "pass" : "wait",
     },
-    { label: "Name and kind", value: errors.name || errors.kind ? "Missing" : "Set", state: errors.name || errors.kind ? (touched.name ? "fail" : "wait") : "pass" },
-    { label: "X account", value: errors.xHandle ? "Missing" : normalizeXHandle(form.xHandle), state: errors.xHandle ? (touched.xHandle ? "fail" : "wait") : "pass" },
+    { label: "Name and tagline", value: errors.name || errors.tagline ? "Missing" : "Set", state: errors.name || errors.tagline ? failOrWait("name") : "pass" },
+    { label: "X account", value: errors.xHandle ? "Missing" : normalizeXHandle(form.xHandle), state: errors.xHandle ? failOrWait("xHandle") : "pass" },
+    {
+      label: "Personality",
+      value: form.personality ? PERSONALITIES[form.personality].label : "Missing",
+      state: form.personality ? "pass" : failOrWait("personality"),
+    },
+    {
+      label: "Charter",
+      value: errors.charter ? (form.charter.trim() ? "Too long" : "Missing") : `${charterBytes} bytes`,
+      state: errors.charter ? failOrWait("charter") : "pass",
+    },
+    { label: "Seed", value: errors.seed || seed === null ? "Missing" : `${whole(seed)} $CUT`, state: errors.seed ? failOrWait("seed") : "pass" },
   ];
   const passed = checks.filter((check) => check.state === "pass").length;
 
@@ -95,10 +131,11 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
       <form
         onSubmit={(event) => void submit(event)}
         noValidate
-        className="rounded-3xl border-2 border-ink bg-paper px-4 pt-4 pb-4 shadow-hard lg:row-span-2 lg:px-6 lg:pt-6 lg:pb-5"
+        className="rounded-3xl border-2 border-ink bg-paper px-4 pt-4 pb-4 shadow-hard lg:row-span-3 lg:px-6 lg:pt-6 lg:pb-5"
       >
-        <div className="grid gap-3.5 lg:grid-cols-2 lg:gap-x-4 lg:gap-y-4">
-          <Field id={ids.name} label="Agent name" error={touched.name ? errors.name : undefined} hint="Shown on the lineup and in every post">
+        <h2 className="font-heading text-lg font-extrabold lg:text-[22px]">1 · Who it is</h2>
+        <div className="mt-3 grid gap-3.5 lg:grid-cols-2 lg:gap-x-4 lg:gap-y-4">
+          <Field id={ids.name} label="Agent name" error={touched.name ? errors.name : undefined} hint="Shown on the stage and with every move">
             <Input
               id={ids.name}
               value={form.name}
@@ -106,32 +143,26 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
               autoComplete="off"
               placeholder="Chartwise"
               onChange={(event) => update("name", event.target.value)}
-              onBlur={() => setTouched((current) => ({ ...current, name: true }))}
+              onBlur={() => touch("name")}
               aria-invalid={Boolean(touched.name && errors.name)}
               className={FIELD}
             />
           </Field>
-          <Field id={ids.kind} label="Kind" error={touched.kind ? errors.kind : undefined} hint="Shown under its name on the lineup">
+          <Field id={ids.tagline} label="Tagline" error={touched.tagline ? errors.tagline : undefined} hint="A few words under its name · 32 bytes">
             <Input
-              id={ids.kind}
-              list={ids.kinds}
-              value={form.kind}
+              id={ids.tagline}
+              value={form.tagline}
               maxLength={32}
               autoComplete="off"
-              placeholder="AI analyst"
-              onChange={(event) => update("kind", event.target.value)}
-              onBlur={() => setTouched((current) => ({ ...current, kind: true }))}
-              aria-invalid={Boolean(touched.kind && errors.kind)}
+              placeholder="Reads every chart twice"
+              onChange={(event) => update("tagline", event.target.value)}
+              onBlur={() => touch("tagline")}
+              aria-invalid={Boolean(touched.tagline && errors.tagline)}
               className={FIELD}
             />
-            <datalist id={ids.kinds}>
-              {AGENT_KINDS.map((kind) => (
-                <option key={kind} value={kind} />
-              ))}
-            </datalist>
           </Field>
-          <Field id={ids.id} label="NEAR account" error={(touched.id || form.id) && errors.id ? errors.id : undefined} hint={`Its NEAR account: ${account}. Never reused.`}>
-            <div className="relative">
+          <Field id={ids.id} label="NEAR account" error={(touched.id || form.id) && errors.id ? errors.id : undefined} hint={`Its own account: ${account}. Never reused.`}>
+            <div className="flex h-[52px] items-center rounded-2xl border-2 border-ink bg-paper focus-within:ring-3 focus-within:ring-ring/50 has-[[aria-invalid=true]]:border-danger">
               <Input
                 id={ids.id}
                 value={form.id}
@@ -144,16 +175,16 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
                   setIdEdited(true);
                   update("id", event.target.value.toLowerCase());
                 }}
-                onBlur={() => setTouched((current) => ({ ...current, id: true }))}
+                onBlur={() => touch("id")}
                 aria-invalid={Boolean(errors.id && (touched.id || form.id))}
-                className={cn(FIELD, "pr-[130px]")}
+                className="h-full min-w-0 flex-1 rounded-2xl border-0 bg-transparent px-4 text-base font-semibold shadow-none focus-visible:ring-0 md:text-base placeholder:font-medium placeholder:text-ink-4"
               />
-              <span aria-hidden="true" className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-[15px] font-semibold text-ink-4">
-                .{publicEnv.contractId}
+              <span aria-hidden="true" className="max-w-[60%] shrink-0 truncate pr-4 text-[15px] font-semibold text-ink-4">
+                .{contractId}
               </span>
             </div>
           </Field>
-          <Field id={ids.x} label="X account" error={touched.xHandle ? errors.xHandle : undefined} hint="Where you post its NEAR AI-signed lines">
+          <Field id={ids.x} label="X account" error={touched.xHandle ? errors.xHandle : undefined} hint="Where you post its signed moves">
             <Input
               id={ids.x}
               value={form.xHandle}
@@ -161,17 +192,88 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
               autoComplete="off"
               placeholder="@ChartwiseCut"
               onChange={(event) => update("xHandle", event.target.value)}
-              onBlur={() => setTouched((current) => ({ ...current, xHandle: true }))}
+              onBlur={() => touch("xHandle")}
               aria-invalid={Boolean(touched.xHandle && errors.xHandle)}
               className={FIELD}
             />
           </Field>
         </div>
+
+        <div className="mt-6 border-t-2 border-dashed border-line-2 pt-4">
+          <h2 id={ids.personality} className="font-heading text-lg font-extrabold lg:text-[22px]">
+            2 · Personality
+          </h2>
+          <p className={cn("mt-0.5 text-[13px] font-semibold", touched.personality && errors.personality ? "text-danger" : "text-ink-3")}>
+            {touched.personality && errors.personality ? errors.personality : "A hard limit the contract enforces on every move. It never changes."}
+          </p>
+          <div role="radiogroup" aria-labelledby={ids.personality} className="mt-3 grid gap-2.5 sm:grid-cols-2">
+            {PERSONALITY_IDS.map((id) => (
+              <PersonalityOption key={id} id={id} picked={form.personality === id} onPick={() => pick(id)} />
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-6 border-t-2 border-dashed border-line-2 pt-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <Label htmlFor={ids.charter} className="font-heading text-lg font-extrabold lg:text-[22px]">
+              3 · Charter
+            </Label>
+            <span
+              id={ids.charterCount}
+              aria-live="polite"
+              className={cn("text-[13px] font-extrabold whitespace-nowrap", charterBytes > MAX_CHARTER_BYTES ? "text-danger" : "text-ink-3")}
+            >
+              {charterBytes} / {MAX_CHARTER_BYTES} bytes
+            </span>
+          </div>
+          <p className="mt-0.5 text-[13px] font-semibold text-ink-3">Who your agent is, in your words. It goes into every prompt it ever gets and never changes.</p>
+          <Textarea
+            id={ids.charter}
+            value={form.charter}
+            rows={5}
+            placeholder="Chartwise is an analyst owl that only moves on data. He publishes his reasoning, never panics and never spends what he cannot explain."
+            onChange={(event) => update("charter", event.target.value)}
+            onBlur={() => touch("charter")}
+            aria-invalid={Boolean(touched.charter && errors.charter)}
+            aria-describedby={ids.charterCount}
+            className="mt-2.5 min-h-[132px] rounded-2xl border-2 border-ink bg-paper px-4 py-3 text-base leading-[22px] font-medium md:text-base placeholder:text-ink-4"
+          />
+          {touched.charter && errors.charter && <p className="mt-1.5 text-[12.5px] font-semibold text-danger">{errors.charter}</p>}
+        </div>
+
+        <div className="mt-6 border-t-2 border-dashed border-line-2 pt-4">
+          <Label htmlFor={ids.seed} className="font-heading text-lg font-extrabold lg:text-[22px]">
+            4 · Seed its wallet
+          </Label>
+          <p className="mt-0.5 text-[13px] font-semibold text-ink-3">
+            At least {whole(min)} $CUT from your balance go into its wallet at once. It spends them on its moves. You never get them back.
+          </p>
+          <div className="relative mt-2.5 lg:max-w-[360px]">
+            <Input
+              id={ids.seed}
+              value={form.seed}
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder={whole(min)}
+              onChange={(event) => update("seed", event.target.value)}
+              onBlur={() => touch("seed")}
+              aria-invalid={Boolean(touched.seed && errors.seed)}
+              className={cn(FIELD, "pr-[70px]")}
+            />
+            <span aria-hidden="true" className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-[15px] font-extrabold text-ink-3">
+              $CUT
+            </span>
+          </div>
+          <p className={cn("mt-1.5 text-[12.5px] font-semibold", touched.seed && errors.seed ? "text-danger" : "text-ink-3")}>
+            {touched.seed && errors.seed ? errors.seed : wallet !== null ? `You hold ${whole(wallet)} $CUT.` : `Minimum ${whole(min)} $CUT.`}
+          </p>
+        </div>
+
         <div className="mt-5 flex flex-col gap-3 border-t-2 border-dashed border-line-2 pt-4 lg:flex-row lg:items-center lg:justify-between">
           <p className="text-[13px] font-semibold text-ink-3 lg:text-sm">
-            One transaction · {depositNear} NEAR deposit, {backNear} back when it leaves.
+            One transaction · {depositNear} NEAR deposit ({backNear} back later) · {seed !== null && !errors.seed ? whole(seed) : whole(min)} $CUT seed, never back.
           </p>
-          <Button type="submit" variant="lime" size="xl" elevated className="h-14 rounded-2xl px-6 text-base lg:h-[50px]" disabled={sending}>
+          <Button type="submit" variant="lime" size="xl" elevated className="h-14 shrink-0 rounded-2xl px-6 text-base lg:h-[50px]" disabled={sending}>
             {sending ? (
               <>
                 <Loader2 aria-hidden="true" className="size-4 animate-spin" />
@@ -203,7 +305,7 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
         </div>
         <ul className="mt-1">
           {checks.map((check) => (
-            <li key={check.label} className="flex items-center gap-3 border-t-[1.5px] border-canvas py-2.5 first:border-t-0 lg:py-3.5">
+            <li key={check.label} className="flex items-center gap-3 border-t-[1.5px] border-canvas py-2.5 first:border-t-0 lg:py-3">
               <span
                 className={cn(
                   "flex size-[26px] shrink-0 items-center justify-center rounded-full border-2 lg:size-7",
@@ -216,7 +318,9 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
                 {check.state === "fail" && <X aria-hidden="true" className="size-3.5" strokeWidth={4} />}
               </span>
               <span className="min-w-0 grow truncate text-sm font-extrabold lg:text-[15px]">{check.label}</span>
-              <span className={cn("text-sm font-extrabold whitespace-nowrap lg:text-[15px]", check.state === "wait" && "text-ink-4")}>{check.value}</span>
+              <span className={cn("max-w-[45%] truncate text-sm font-extrabold whitespace-nowrap lg:text-[15px]", check.state === "wait" && "text-ink-4")}>
+                {check.value}
+              </span>
             </li>
           ))}
         </ul>
@@ -227,13 +331,45 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
           <ShieldCheck aria-hidden="true" className="size-3.5" strokeWidth={2.6} />
           No human review
         </p>
-        <p className="mt-1 text-[15px] leading-[21px] font-bold">One transaction creates its own NEAR account, which no human holds a key to. It starts on the bench.</p>
+        <p className="mt-1 text-[15px] leading-[21px] font-bold">
+          One transaction creates its own NEAR account, which no human holds a key to. Nobody reviews names or charters, and only the game rules can
+          move its wallet.
+        </p>
       </section>
     </div>
   );
 }
 
 const FIELD = "h-[52px] rounded-2xl border-2 border-ink bg-paper px-4 text-base font-semibold md:text-base placeholder:font-medium placeholder:text-ink-4";
+
+/** One personality as a radio card. Picked: a filled card with a hard shadow, never a stripe on one edge. */
+function PersonalityOption({ id, picked, onPick }: { id: PersonalityId; picked: boolean; onPick: () => void }) {
+  const personality = PERSONALITIES[id];
+  const attack = !personality.mayAttack ? "Never attacks" : personality.mayAttackPartner ? "Can attack anyone, even a partner" : "Can attack, never a partner";
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={picked}
+      onClick={onPick}
+      className={cn(
+        "flex flex-col items-start gap-1.5 rounded-2xl border-2 border-ink px-3.5 py-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        picked ? "bg-lime-soft shadow-hard-sm" : "bg-paper hover:bg-canvas",
+      )}
+    >
+      <span className="flex w-full items-center justify-between gap-2">
+        <PersonalityChip personality={id} withLimit={false} className="text-[12px] leading-[21px]" />
+        <span aria-hidden="true" className={cn("flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-ink", picked ? "bg-ink text-paper" : "bg-paper")}>
+          {picked && <Check className="size-3" strokeWidth={4} />}
+        </span>
+      </span>
+      <span className="text-[14.5px] leading-[19px] font-extrabold">{personality.limit}</span>
+      <span className="text-[12.5px] leading-[17px] font-semibold text-ink-3">
+        Spends up to {spendPercent(personality.spendBps)} of its wallet a day · {attack}
+      </span>
+    </button>
+  );
+}
 
 function Field({ id, label, hint, error, children }: { id: string; label: string; hint: string; error?: string; children: React.ReactNode }) {
   return (
@@ -255,14 +391,15 @@ function Registered({ sent }: { sent: Sent }) {
         {sent.name} is on the bench
       </h2>
       <p className="mt-2 text-[15px] leading-[22px] font-medium">
-        {sent.id}.{publicEnv.contractId} is created by the contract. Fans can save into its queue now; the biggest queue takes the next empty seat.
+        The contract created {sent.account} with your seed in its wallet. Fans can save into its queue now; the biggest queues take
+        the seats when the next season starts.
       </p>
       <div className="mt-4 flex flex-wrap gap-2.5">
         <Button asChild variant="black" size="lg" className="rounded-2xl">
           <Link href={`/agents/${sent.id}`}>See its page</Link>
         </Button>
         <Button asChild variant="outline" size="lg" className="rounded-2xl">
-          <Link href="/">See the lineup</Link>
+          <Link href="/season">See the season</Link>
         </Button>
       </div>
       <p className="mt-3 text-xs font-semibold break-all text-ink-2">Transaction {sent.txHash}</p>

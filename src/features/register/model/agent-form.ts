@@ -1,26 +1,19 @@
-// What `register_agent({ id, name, kind, x_handle })` accepts, checked in the browser before the wallet opens.
-// Mirrors `validate_agent_id` and `validate_text` in contracts/thecut/src/agents.rs (MAX_TEXT 32, MAX_X_HANDLE 16 bytes).
+import type { PersonalityId } from "@/entities/agent";
+import { CUT_DECIMALS, parseUnits } from "@/shared/lib/amount";
+
+// What `register_agent({ id, name, tagline, x_handle, personality, charter, seed })` accepts (docs/design/SPEC-v20.md
+// "Agent lifecycle"), checked in the browser before the wallet opens.
 
 export const MAX_TEXT_BYTES = 32;
 export const MAX_X_HANDLE_BYTES = 16;
+/** The charter: the agent's character in its creator's words, part of every prompt. */
+export const MAX_CHARTER_BYTES = 600;
 /** NEAR account ids are at most 64 characters, so the agent id leaves room for `.<contract>`. */
 export const MAX_ACCOUNT_ID = 64;
 
-/** Kinds already on the lineup; a creator picks one or types its own. */
-export const AGENT_KINDS = [
-  "AI analyst",
-  "AI streamer",
-  "AI agent",
-  "AI artist",
-  "AI idol",
-  "Virtual influencer",
-  "Virtual singer",
-  "Virtual model",
-  "Digital model",
-  "VTuber",
-] as const;
-
-const bytes = (value: string) => new TextEncoder().encode(value).length;
+/** UTF-8 size, the way the contract counts text limits. */
+export const byteLength = (value: string) => new TextEncoder().encode(value).length;
+const bytes = byteLength;
 const isSeparator = (char: string) => char === "-" || char === "_";
 
 /**
@@ -53,12 +46,42 @@ export function suggestAgentId(name: string): string {
     .replace(/[-_]+$/g, "");
 }
 
-/** Name or kind: required, at most 32 bytes, no control characters. */
-export function textError(value: string, field: "name" | "kind"): string | null {
-  if (!value.trim()) return `${field === "name" ? "Name" : "Kind"} cannot be empty`;
-  if (bytes(value) > MAX_TEXT_BYTES) return `${field === "name" ? "Name" : "Kind"} can be at most ${MAX_TEXT_BYTES} bytes`;
-  if (/[\u0000-\u001f\u007f-\u009f]/.test(value)) return `${field === "name" ? "Name" : "Kind"} cannot contain control characters`;
+const FIELD_LABEL = { name: "Name", tagline: "Tagline" } as const;
+
+/** Name or tagline: required, at most 32 bytes, no control characters. */
+export function textError(value: string, field: "name" | "tagline"): string | null {
+  const label = FIELD_LABEL[field];
+  if (!value.trim()) return `${label} cannot be empty`;
+  if (bytes(value) > MAX_TEXT_BYTES) return `${label} can be at most ${MAX_TEXT_BYTES} bytes`;
+  if (/[\u0000-\u001f\u007f-\u009f]/.test(value)) return `${label} cannot contain control characters`;
   return null;
+}
+
+/** Charter: required, at most 600 bytes, no control characters except newline. */
+export function charterError(charter: string): string | null {
+  if (!charter.trim()) return "Write who your agent is";
+  if (bytes(charter) > MAX_CHARTER_BYTES) return `A charter can be at most ${MAX_CHARTER_BYTES} bytes`;
+  if (/[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/.test(charter)) return "A charter cannot contain control characters, only new lines";
+  return null;
+}
+
+/**
+ * The seed typed in whole $CUT: at least `minSeed`, and no more than `balance` when the balance is known.
+ * Null when it is fine.
+ */
+export function seedError(seed: string, minSeed: bigint, balance: bigint | null): string | null {
+  const amount = parseSeed(seed);
+  if (amount === null) return "Type a whole number of $CUT";
+  if (amount < minSeed) return `The seed is at least ${(minSeed / 10n ** BigInt(CUT_DECIMALS)).toLocaleString("en-US")} $CUT`;
+  if (balance !== null && amount > balance) return "That is more $CUT than your wallet holds";
+  return null;
+}
+
+/** Whole $CUT typed by the creator ("1,500") in yocto-$CUT, or null when it is not a whole number. */
+export function parseSeed(seed: string): bigint | null {
+  const clean = seed.trim().replaceAll(",", "");
+  if (!/^\d+$/.test(clean)) return null;
+  return parseUnits(clean);
 }
 
 /** X handle: optional `@`, then 1 to 15 letters, digits or _ (X's own rule, within the contract's 16 bytes). */
@@ -74,23 +97,52 @@ export function normalizeXHandle(handle: string): string {
   return trimmed && !trimmed.startsWith("@") ? `@${trimmed}` : trimmed;
 }
 
-export type AgentForm = { id: string; name: string; kind: string; xHandle: string };
+export type AgentForm = {
+  id: string;
+  name: string;
+  tagline: string;
+  xHandle: string;
+  /** Null until the creator picks one. */
+  personality: PersonalityId | null;
+  charter: string;
+  /** Whole $CUT, as typed. */
+  seed: string;
+};
+
+/** What the form checks against the contract's parameters and the creator's wallet. */
+export type FormLimits = { contractId: string; minSeed: bigint; balance: bigint | null };
 
 /** Every problem with the form, by field. Empty when `register_agent` would accept it. */
-export function formErrors(form: AgentForm, contractId: string): Partial<Record<keyof AgentForm, string>> {
+export function formErrors(form: AgentForm, limits: FormLimits): Partial<Record<keyof AgentForm, string>> {
   const errors: Partial<Record<keyof AgentForm, string>> = {};
   const name = textError(form.name, "name");
-  const kind = textError(form.kind, "kind");
-  const id = agentIdError(form.id, contractId);
+  const tagline = textError(form.tagline, "tagline");
+  const id = agentIdError(form.id, limits.contractId);
   const x = xHandleError(normalizeXHandle(form.xHandle));
+  const charter = charterError(form.charter);
+  const seed = seedError(form.seed, limits.minSeed, limits.balance);
   if (name) errors.name = name;
-  if (kind) errors.kind = kind;
+  if (tagline) errors.tagline = tagline;
   if (id) errors.id = id;
   if (x) errors.xHandle = x;
+  if (!form.personality) errors.personality = "Pick a personality";
+  if (charter) errors.charter = charter;
+  if (seed) errors.seed = seed;
   return errors;
 }
 
-/** The arguments of `register_agent`, as the contract names them. */
+/**
+ * The arguments of `register_agent`, as the contract names them. `seed` is yocto-$CUT as a decimal string (U128):
+ * the contract moves it from the creator's balance into the new agent's wallet in the same call.
+ */
 export function registerArgs(form: AgentForm) {
-  return { id: form.id, name: form.name.trim(), kind: form.kind.trim(), x_handle: normalizeXHandle(form.xHandle) };
+  return {
+    id: form.id,
+    name: form.name.trim(),
+    tagline: form.tagline.trim(),
+    x_handle: normalizeXHandle(form.xHandle),
+    personality: form.personality,
+    charter: form.charter.trim(),
+    seed: (parseSeed(form.seed) ?? 0n).toString(),
+  };
 }
