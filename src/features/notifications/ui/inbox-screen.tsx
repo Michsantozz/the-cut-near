@@ -111,7 +111,7 @@ export function InboxVisitor() {
   return (
     <>
       <PhoneTitle />
-      <div className="flex flex-col items-center px-9 pt-[100px] text-center lg:items-start lg:px-8 lg:pt-4 lg:text-left">
+      <div className="flex flex-col items-center px-9 pt-[100px] text-center lg:items-start lg:px-8 lg:pt-4 lg:text-left pb-12 lg:pb-16">
         <span aria-hidden="true" className="flex size-[84px] -rotate-[4deg] items-center justify-center rounded-[26px] border-2 border-ink bg-[#ffd84d] shadow-hard">
           <Bell className="size-10" strokeWidth={2.4} />
         </span>

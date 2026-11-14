@@ -77,11 +77,12 @@ export function ReceiptsScreen({ data }: { data: Receipts }) {
 function Hero({ data }: { data: Receipts }) {
   const at = new Date(data.renderedAt);
   return (
-    <div className="pt-[22px] lg:flex lg:items-start lg:justify-between lg:gap-8 lg:pt-2">
+    <div className="lg:flex lg:items-start lg:justify-between lg:gap-8 lg:pt-2">
       <div className="lg:max-w-[820px]">
-        <SourceChip data={data} className="lg:hidden" />
-        <h2 className="mt-3.5 font-heading text-[60px] leading-[58px] font-extrabold tracking-[-2.5px] lg:hidden">The Receipts.</h2>
-        <p className="mt-2.5 text-base leading-[23px] font-medium lg:mt-0 lg:text-[21px] lg:leading-[30px]">
+        {/* Phone title, same size as the other tab pages (Prizes). */}
+        <h2 className="pt-4 font-heading text-[32px] leading-9 font-extrabold tracking-[-1px] lg:hidden">Receipts</h2>
+        <SourceChip data={data} className="mt-2 lg:hidden" />
+        <p className="mt-3 text-base leading-[23px] font-medium lg:mt-0 lg:text-[21px] lg:leading-[30px]">
           {data.live
             ? "Every buy, save, boo, move, cut, burn and prize since launch, from the contract’s public log on NEAR. Every entry links to its transaction."
             : "Every buy, save, boo, move, cut, burn and prize of the sample world, the way the contract logs them. In live mode each entry links to its transaction on NEAR."}

@@ -19,7 +19,7 @@ export function RisksDialog({ time, className }: { time: string; className?: str
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-[calc(100%-2rem)] gap-0 rounded-3xl border-2 border-ink p-5 shadow-hard-lg ring-0 sm:max-w-[756px] lg:p-8">
-        <DialogTitle className="flex items-center gap-3 font-heading text-[26px] leading-8 font-extrabold tracking-[-1px] lg:text-[32px]">
+        <DialogTitle className="flex items-center gap-3 pr-10 font-heading text-[26px] leading-8 font-extrabold tracking-[-1px] lg:text-[32px]">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border-2 border-ink bg-orange lg:size-11">
             <TriangleAlert aria-hidden="true" className="size-5" strokeWidth={2.6} />
           </span>
