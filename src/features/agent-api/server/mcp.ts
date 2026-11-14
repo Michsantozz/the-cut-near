@@ -92,8 +92,8 @@ export function createAgentMcpServer(ports: MovePorts): McpServer {
   server.registerTool(
     "prepare_buy",
     {
-      description: "Prepare buy({ min_out }) with NEAR attached. min_out comes from a fresh quote less your slippage. Pass account_id for an exact first-buy registration check. Never signs.",
-      inputSchema: { near: amount("NEAR to spend"), slippage_percent: slippage, account_id: accountId.optional() },
+      description: "Prepare buy({ min_out }) with NEAR attached. min_out comes from a fresh quote for this account less your slippage (a first buy keeps 0.01 NEAR for $CUT storage). Never signs.",
+      inputSchema: { near: amount("NEAR to spend"), slippage_percent: slippage, account_id: accountId.describe("The account that will sign") },
       annotations: PREPARE,
     },
     ({ near, slippage_percent, account_id }) => run(() => tools.prepareBuy(near, slippage_percent, account_id)),
