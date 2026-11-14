@@ -193,9 +193,13 @@ fn gap_to_next_uses_the_score() {
 #[test]
 fn schedule_keeps_the_grid() {
     let at = 1_000;
-    assert_eq!(next_cut_after(at, 100, at), Some(1_100));
-    assert_eq!(next_cut_after(at, 100, at + 99), Some(1_100));
+    assert_eq!(next_cut_after(at, 100, 0, at), Some(1_100));
+    assert_eq!(next_cut_after(at, 100, 0, at + 99), Some(1_100));
     // A cut run 2.5 intervals late skips the missed slots and keeps the grid.
-    assert_eq!(next_cut_after(at, 100, at + 250), Some(1_300));
-    assert_eq!(next_cut_after(at, 0, at), None);
+    assert_eq!(next_cut_after(at, 100, 0, at + 250), Some(1_300));
+    assert_eq!(next_cut_after(at, 0, 0, at), None);
+    // With a 30 move lead, the next cut keeps an open move window.
+    assert_eq!(next_cut_after(at, 100, 30, at + 69), Some(1_100));
+    assert_eq!(next_cut_after(at, 100, 30, at + 70), Some(1_200));
+    assert_eq!(next_cut_after(at, 100, 30, at + 99), Some(1_200));
 }

@@ -42,6 +42,10 @@ pub fn validate_agent_id(id: &str) -> Result<(), &'static str> {
     if previous_separator {
         return Err("Agent id cannot end with - or _");
     }
+    // A move's target or heir of "null" or "none" means no agent.
+    if id == "null" || id == "none" {
+        return Err("Agent id cannot be null or none");
+    }
     Ok(())
 }
 
@@ -213,6 +217,7 @@ impl Contract {
             damage: 0,
             bounty: 0,
             moved_for: 0,
+            wallet_at_cut: 0,
             cut_index: None,
             delete_state: None,
             runner: None,
@@ -221,9 +226,13 @@ impl Contract {
         self.pending_agents = checked(self.pending_agents.checked_add(1));
         self.agents.insert(id.clone(), agent);
 
-        // The wallet: a $CUT registration paid from the deposit, then the seed.
-        self.deposit_to_storage_account(&account_id, STORAGE_MIN)
-            .unwrap_or_else(|e| env::panic_str(&e.to_string()));
+        // The wallet: a $CUT registration paid from the deposit (unless someone registered
+        // this account before), then the seed.
+        let registered_before = self.get_storage_balance(&account_id).is_ok();
+        if !registered_before {
+            self.deposit_to_storage_account(&account_id, STORAGE_MIN)
+                .unwrap_or_else(|e| env::panic_str(&e.to_string()));
+        }
         self.move_cut(&creator, &account_id, seed.0, "seed");
 
         let excess = deposit.saturating_sub(required);
@@ -247,13 +256,13 @@ impl Contract {
             .then(
                 Self::ext(env::current_account_id())
                     .with_static_gas(GAS_CALLBACK)
-                    .on_agent_created(id, seed),
+                    .on_agent_created(id, seed, registered_before),
             )
     }
 
     /// Confirms or rolls back a registration. Never panics.
     #[private]
-    pub fn on_agent_created(&mut self, id: AgentId, seed: U128) -> bool {
+    pub fn on_agent_created(&mut self, id: AgentId, seed: U128, registered_before: bool) -> bool {
         let created =
             env::promise_results_count() == 1 && env::promise_result_checked(0, 64).is_ok();
         let Some(agent) = self.agents.get(&id) else {
@@ -289,18 +298,24 @@ impl Contract {
             events::emit("register", &[event]);
         } else {
             // The batch failed as a whole: the account does not exist and its funding came
-            // back to this contract. Give the wallet back, free the id, refund the deposit.
-            let wallet = self.balance_of(&account_id);
+            // back to this contract. Give the seed back, free the id, refund the deposit. A
+            // registration someone made before keeps whatever else it holds; the one made
+            // here is closed, burning any $CUT sent to it meanwhile.
+            let back = self.balance_of(&account_id).min(seed.0);
             if self.get_storage_balance(&creator).is_ok() {
-                self.move_cut(&account_id, &creator, wallet, "registration failed");
+                self.move_cut(&account_id, &creator, back, "registration failed");
             } else {
                 self.burn_cut(
                     &account_id,
-                    wallet,
+                    back,
                     "registration failed, creator unregistered",
                 );
             }
-            self.close_wallet(&account_id);
+            if !registered_before {
+                let rest = self.balance_of(&account_id);
+                self.burn_cut(&account_id, rest, "registration failed");
+                self.close_wallet(&account_id);
+            }
             self.agents.remove(&id);
             env::log_str(&format!(
                 "Agent {id} could not be created; the seed and the deposit go back to {creator}"

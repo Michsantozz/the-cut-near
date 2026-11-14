@@ -198,14 +198,15 @@ pub fn pending_reward(amount: u128, acc_now: u128, snapshot: u128) -> Option<u12
     mul_div(amount, acc_now.checked_sub(snapshot)?, ACC_SCALE)
 }
 
-/// The first scheduled cut time strictly after `now`, on the grid `at + k * interval`
-/// with `k >= 1`. A cut that runs late does not shift the schedule, and missed cuts
-/// are skipped (one cut per `run_cut`).
-pub fn next_cut_after(at: u64, interval: u64, now: u64) -> Option<u64> {
+/// The first scheduled cut time whose move window is still open at `now` (its time minus
+/// `move_lead` is strictly after `now`), on the grid `at + k * interval` with `k >= 1`. A
+/// cut that runs late does not shift the schedule; missed cuts, and a cut whose moves
+/// would already be closed, are skipped (one cut per `run_cut`).
+pub fn next_cut_after(at: u64, interval: u64, move_lead: u64, now: u64) -> Option<u64> {
     if interval == 0 {
         return None;
     }
-    let steps = now.saturating_sub(at) / interval + 1;
+    let steps = now.checked_add(move_lead)?.saturating_sub(at) / interval + 1;
     at.checked_add(steps.checked_mul(interval)?)
 }
 

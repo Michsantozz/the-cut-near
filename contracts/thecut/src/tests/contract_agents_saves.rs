@@ -76,7 +76,7 @@ fn register_creates_a_keyless_agent_account_with_a_wallet() {
     assert!(w.bench_ids().is_empty());
 
     assert!(w.callback(PromiseResult::Successful(vec![]), |c| {
-        c.on_agent_created("kiko".into(), U128(cut(1_200)))
+        c.on_agent_created("kiko".into(), U128(cut(1_200)), false)
     }));
     let register = event("register").unwrap();
     assert_eq!(register[0]["agent_id"], "kiko");
@@ -121,7 +121,7 @@ fn failed_creation_refunds_the_seed_and_the_deposit_and_frees_the_id() {
     let bought = w.buy(creator.as_str(), near(250));
     register_kiko(&mut w, near(1), "miser", "", cut(1_000));
     assert!(!w.callback(PromiseResult::Failed, |c| {
-        c.on_agent_created("kiko".into(), U128(cut(1_000)))
+        c.on_agent_created("kiko".into(), U128(cut(1_000)), false)
     }));
     assert_eq!(transfers(), vec![(creator.clone(), near(1).as_yoctonear())]);
     assert_eq!(w.balance(creator.as_str()), bought);
@@ -135,6 +135,79 @@ fn failed_creation_refunds_the_seed_and_the_deposit_and_frees_the_id() {
     // The id can be used again.
     w.register("kiko");
     assert_eq!(w.bench_ids(), vec!["kiko".to_string()]);
+}
+
+#[test]
+fn failed_creation_returns_only_the_seed_and_keeps_an_earlier_registration() {
+    let mut w = World::daily();
+    let creator = creator_of("kiko");
+    let bought = w.buy(creator.as_str(), near(250));
+    // A fan registers the future agent account and sends it 50 $CUT before it exists.
+    w.buy("fan.near", near(10));
+    w.transfer("fan.near", "kiko.thecut.near", cut(50));
+    let storage = w.view(|c| {
+        c.storage_balance_of(id("kiko.thecut.near"))
+            .map(|b| b.total)
+    });
+    register_kiko(&mut w, near(1), "miser", "", cut(1_000));
+    let callback = function_calls()
+        .into_iter()
+        .find(|(_, method, _)| method == "on_agent_created")
+        .unwrap();
+    assert!(
+        callback.2.contains("\"registered_before\":true"),
+        "{}",
+        callback.2
+    );
+    assert_eq!(
+        w.view(|c| c
+            .storage_balance_of(id("kiko.thecut.near"))
+            .map(|b| b.total)),
+        storage,
+        "no second registration"
+    );
+
+    assert!(!w.callback(PromiseResult::Failed, |c| {
+        c.on_agent_created("kiko".into(), U128(cut(1_000)), true)
+    }));
+    assert_eq!(w.balance(creator.as_str()), bought);
+    assert_eq!(
+        w.wallet("kiko"),
+        cut(50),
+        "the fan's $CUT stays where it was sent"
+    );
+    assert_eq!(
+        w.view(|c| c
+            .storage_balance_of(id("kiko.thecut.near"))
+            .map(|b| b.total)),
+        storage
+    );
+    w.assert_books();
+}
+
+#[test]
+fn failed_creation_burns_a_gift_that_reached_a_new_registration() {
+    let mut w = World::daily();
+    let creator = creator_of("kiko");
+    let bought = w.buy(creator.as_str(), near(250));
+    register_kiko(&mut w, near(1), "miser", "", cut(1_000));
+    w.buy("fan.near", near(10));
+    w.transfer("fan.near", "kiko.thecut.near", cut(50));
+    let burned = w.view(|c| c.get_stats().burned.0);
+    assert!(!w.callback(PromiseResult::Failed, |c| {
+        c.on_agent_created("kiko".into(), U128(cut(1_000)), false)
+    }));
+    assert_eq!(
+        w.balance(creator.as_str()),
+        bought,
+        "the seed, not the gift"
+    );
+    assert_eq!(w.view(|c| c.get_stats().burned.0), burned + cut(50));
+    assert!(
+        w.view(|c| c.storage_balance_of(id("kiko.thecut.near")))
+            .is_none()
+    );
+    w.assert_books();
 }
 
 #[test]
@@ -216,6 +289,17 @@ fn register_validates_the_id() {
     assert!(validate_agent_id("kiko_").is_err());
     assert!(validate_agent_id("ki--ko").is_err());
     assert!(validate_agent_id(&"a".repeat(33)).is_err());
+    // A move reads "null" and "none" as no agent, so no agent may be called that.
+    assert!(validate_agent_id("null").is_err());
+    assert!(validate_agent_id("none").is_err());
+    assert!(validate_agent_id("nullbot").is_ok());
+}
+
+#[test]
+#[should_panic(expected = "Agent id cannot be null or none")]
+fn register_refuses_the_id_null() {
+    let mut w = World::daily();
+    w.register("null");
 }
 
 #[test]

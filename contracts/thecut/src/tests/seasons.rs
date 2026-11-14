@@ -18,6 +18,34 @@ fn brief(w: &mut World) -> Value {
 }
 
 #[test]
+fn a_late_cut_still_leaves_a_move_window() {
+    // The testnet fast launch: a cut every 3 minutes, moves close 30 s before.
+    let interval = 180 * SEC;
+    let mut w = World::launch(Launch {
+        cut_interval: interval,
+        move_lead: 30 * SEC,
+        ..Launch::default()
+    });
+    for agent in ["ana", "bob", "cid"] {
+        w.register(agent);
+    }
+    // The season start runs 160 s late: the cut at FIRST_CUT + 180 s would close its moves
+    // at FIRST_CUT + 150 s, already past, so the next cut is the one after it.
+    w.at_next_cut();
+    w.now += 160 * SEC;
+    w.call("runner.near", zero(), |c| c.run_cut());
+    let next = w.view(|c| c.get_next_cut());
+    assert_eq!(next.at.0, FIRST_CUT + 2 * interval);
+    assert!(next.moves_close_at.0 > w.now);
+    assert!(w.view(|c| c.get_move_request("ana".into())).is_some());
+
+    // On time (late by 140 s), the next slot keeps its window.
+    w.now = next.at.0 + 140 * SEC;
+    w.call("runner.near", zero(), |c| c.run_cut());
+    assert_eq!(w.view(|c| c.get_next_cut().at.0), FIRST_CUT + 3 * interval);
+}
+
+#[test]
 fn no_season_starts_until_the_bench_has_min_season_agents() {
     let mut w = World::daily();
     w.register("ana");
@@ -155,12 +183,20 @@ fn the_brief_is_the_board_of_the_last_cut() {
             "burned": (record.burned.0 / crate::ONE_CUT).to_string()
         })
     );
+    // Moves without their reasons: one agent's speech never reaches another's prompt.
     assert_eq!(
         board["last_moves"],
         json!([
-            { "agent": "kiko", "move": "pact", "target": "pixie", "amount": "20", "reason": "I pact." },
-            { "agent": "melody", "move": "hold", "target": null, "amount": "0", "reason": "I hold." }
+            { "agent": "kiko", "move": "pact", "target": "pixie", "amount": "20" },
+            { "agent": "melody", "move": "hold", "target": null, "amount": "0" }
         ])
+    );
+    let text = w.view(|c| c.get_brief()).unwrap();
+    assert!(!text.contains("I pact.") && !text.contains("I hold."));
+    assert_eq!(
+        w.view(|c| c.get_moves(2))[0].reason,
+        "I pact.",
+        "fans still read it"
     );
     // The brief is what the next requests embed.
     let request = w.view(|c| c.get_move_request("kiko".into())).unwrap();

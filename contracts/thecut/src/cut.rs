@@ -477,6 +477,7 @@ impl Contract {
         self.next_cut_at = checked(math::next_cut_after(
             scheduled_at,
             self.params.cut_interval.0,
+            self.params.move_lead.0,
             now,
         ));
         let (wallet_burned, creator_refund) = removed
@@ -522,10 +523,12 @@ impl Contract {
         if index > MOVE_HISTORY {
             self.moves.remove(&(index - MOVE_HISTORY));
         }
-        let brief = self
-            .season
-            .active
-            .then(|| self.build_brief(was_active.then_some(&record), &moves));
+        let brief = if self.season.active {
+            self.snapshot_wallets();
+            Some(self.build_brief(was_active.then_some(&record), &moves))
+        } else {
+            None
+        };
         self.brief.set(brief);
 
         // The public log.

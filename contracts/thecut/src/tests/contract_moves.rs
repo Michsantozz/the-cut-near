@@ -346,6 +346,20 @@ fn amounts_are_clamped_per_personality() {
 }
 
 #[test]
+fn a_gift_during_the_day_does_not_raise_the_cap() {
+    let mut w = day_one();
+    // A fan sends kiko 10,000 $CUT after the cut (an ft_transfer_call could still refund it).
+    w.buy("fan.near", near(2_000));
+    w.transfer("fan.near", &agent_account("kiko"), cut(10_000));
+    assert_eq!(w.wallet("kiko"), cut(11_000));
+    // The gambler's cap stays 50% of its wallet at the cut, less the fee: (1,000 - 10) / 2.
+    let kiko = w.submit("kiko", &answer("attack", Some("zed"), "5000", None));
+    assert_eq!(kiko.amount.0, cut(495));
+    assert_eq!(w.wallet("kiko"), cut(11_000) - cut(10) - cut(495));
+    w.assert_books();
+}
+
+#[test]
 fn generous_agents_cannot_attack() {
     let mut w = day_one();
     let view = w.submit("onyx", &answer("attack", Some("zed"), "100", None));
