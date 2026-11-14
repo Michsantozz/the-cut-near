@@ -375,7 +375,7 @@ function JournalRun({ rows, now }: { rows: ReceiptRow[]; now: Date }) {
 
 function JournalRow({ row, now }: { row: ReceiptRow; now: Date }) {
   return (
-    <li className="border-t-[1.5px] border-line py-[11px] lg:flex lg:min-h-14 lg:items-center lg:gap-3.5 lg:py-[7px]">
+    <li className="border-t-[1.5px] border-line py-[11px] transition-colors lg:flex lg:hover:bg-ink/5 lg:min-h-14 lg:items-center lg:gap-3.5 lg:py-[7px]">
       <div className="flex items-center gap-2 lg:contents">
         <Tag tag={row.tag} label={row.label} />
         <time dateTime={row.at.toISOString()} className="min-w-0 grow text-[12.5px] font-semibold whitespace-nowrap text-ink-3 lg:order-0 lg:w-[116px] lg:shrink-0 lg:grow-0 lg:text-[13px] lg:leading-[17px] lg:whitespace-normal">

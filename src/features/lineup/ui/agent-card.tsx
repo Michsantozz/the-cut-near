@@ -47,7 +47,7 @@ export function AgentCard({
       aria-labelledby={`agent-${agent.id}`}
       data-lowest={isLowest || undefined}
       className={cn(
-        "flex flex-col rounded-3xl border-2 bg-paper p-3 shadow-hard lg:p-3.5",
+        "flex flex-col rounded-3xl border-2 bg-paper p-3 shadow-hard transition-transform pointer-fine:hover:-translate-y-0.5 lg:p-3.5",
         isLowest ? "border-danger bg-danger-soft shadow-[4px_4px_0_var(--color-danger)]" : "border-ink",
       )}
     >
