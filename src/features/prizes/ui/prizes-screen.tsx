@@ -1,14 +1,16 @@
 import { cn } from "cn";
 import { Gift, Hourglass, Plus } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
+import { RobotTile } from "@/entities/robot";
 import { publicEnv } from "@/shared/config/public";
 import { formatAmount, formatCount, formatUsd, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 import { Button } from "@/shared/ui/button";
 import { WalletGatedLink } from "@/shared/wallet";
 
 import type { Breakdown } from "../model/breakdown";
-import type { Prizes } from "../server/load-prizes";
+import type { Pile, Prizes, PrizesPreview } from "../server/load-prizes";
 import { CollectCard } from "./collect-card";
 
 // Prizes (Earnings.dc.html, DeskEarnings.dc.html): what is ready to collect, how it was made, past slices.
@@ -65,7 +67,7 @@ function Steps({ b, names, now }: { b: Breakdown; names: Record<string, string>;
       <ol className="mt-2 lg:hidden">
         {steps.map((step, i) => (
           <li key={i} className={cn("flex h-[42px] items-center gap-3 text-sm", i > 0 && "border-t-[1.5px] border-canvas")}>
-            <span className={cn("flex size-[22px] shrink-0 items-center justify-center rounded-md border-2 border-ink text-xs font-extrabold", STEP_BG[i])}>{i + 1}</span>
+            <span className={cn("flex size-[22px] shrink-0 items-center justify-center rounded-3xs border-2 border-ink text-xs font-extrabold", STEP_BG[i])}>{i + 1}</span>
             <span className="min-w-0 grow truncate">{step.text}</span>
             <span className="font-extrabold whitespace-nowrap">{step.value}</span>
           </li>
@@ -74,7 +76,7 @@ function Steps({ b, names, now }: { b: Breakdown; names: Record<string, string>;
       <ol className="mt-3 hidden grid-cols-5 gap-3 lg:grid">
         {steps.map((step, i) => (
           <li key={i} className="rounded-2xl border-2 border-ink px-3 pt-3 pb-3">
-            <span className={cn("flex size-6 items-center justify-center rounded-md border-2 border-ink text-xs font-extrabold", STEP_BG[i])}>{i + 1}</span>
+            <span className={cn("flex size-[26px] items-center justify-center rounded-2xs border-2 border-ink text-xs font-extrabold", STEP_BG[i])}>{i + 1}</span>
             <p className="mt-2 text-sm leading-[19px] text-ink-2">{step.desk}</p>
             <p className="mt-2 font-heading text-[19px] font-extrabold whitespace-nowrap">{step.value}</p>
             <p className="mt-1 text-xs leading-4 text-ink-3">{step.sub}</p>
@@ -139,13 +141,13 @@ function Badge({ row, className }: { row: CutRow; className?: string }) {
   );
 }
 
-function PrizesSoFar({ data, sub }: { data: Prizes; sub: string }) {
+function PrizesSoFar({ total, sub }: { total: bigint; sub: string }) {
   return (
-    <section className="relative rounded-3xl border-2 border-ink bg-blue px-[18px] pt-3.5 pb-3.5 text-paper shadow-hard lg:px-5">
-      <p className="text-[13px] font-bold">Prizes so far</p>
-      <p className="font-heading text-[40px] leading-[44px] font-extrabold tracking-[-1px]">{cut2(data.total)} $CUT</p>
-      <p className="text-[13px] font-bold">{sub}</p>
-      <span aria-hidden="true" className="absolute top-3.5 right-4 flex size-[46px] items-center justify-center rounded-[14px] border-2 border-ink bg-lime text-ink">
+    <section className="relative rounded-3xl border-2 border-ink bg-blue px-4 py-3 text-paper shadow-hard lg:px-[18px] lg:py-4">
+      <p className="text-[13px] font-semibold text-[#dce6ff]">Prizes so far</p>
+      <p className="font-heading text-[38px] leading-[42px] font-extrabold lg:text-[40px] lg:leading-[44px]">{cut2(total)} $CUT</p>
+      <p className="text-[13px] font-semibold text-[#dce6ff]">{sub}</p>
+      <span aria-hidden="true" className="absolute top-3.5 right-3.5 flex size-[46px] items-center justify-center rounded-lg border-2 border-ink bg-lime text-ink lg:top-4 lg:right-4">
         <Gift className="size-[22px]" strokeWidth={2.6} />
       </span>
     </section>
@@ -154,74 +156,157 @@ function PrizesSoFar({ data, sub }: { data: Prizes; sub: string }) {
 
 function HowPrizesWork() {
   return (
-    <section aria-labelledby="how-title" className="rounded-3xl border-2 border-ink bg-paper px-[18px] pt-4 pb-4">
-      <h2 id="how-title" className="font-heading text-[19px] font-extrabold">
+    <section aria-labelledby="how-title" className="rounded-2xl border-2 border-ink bg-paper px-4 pt-3.5 pb-3.5">
+      <h2 id="how-title" className="font-heading text-lg font-extrabold">
         How prizes work
       </h2>
-      <ol className="mt-2 flex flex-col gap-2.5">
+      <ol className="mt-2.5 flex flex-col gap-[9px]">
         {RULES.map((rule, i) => (
-          <li key={i} className="flex gap-2.5 text-sm leading-[19px]">
-            <span className="flex size-[22px] shrink-0 items-center justify-center rounded-md border-2 border-ink text-xs font-extrabold">{i + 1}</span>
+          <li key={i} className="flex items-start gap-2.5 text-[13.5px] leading-[19px]">
+            <span className="flex size-[22px] shrink-0 items-center justify-center rounded-3xs border-2 border-ink bg-canvas text-[11px] font-extrabold">{i + 1}</span>
             {rule}
           </li>
         ))}
       </ol>
-      <Link href="/inside" className="mt-3 inline-block text-sm font-bold text-blue underline">
+      <Link href="/inside" className="mt-3 inline-block text-[13.5px] font-bold text-blue underline">
         How the cut works
       </Link>
     </section>
   );
 }
 
+/** The stage's piles now, highest first: the lowest is cut next, the viewer's robot is marked. */
+function PilesNow({ piles, mine, when }: { piles: Pile[]; mine: string | null; when: string }) {
+  if (piles.length === 0) return null;
+  const lowest = piles.at(-1)?.id;
+  return (
+    <section aria-labelledby="piles-title" className="rounded-3xl border-2 border-ink bg-paper px-[22px] pt-[18px] pb-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="piles-title" className="font-heading text-[22px] font-extrabold">
+          The {formatCount(piles.length)} piles now
+        </h2>
+        <p className="text-[13px] font-semibold text-ink-3">$CUT saved · lowest is cut {when}</p>
+      </div>
+      <ol className="mt-3.5 grid gap-3" style={{ gridTemplateColumns: `repeat(${piles.length}, minmax(0, 1fr))` }}>
+        {piles.map((robot) => {
+          const low = robot.id === lowest;
+          const yours = robot.id === mine;
+          return (
+            <li key={robot.id} className="relative min-w-0 text-center">
+              <Link href={`/robots/${robot.id}`} className="block rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+                <RobotTile
+                  id={robot.id}
+                  name={robot.name}
+                  className={cn("aspect-square size-auto w-full rounded-xl text-2xl", low && "border-dashed border-danger", yours && "border-3")}
+                />
+                {(low || yours) && (
+                  <span
+                    className={cn(
+                      "absolute top-1.5 left-1.5 rounded-full px-[7px] text-[10.5px] leading-[17px] font-extrabold",
+                      low ? "bg-ink text-paper" : "border-[1.5px] border-ink bg-lime",
+                    )}
+                  >
+                    {low ? "LOWEST" : "YOURS"}
+                  </span>
+                )}
+                <span className="mt-[7px] block truncate text-[12.5px] font-bold">{robot.name}</span>
+                <span className="block text-[11.5px] font-semibold whitespace-nowrap text-ink-3">{cut0(robot.pile)}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+type WaitingProps = { saved: Prizes["saved"] | null; nextCut: PrizesPreview["nextCut"]; now: Date };
+
 /** Nothing to collect: saved and waiting for the cut (`empty`), or nothing saved (`locked`). */
-function Waiting({ data, now }: { data: Prizes; now: Date }) {
-  const saved = data.saved.total > 0n;
-  const at = data.nextCut.at;
+function Waiting({ saved: save, nextCut, now }: WaitingProps) {
+  const saved = save !== null && save.total > 0n;
+  const at = nextCut.at;
   const when = `${dayWord(now, at, true)} at ${formatUtcTime(at)} UTC`;
   const steps = saved
     ? [
-        `${when} the lowest pile is cut.${data.nextCut.lowestName ? ` ${data.nextCut.lowestName} is lowest now.` : ""}`,
+        `${when} the lowest pile is cut.${nextCut.lowestName ? ` ${nextCut.lowestName} is lowest now.` : ""}`,
         "Half its pile burns. The other half plus the day’s fees is the prize, in 9 equal slices.",
-        `If ${data.saved.robotName} survives, you share its slice with its savers. If it is cut, half your save burns.`,
+        `If ${save.robotName} survives, you share its slice with its savers. If it is cut, half your save burns.`,
       ]
     : [
         "Save $CUT on a robot. It stays locked until the next cut.",
-        "Every day at 18:00 UTC the lowest pile is cut: half burns, half plus the day’s 1% fees is the prize.",
+        `Every day at ${formatUtcTime(at)} UTC the lowest pile is cut: half burns, half plus the day’s 1% fees is the prize.`,
         "95% goes to savers in 9 equal slices, one per surviving robot; small piles pay more per $CUT. 5% goes to creators.",
       ];
+  const chip = saved
+    ? `You saved ${cut0(save.total)} on ${save.robotName}`
+    : `Paid every day, after the ${formatUtcTime(at)} UTC cut`;
   return (
-    <section className="rounded-3xl border-2 border-ink bg-paper px-[18px] pt-4 pb-[18px] shadow-hard-lg">
-      <div className="flex items-center gap-2.5">
-        <span aria-hidden="true" className={cn("flex size-8 items-center justify-center rounded-lg border-2 border-ink", saved ? "bg-sky" : "bg-lime")}>
-          {saved ? <Hourglass className="size-4" strokeWidth={2.6} /> : <Gift className="size-4" strokeWidth={2.6} />}
+    <section className="rounded-3xl border-2 border-ink bg-paper px-4 py-3.5 shadow-hard lg:px-[22px] lg:py-5">
+      <div className="flex flex-wrap items-center gap-2.5 lg:gap-3">
+        <span aria-hidden="true" className={cn("flex size-[34px] items-center justify-center rounded-sm border-2 border-ink lg:size-10 lg:rounded-md", saved ? "bg-sky" : "bg-lime")}>
+          {saved ? <Hourglass className="size-[18px] lg:size-5" strokeWidth={2.6} /> : <Gift className="size-[18px] lg:size-5" strokeWidth={2.6} />}
         </span>
-        <h2 className="font-heading text-xl font-extrabold">{saved ? "Nothing to collect yet" : "Prizes are for savers"}</h2>
+        <h2 className="font-heading text-xl font-extrabold lg:text-[26px]">{saved ? "Nothing to collect yet" : "Prizes are for savers"}</h2>
+        <p className="hidden rounded-full border-2 border-ink bg-lime px-3 py-1 text-[13px] font-bold whitespace-nowrap lg:ml-1.5 lg:block">{chip}</p>
       </div>
-      <p className="mt-2 inline-flex rounded-full border-2 border-ink bg-lime px-2.5 py-0.5 text-xs font-extrabold">
-        {saved ? `You saved ${cut0(data.saved.total)} on ${data.saved.robotName}` : `Paid every day, after the ${formatUtcTime(at)} UTC cut`}
-      </p>
-      <ol className="mt-3 flex flex-col gap-2.5">
+      <p className="mt-1.5 inline-block rounded-full border-2 border-ink bg-lime px-2.5 py-1 text-xs font-bold lg:hidden">{chip}</p>
+      <ol className="mt-3 flex flex-col gap-2.5 lg:mt-4 lg:grid lg:grid-cols-3 lg:gap-3.5">
         {steps.map((step, i) => (
-          <li key={i} className="flex gap-2.5 text-[15px] leading-[21px]">
-            <span className="flex size-[22px] shrink-0 items-center justify-center rounded-md border-2 border-ink text-xs font-extrabold">{i + 1}</span>
+          <li key={i} className="flex items-start gap-2.5 text-sm leading-5 lg:rounded-xl lg:border-2 lg:border-ink lg:bg-[#f6f7fb] lg:px-3.5 lg:py-3">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-2xs border-2 border-ink bg-canvas text-xs font-extrabold lg:size-[26px] lg:bg-paper">{i + 1}</span>
             {step}
           </li>
         ))}
       </ol>
       {saved ? (
-        <Button asChild variant="outline" className="mt-4 h-11 rounded-xl px-4 text-[15px]">
+        <Button asChild variant="outline" className="mt-3.5 h-[42px] rounded-md px-3.5 text-sm font-bold lg:mt-4 lg:h-11 lg:rounded-[13px] lg:px-[18px] lg:font-extrabold">
           <Link href="/inside">How the cut works</Link>
         </Button>
       ) : (
-        <Button asChild variant="primary" elevated className="mt-4 h-[52px] w-full rounded-2xl text-base">
+        <Button asChild variant="primary" elevated className="mt-3.5 h-[50px] w-full rounded-xl text-[15px] font-bold lg:mt-4 lg:h-12 lg:w-auto lg:px-6 lg:font-extrabold">
           <WalletGatedLink href="/buy">
-            <Plus aria-hidden="true" className="size-[18px]" strokeWidth={2.8} />
-            Buy $CUT
+            <Plus aria-hidden="true" className="size-[18px]" strokeWidth={2.6} />
+            Buy $CUT · from $10
           </WalletGatedLink>
         </Button>
       )}
     </section>
   );
+}
+
+/** Phone: title, the total, the main cards. Laptop: the main cards next to the total and how prizes work. */
+function Layout({ sub, soFar, main, rows }: { sub: string; soFar: { total: bigint; sub: string; phone: boolean }; main: ReactNode; rows: CutRow[] }) {
+  return (
+    <>
+      <div className="mx-auto max-w-[640px] px-5 pb-6 lg:hidden">
+        <h2 className="pt-4 font-heading text-[32px] leading-9 font-extrabold tracking-[-1px]">Prizes</h2>
+        <p className="mt-0.5 text-sm text-ink-3">{sub}</p>
+        <div className="mt-3 flex flex-col gap-3">
+          {soFar.phone && <PrizesSoFar total={soFar.total} sub={soFar.sub} />}
+          {main}
+          <YourCuts rows={rows} className="mt-1" />
+        </div>
+      </div>
+      <div className="hidden gap-6 px-8 pt-1 pb-7 lg:flex">
+        <div className="flex min-w-0 grow flex-col gap-4">{main}</div>
+        <div className="flex w-[340px] shrink-0 flex-col gap-4">
+          <PrizesSoFar total={soFar.total} sub={soFar.sub} />
+          {rows.length > 0 && (
+            <div className="rounded-3xl border-2 border-ink bg-paper px-[18px] pt-3.5 pb-2">
+              <YourCuts rows={rows} />
+            </div>
+          )}
+          <HowPrizesWork />
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** The page's subtitle, which the laptop header shows: a member's share, or how savers share for anyone else. */
+export function prizesSub(data: Prizes | null): string {
+  return data && (data.claimable > 0n || data.saved.total > 0n) ? "Your share of each day’s cut" : "How savers share each day’s cut";
 }
 
 export function PrizesScreen({ data }: { data: Prizes }) {
@@ -237,7 +322,8 @@ export function PrizesScreen({ data }: { data: Prizes }) {
     rows.push({ key: "ready", title: `${dayWord(now, b.at, true)} · ${formatUtcDate(b.at)}`, amount: `${cut2(data.claimable)} $CUT`, sub: cutName ? `${cutName} was cut` : `Cut #${b.cutIndex}`, badge: "Ready", badgeTone: "ready" });
   for (const past of data.past.slice(0, 3))
     rows.push({ key: past.key, title: formatUtcDate(past.at), amount: `${cut2(past.amount)} $CUT`, sub: "Collected", badge: "In wallet", badgeTone: "done", href: past.href });
-  if (data.keep || data.saved.total > 0n)
+  // Nothing paid yet: the design shows no cuts list, only the waiting card.
+  if ((ready || data.past.length > 0) && (data.keep || data.saved.total > 0n))
     rows.push({
       key: "next",
       title: `${dayWord(now, data.nextCut.at, true)} · ${nextDay}`,
@@ -268,71 +354,32 @@ export function PrizesScreen({ data }: { data: Prizes }) {
       {b && <Steps b={b} names={data.names} now={now} />}
     </>
   ) : (
-    <Waiting data={data} now={now} />
-  );
-
-  return (
     <>
-      <div className="mx-auto max-w-[640px] px-5 pb-6 lg:hidden">
-        <h2 className="pt-4 font-heading text-[34px] leading-[38px] font-extrabold tracking-[-0.8px]">Prizes</h2>
-        <p className="text-[15px] text-ink-3">{ready || data.saved.total > 0n ? "Your share of each day’s cut" : "How savers share each day’s cut"}</p>
-        <div className="mt-3 flex flex-col gap-3">
-          {!ready && <PrizesSoFar data={data} sub={soFarSub} />}
-          {main}
-          <YourCuts rows={rows} className="mt-1" />
-        </div>
-      </div>
-      <div className="hidden gap-6 px-8 pt-1 pb-7 lg:flex">
-        <div className="flex min-w-0 grow flex-col gap-4">{main}</div>
-        <div className="flex w-[340px] shrink-0 flex-col gap-4">
-          <PrizesSoFar data={data} sub={soFarSub} />
-          {rows.length > 0 && (
-            <div className="rounded-3xl border-2 border-ink bg-paper px-[18px] pt-3.5 pb-2">
-              <YourCuts rows={rows} />
-            </div>
-          )}
-          <HowPrizesWork />
-        </div>
+      <Waiting saved={data.saved} nextCut={data.nextCut} now={now} />
+      <div className="hidden lg:block">
+        <PilesNow piles={data.piles} mine={data.saved.total > 0n ? data.saved.robotId : null} when={pilesWhen(now, data.nextCut.at)} />
       </div>
     </>
   );
+
+  return <Layout sub={prizesSub(data)} soFar={{ total: data.total, sub: soFarSub, phone: !ready }} main={main} rows={rows} />;
 }
 
-/** A visitor: how prizes work, and a way in. */
-export function PrizesVisitor() {
-  return (
-    <div className="mx-auto max-w-[640px] px-5 pb-6 lg:max-w-none lg:px-8 lg:pt-1">
-      <h2 className="pt-4 font-heading text-[34px] leading-[38px] font-extrabold tracking-[-0.8px] lg:hidden">Prizes</h2>
-      <p className="text-[15px] text-ink-3 lg:hidden">How savers share each day’s cut</p>
-      <div className="mt-3 flex flex-col gap-4 lg:mt-0 lg:flex-row lg:items-start lg:gap-6">
-        <div className="lg:grow">
-          <section className="rounded-3xl border-2 border-ink bg-paper px-[18px] pt-4 pb-[18px] shadow-hard-lg">
-            <div className="flex items-center gap-2.5">
-              <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-lg border-2 border-ink bg-lime">
-                <Gift className="size-4" strokeWidth={2.6} />
-              </span>
-              <h2 className="font-heading text-xl font-extrabold">Prizes are for savers</h2>
-            </div>
-            <ol className="mt-3 flex flex-col gap-2.5">
-              {RULES.slice(1).map((rule, i) => (
-                <li key={i} className="flex gap-2.5 text-[15px] leading-[21px]">
-                  <span className="flex size-[22px] shrink-0 items-center justify-center rounded-md border-2 border-ink text-xs font-extrabold">{i + 1}</span>
-                  {rule}
-                </li>
-              ))}
-            </ol>
-            <Button asChild variant="primary" elevated className="mt-4 h-[52px] w-full rounded-2xl text-base lg:w-auto lg:px-7">
-              <WalletGatedLink href="/buy">
-                <Plus aria-hidden="true" className="size-[18px]" strokeWidth={2.8} />
-                Buy $CUT
-              </WalletGatedLink>
-            </Button>
-          </section>
-        </div>
-        <div className="lg:w-[340px] lg:shrink-0">
-          <HowPrizesWork />
-        </div>
+/** A visitor: how prizes work, the piles now, and a way in. */
+export function PrizesVisitor({ data }: { data: PrizesPreview }) {
+  const now = new Date(data.renderedAt);
+  const main = (
+    <>
+      <Waiting saved={null} nextCut={data.nextCut} now={now} />
+      <div className="hidden lg:block">
+        <PilesNow piles={data.piles} mine={null} when={pilesWhen(now, data.nextCut.at)} />
       </div>
-    </div>
+    </>
   );
+  return <Layout sub={prizesSub(null)} soFar={{ total: 0n, sub: "You hold no $CUT yet", phone: true }} main={main} rows={[]} />;
+}
+
+function pilesWhen(now: Date, at: Date): string {
+  const day = relativeUtcDay(now, at);
+  return `${day ?? formatUtcDate(at)} at ${formatUtcTime(at)} UTC`;
 }

@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { getNextCut } from "@/entities/cut/server";
 import { getJournal } from "@/entities/journal/server";
 import { getParams, getPool, getUsdCentsPerNear } from "@/entities/market/server";
+import { rankByPile, type Robot } from "@/entities/robot";
 import { getBench, getStage } from "@/entities/robot/server";
 import { getClaimable, getSaves, isStorageRegistered } from "@/entities/save/server";
 import { publicEnv } from "@/shared/config/public";
@@ -17,8 +18,17 @@ const ONE_NEAR = 10n ** 24n;
 
 export type PastPrize = { key: string; at: Date; amount: bigint; href: string };
 
-export type Prizes = {
+/** A robot's pile on the stage now, highest first; the last one is the lowest. */
+export type Pile = { id: string; name: string; pile: bigint };
+
+/** What anyone sees before saving: the next cut and the piles now. */
+export type PrizesPreview = {
   renderedAt: number;
+  nextCut: { index: number; at: Date; lowestName: string | null };
+  piles: Pile[];
+};
+
+export type Prizes = PrizesPreview & {
   accountId: string;
   claimable: bigint;
   claimableUsdCents: bigint | null;
@@ -31,9 +41,8 @@ export type Prizes = {
   /** The save that keeps riding into the next cut unless the viewer takes it back with the collect. */
   keep: { robotId: string; robotName: string; amount: bigint } | null;
   /** Total saved now, and the robot with the biggest save, for the empty state. */
-  saved: { total: bigint; robotName: string | null };
+  saved: { total: bigint; robotId: string | null; robotName: string | null };
   registered: boolean;
-  nextCut: { index: number; at: Date; lowestName: string | null };
   /** Claims already collected, newest first. */
   past: PastPrize[];
 };
@@ -69,10 +78,9 @@ export async function loadPrizes(accountId: string): Promise<Prizes> {
   const biggest = [...saves].sort((a, b) => (a.amount === b.amount ? 0 : a.amount > b.amount ? -1 : 1))[0];
   const collected = claims.entries.reduce((sum, entry) => sum + (entry.amount ?? 0n), 0n);
   const priceYocto = pool.cutReserve > 0n ? (pool.nearReserve * ONE_CUT) / pool.cutReserve : 0n;
-  const lowest = [...stage].sort((a, b) => (a.pile === b.pile ? 0 : a.pile < b.pile ? -1 : 1))[0];
 
   return {
-    renderedAt: Date.now(),
+    ...preview(nextCut, stage),
     accountId,
     claimable,
     claimableUsdCents: usd === null ? null : ((claimable * priceYocto) / ONE_CUT * usd * 2n + ONE_NEAR) / (2n * ONE_NEAR),
@@ -81,9 +89,24 @@ export async function loadPrizes(accountId: string): Promise<Prizes> {
     breakdown,
     names,
     keep: keepSave ? { robotId: keepSave.robotId, robotName: names[keepSave.robotId] ?? keepSave.robotId, amount: keepSave.amount } : null,
-    saved: { total: saves.reduce((sum, save) => sum + save.amount, 0n), robotName: biggest ? (names[biggest.robotId] ?? biggest.robotId) : null },
+    saved: {
+      total: saves.reduce((sum, save) => sum + save.amount, 0n),
+      robotId: biggest?.robotId ?? null,
+      robotName: biggest ? (names[biggest.robotId] ?? biggest.robotId) : null,
+    },
     registered,
-    nextCut: { index: nextCut.index, at: nextCut.at, lowestName: lowest?.name ?? null },
     past: claims.entries.map((entry) => ({ key: entry.id, at: entry.at, amount: entry.amount ?? 0n, href: explorerTxUrl(publicEnv.network, entry.txHash) })),
   };
+}
+
+/** A visitor's prizes page: no account, only the next cut and the piles now. Request-time only. */
+export async function loadPrizesPreview(): Promise<PrizesPreview> {
+  await connection();
+  const [nextCut, stage] = await Promise.all([getNextCut(), getStage()]);
+  return preview(nextCut, stage);
+}
+
+function preview(nextCut: { index: number; at: Date }, stage: readonly Robot[]): PrizesPreview {
+  const piles = rankByPile(stage).map((robot) => ({ id: robot.id, name: robot.name, pile: robot.pile }));
+  return { renderedAt: Date.now(), nextCut: { index: nextCut.index, at: nextCut.at, lowestName: piles.at(-1)?.name ?? null }, piles };
 }
