@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
 
 import type { ContractCall } from "./contract-call";
 import type { NearNetwork } from "./network";
@@ -30,8 +30,18 @@ export type WalletContextValue = {
 
 export const WalletContext = createContext<WalletContextValue | null>(null);
 
+const subscribeNothing = () => () => {};
+
+/**
+ * The wallet, as this component may render it. While a component hydrates it sees `loading`, the state the
+ * server rendered: a page streamed in after the wallet loaded would otherwise hydrate with `signed-out` over
+ * server HTML made with `loading` (a hydration mismatch). It re-renders with the real state right after.
+ */
 export function useWallet(): WalletContextValue {
   const value = useContext(WalletContext);
-  if (!value) throw new Error("useWallet must be used inside <WalletProvider>");
-  return value;
+  // React reads the server snapshot while hydrating, the client one otherwise (and after hydration).
+  const hydrated = useSyncExternalStore(subscribeNothing, () => true, () => false);
+  const shown = useMemo(() => (value && !hydrated ? { ...value, status: "loading" as const, accountId: null } : value), [value, hydrated]);
+  if (!shown) throw new Error("useWallet must be used inside <WalletProvider>");
+  return shown;
 }

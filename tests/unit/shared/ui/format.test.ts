@@ -36,6 +36,14 @@ describe("formatAmount", () => {
     expect(formatAmount(units(999_999) + units(1) / 2n, { maxFractionDigits: 0 })).toBe("1,000,000");
   });
 
+  it("rounds down when asked, so a limit never reads higher than it is", () => {
+    const limit = units(592) + units(1) / 2n; // 592.5
+    expect(formatAmount(limit, { maxFractionDigits: 0, rounding: "down" })).toBe("592");
+    expect(formatAmount(limit, { maxFractionDigits: 1, rounding: "down" })).toBe("592.5");
+    expect(formatAmount(units(1) - 1n, { maxFractionDigits: 2, rounding: "down" })).toBe("0.99");
+    expect(formatAmount(-limit, { maxFractionDigits: 0, rounding: "down" })).toBe("-592");
+  });
+
   it("formats other decimals, like NEAR's 24", () => {
     expect(formatAmount(5n * 10n ** 23n, { decimals: 24 })).toBe("0.5");
   });
@@ -61,6 +69,11 @@ describe("formatSignificant", () => {
     expect(formatSignificant(0n)).toBe("0");
     expect(formatSignificant(12_345n * 10n ** 15n, { maxFractionDigits: 2 })).toBe("12.35");
     expect(formatSignificant(units(1_052_400))).toBe("1,052,400");
+  });
+
+  it("keeps a 0.1 $CUT boo at 0.1 when the rest is shown in whole $CUT", () => {
+    expect(formatSignificant(units(1) / 10n, { maxFractionDigits: 0 })).toBe("0.1");
+    expect(formatSignificant(units(41_200), { maxFractionDigits: 0 })).toBe("41,200");
   });
 });
 

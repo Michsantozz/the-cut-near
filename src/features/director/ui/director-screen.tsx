@@ -425,7 +425,20 @@ function DoneView({ screen }: { screen: Screen }) {
 
 /** Every line the Director (and the agents) signed, each with its proof. */
 function LinesFeed({ lines, names }: { lines: DirectorLineView[]; names: Record<string, string> }) {
-  if (lines.length === 0) return null;
+  // No signed line stored yet: say so, instead of promising narration the page cannot show.
+  if (lines.length === 0) {
+    return (
+      <section aria-labelledby="lines-title" className="rounded-3xl border-2 border-dashed border-ink/40 bg-paper px-4 py-3.5 lg:px-[22px] lg:py-4">
+        <h2 id="lines-title" className="font-heading text-lg font-extrabold lg:text-[22px]">
+          No line yet
+        </h2>
+        <p className="mt-1 text-[13.5px] leading-[19px] font-semibold text-ink-3 lg:text-[14.5px] lg:leading-[21px]">
+          The Director has not signed a line yet. Only lines NEAR AI wrote and signed inside sealed hardware show up here, each with its proof, so for now
+          there is nothing to read.
+        </p>
+      </section>
+    );
+  }
   const nameOf = (id: string | null) => (id ? (names[id] ?? id) : null);
 
   return (

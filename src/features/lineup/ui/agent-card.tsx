@@ -103,7 +103,8 @@ export function AgentCard({
       </div>
       {/* On a phone the breakdown and the heir line stay on the agent's page, except for the agent on the cut line. */}
       <ScoreBreakdown agent={agent} className={cn(!isLowest && "max-sm:hidden")} />
-      <p className={cn("mt-0.5 truncate text-[12px] leading-[17px] font-semibold text-ink-3", !isLowest && "max-sm:hidden")}>
+      {/* Wraps instead of truncating: the bounty at the end is the part a saver needs to read. */}
+      <p className={cn("mt-0.5 text-[12px] leading-[17px] font-semibold text-pretty text-ink-3", !isLowest && "max-sm:hidden")}>
         {heir ? `If cut, its wallet goes to ${heir}` : "No heir: if cut, its wallet burns"}
         {agent.bounty > 0n && ` · ${cut(agent.bounty)} $CUT rescue bounty`}
       </p>

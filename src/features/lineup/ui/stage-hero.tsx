@@ -8,7 +8,7 @@ import { formatCount, formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
 
 import type { Lineup } from "../server/load-lineup";
-import { cut, shortName } from "./copy";
+import { cut, cutSmall, shortName } from "./copy";
 import { CutClocks } from "./countdown";
 
 /** The game in one card: the agents standing on it, what happens today, and the season's numbers. */
@@ -75,7 +75,7 @@ export function StageHero({ lineup }: { lineup: Lineup }) {
 export function CutLineCard({ lineup, className }: { lineup: Lineup; className?: string }) {
   const { lowest, next, gap } = lineup.board;
   if (!lowest) return null;
-  const pressure = [lowest.damage > 0n && `${cut(lowest.damage)} attack damage`, lowest.boos > 0n && `${cut(lowest.boos)} in boos`].filter(Boolean).join(" and ");
+  const pressure = [lowest.damage > 0n && `${cutSmall(lowest.damage)} attack damage`, lowest.boos > 0n && `${cutSmall(lowest.boos)} in boos`].filter(Boolean).join(" and ");
 
   return (
     <section aria-labelledby="cutline-title" className={cn("overflow-hidden rounded-3xl border-2 border-ink bg-violet text-paper shadow-hard lg:grid lg:grid-cols-[180px_minmax(0,1fr)_minmax(0,300px)] xl:grid-cols-[180px_minmax(0,1fr)_380px]", className)}>

@@ -9,21 +9,26 @@ export type AmountFormat = {
   maxFractionDigits?: number;
   /** Trailing zeros kept up to this many digits. Defaults to 0. */
   minFractionDigits?: number;
+  /**
+   * "half-up" (default) or "down": toward zero, for limits the contract enforces, so "up to 592.5"
+   * never reads as a higher "593".
+   */
+  rounding?: "half-up" | "down";
 };
 
 const groupThousands = (digits: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
 /** `182_400 × 10^18` → "182,400"; `674.2 × 10^18` → "674.2"; with `minFractionDigits: 2` → "674.20". */
 export function formatAmount(value: bigint, format: AmountFormat = {}): string {
-  const { decimals = CUT_DECIMALS, maxFractionDigits = 2, minFractionDigits = 0 } = format;
+  const { decimals = CUT_DECIMALS, maxFractionDigits = 2, minFractionDigits = 0, rounding = "half-up" } = format;
   if (minFractionDigits > maxFractionDigits) throw new RangeError("minFractionDigits is above maxFractionDigits");
 
   const negative = value < 0n;
   const abs = negative ? -value : value;
   const unit = 10n ** BigInt(decimals);
   const keep = 10n ** BigInt(maxFractionDigits);
-  // Half up: add half a unit before the integer division.
-  const scaled = (abs * keep * 2n + unit) / (unit * 2n);
+  // Half up: add half a unit before the integer division. Down: plain integer division.
+  const scaled = rounding === "down" ? (abs * keep) / unit : (abs * keep * 2n + unit) / (unit * 2n);
 
   const whole = groupThousands((scaled / keep).toString());
   const fraction = (scaled % keep).toString().padStart(maxFractionDigits, "0");
