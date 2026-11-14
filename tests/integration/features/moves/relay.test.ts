@@ -8,7 +8,7 @@ import { FakeChain } from "../../../msw/near-rpc";
 import { server } from "../../../msw/server";
 
 const RPC = "https://rpc.moves.test";
-const CONTRACT = "thecut.testnet";
+const CONTRACT = "thecut-daily.testnet";
 const KEEPER = "keeper.testnet";
 const SECRET = "cron-secret-0123456789";
 const keeperKey = KeyPair.fromRandom("ed25519");

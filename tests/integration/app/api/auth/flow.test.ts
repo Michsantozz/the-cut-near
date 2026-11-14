@@ -22,7 +22,7 @@ vi.mock("@/shared/db/client", () => ({
 
 const ORIGIN = "https://thecut.app";
 const RPC = "https://rpc.auth.test";
-const CONTRACT = "thecut.testnet";
+const CONTRACT = "thecut-daily.testnet";
 
 let chain: FakeChain;
 

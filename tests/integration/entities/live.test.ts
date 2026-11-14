@@ -29,7 +29,7 @@ const save = (n: number, agentId: string, amount: bigint, at: Date): NewJournalR
   txHash: `T${n}`,
   blockHeight: 1_000 + n,
   blockTimestamp: at,
-  emitter: "thecut.testnet",
+  emitter: "thecut-daily.testnet",
   standard: "thecut",
   version: "1.0.0",
   event: "save",
@@ -52,7 +52,7 @@ beforeEach(async () => {
   vi.stubEnv("DATABASE_URL", "postgres://unused:unused@localhost:5432/unused");
   vi.stubEnv("SESSION_SECRET", "s".repeat(32));
   vi.stubEnv("NEAR_RPC_URL", RPC);
-  const chain = new FakeChain("thecut.testnet")
+  const chain = new FakeChain("thecut-daily.testnet")
     .view("get_stage", { value: [agent("pixie", 182_400n * CUT), agent("kiko", 23_600n * CUT)] })
     .view("get_bench", { value: [agent("chartwise", 88_400n * CUT, "bench")] })
     .view("get_agent", (args) => ({ value: args.id === "kiko" ? agent("kiko", 23_600n * CUT) : null }))
