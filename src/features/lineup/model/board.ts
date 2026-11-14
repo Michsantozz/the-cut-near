@@ -1,28 +1,10 @@
-import type { Params } from "@/entities/market";
-import type { Robot } from "@/entities/robot";
+import { paysPer100, sliceIfCut, type SplitParams } from "@/entities/cut";
+import { compareRobots, rankByPile, type Robot } from "@/entities/robot";
 import { units } from "@/shared/lib/amount";
 
 // The cut board: robots ranked by pile, who is cut if the cut ran now, and what saving pays (SPEC-v19 §1–2, §6).
 
-const BPS = 10_000n;
 const ONE_CUT = units(1);
-const HUNDRED_CUT = units(100);
-
-/**
- * Higher pile first. Tie on pile: the newer robot is lower, because the contract cuts the newer one.
- * Same pile and same age: by id, only so the order on screen stays stable.
- */
-export function compareRobots(a: Robot, b: Robot): number {
-  if (a.pile !== b.pile) return a.pile > b.pile ? -1 : 1;
-  const age = a.joinedAt.getTime() - b.joinedAt.getTime();
-  if (age !== 0) return age;
-  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-}
-
-/** The stage ranked by pile, highest first; the last robot is the one the cut takes. */
-export function rankByPile(stage: readonly Robot[]): Robot[] {
-  return [...stage].sort(compareRobots);
-}
 
 /**
  * $CUT `robot` must add to rank above `other`. Zero when it already does.
@@ -34,24 +16,6 @@ export function gapToPass(robot: Robot, other: Robot): bigint {
   const winsTie = robot.joinedAt.getTime() < other.joinedAt.getTime();
   if (diff < 0n || (diff === 0n && winsTie)) return 0n;
   return winsTie ? diff : diff + ONE_CUT;
-}
-
-/**
- * One survivor's equal slice if the cut ran now: the lowest pile minus its burned part, plus the fees so far,
- * times the savers' share, split into one slice per surviving robot.
- */
-export function sliceIfCutNow(lowestPile: bigint, feesSoFar: bigint, params: Pick<Params, "burnBps" | "saversBps" | "stageSize">): bigint {
-  const survivors = BigInt(params.stageSize - 1);
-  if (survivors <= 0n) return 0n;
-  const burned = (lowestPile * BigInt(params.burnBps)) / BPS;
-  const prize = lowestPile - burned + feesSoFar;
-  return (prize * BigInt(params.saversBps)) / (BPS * survivors);
-}
-
-/** What 100 $CUT saved on a pile would get from its slice. Null for an empty pile: its slice burns. */
-export function paysPer100(slice: bigint, pile: bigint): bigint | null {
-  if (pile <= 0n) return null;
-  return (slice * HUNDRED_CUT) / pile;
 }
 
 /** Width of a pile bar as a percent of the top pile, never thinner than `min`. */
@@ -83,11 +47,11 @@ export type Board = {
   totalSaved: bigint;
 };
 
-export function buildBoard(stage: readonly Robot[], feesSoFar: bigint, params: Pick<Params, "burnBps" | "saversBps" | "stageSize">): Board {
+export function buildBoard(stage: readonly Robot[], feesSoFar: bigint, params: SplitParams): Board {
   const ranked = rankByPile(stage);
   const lowest = ranked.at(-1) ?? null;
   const next = ranked.length > 1 ? ranked[ranked.length - 2] : null;
-  const slice = lowest ? sliceIfCutNow(lowest.pile, feesSoFar, params) : 0n;
+  const slice = lowest ? sliceIfCut(lowest.pile, feesSoFar, params) : 0n;
   return {
     entries: ranked.map((robot, index) => ({
       robot,

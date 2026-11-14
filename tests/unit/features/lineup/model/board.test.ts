@@ -1,21 +1,18 @@
 import { describe, expect, it } from "vitest";
 
+import { paysPer100, sliceIfCut } from "@/entities/cut";
 import { getNextCut } from "@/entities/cut/server";
 import { getParams } from "@/entities/market/server";
-import type { Robot } from "@/entities/robot";
+import { compareRobots, rankByPile, type Robot } from "@/entities/robot";
 import { getBench, getStage } from "@/entities/robot/server";
 import {
   barPercent,
   boardOrder,
   boardOrders,
   buildBoard,
-  compareRobots,
   dayOfCut,
   gapToPass,
-  paysPer100,
   rankBench,
-  rankByPile,
-  sliceIfCutNow,
 } from "@/features/lineup/model/board";
 import { units } from "@/shared/lib/amount";
 import { formatAmount } from "@/shared/ui/format";
@@ -103,25 +100,25 @@ describe("gap to pass", () => {
 describe("slice and pays per 100 saved", () => {
   it("is (lowest pile ÷ 2 + fees) × 95% ÷ 9 survivors", () => {
     // The design's sample cut: (11,800 + 5,020) × 0.95 ÷ 9 = 1,775.44
-    expect(formatAmount(sliceIfCutNow(units(23_600), units(5_020), params), { maxFractionDigits: 1 })).toBe("1,775.4");
+    expect(formatAmount(sliceIfCut(units(23_600), units(5_020), params), { maxFractionDigits: 1 })).toBe("1,775.4");
   });
 
   it("uses the fees so far, so the numbers are 'if the cut ran now'", () => {
     // (11,800 + 4,100) × 0.95 ÷ 9 = 1,678.33
-    expect(formatAmount(sliceIfCutNow(units(23_600), units(4_100), params))).toBe("1,678.33");
+    expect(formatAmount(sliceIfCut(units(23_600), units(4_100), params))).toBe("1,678.33");
   });
 
   it("follows the burn share instead of assuming half", () => {
-    const quarterBurn = sliceIfCutNow(units(1_000), 0n, { burnBps: 2_500, saversBps: 10_000, stageSize: 4 });
+    const quarterBurn = sliceIfCut(units(1_000), 0n, { burnBps: 2_500, saversBps: 10_000, stageSize: 4 });
     expect(quarterBurn).toBe(units(250));
   });
 
   it("is zero without survivors", () => {
-    expect(sliceIfCutNow(units(100), units(100), { ...params, stageSize: 1 })).toBe(0n);
+    expect(sliceIfCut(units(100), units(100), { ...params, stageSize: 1 })).toBe(0n);
   });
 
   it("pays slice ÷ pile × 100", () => {
-    const slice = sliceIfCutNow(units(23_600), units(5_020), params);
+    const slice = sliceIfCut(units(23_600), units(5_020), params);
     // The design's table (SPEC-v19 §2), which assumed 5,020 in fees.
     expect(pays(paysPer100(slice, units(182_400)))).toBe("0.97");
     expect(pays(paysPer100(slice, units(112_300)))).toBe("1.58");

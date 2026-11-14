@@ -1,6 +1,6 @@
-import type { CutRecord, NextCut } from "@/entities/cut";
+import { sliceIfCut, type CutRecord, type NextCut, type SplitParams } from "@/entities/cut";
 import type { Params } from "@/entities/market";
-import type { Robot } from "@/entities/robot";
+import { rankByPile, type Robot } from "@/entities/robot";
 import { countdownParts, formatCut, formatRatio, utcClock } from "./format";
 
 // What the Director is allowed to know, already formatted the way the design writes numbers.
@@ -47,7 +47,7 @@ export type DayInput = {
   stage: Robot[];
   bench: Robot[];
   nextCut: NextCut;
-  params: Pick<Params, "burnBps" | "saversBps" | "stageSize">;
+  params: SplitParams;
   now: Date;
   /** The day's fees to compute the slice with. Defaults to the fees so far (`NextCut.prizeSoFar`); SPEC-v19 uses the 5,020 expected by 18:00. */
   fees?: bigint;
@@ -55,17 +55,9 @@ export type DayInput = {
 
 const HOUR = 3_600_000;
 
-/** The slice each survivor's savers share if `pile` is cut with `fees` in the pot. */
-export function sliceIfCut(pile: bigint, fees: bigint, params: DayInput["params"]): bigint {
-  const burned = (pile * BigInt(params.burnBps)) / 10_000n;
-  const prize = pile - burned + fees;
-  const savers = (prize * BigInt(params.saversBps)) / 10_000n;
-  return savers / BigInt(Math.max(1, params.stageSize - 1));
-}
-
 export function buildDayFacts(input: DayInput): DayFacts {
   const { nextCut, params, now } = input;
-  const byPile = [...input.stage].sort((a, b) => (a.pile === b.pile ? 0 : a.pile > b.pile ? -1 : 1));
+  const byPile = rankByPile(input.stage);
   const lowestRobot = byPile.find((robot) => robot.id === nextCut.lowestId) ?? byPile[byPile.length - 1];
   if (!lowestRobot || byPile.length < 2) throw new Error("The Director needs at least two robots on the stage.");
   const fees = input.fees ?? nextCut.prizeSoFar;
