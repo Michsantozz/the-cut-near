@@ -41,7 +41,7 @@ export const PERSONALITIES: Record<PersonalityId, Personality> = {
     spendBps: 2_000,
     mayAttack: true,
     mayAttackPartner: true,
-    limit: "20% a day, can betray a pact",
+    limit: "20% a day, may betray",
     promptLine: "You spend up to 20% a day, and you are the only kind that may attack an agent you have a pact with.",
   },
   generous: {
@@ -50,7 +50,7 @@ export const PERSONALITIES: Record<PersonalityId, Personality> = {
     spendBps: 4_000,
     mayAttack: false,
     mayAttackPartner: false,
-    limit: "40% a day, never attacks",
+    limit: "40% a day, no attacks",
     promptLine: "You spend up to 40% a day and you can never attack.",
   },
 };
