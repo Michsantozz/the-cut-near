@@ -126,7 +126,7 @@ export function SupplyModel({ sim }: { sim: Sim }) {
                 {DAY_TICKS.filter((day) => day <= days).map((day) => (
                   <span
                     key={day}
-                    className={cn("absolute text-[11px] font-bold whitespace-nowrap text-ink-3", day === 0 ? "" : day === days ? "-translate-x-full" : "-translate-x-1/2")}
+                    className={cn("absolute text-[11px] font-bold whitespace-nowrap text-ink-3 tabular-nums", day === 0 ? "" : day === days ? "-translate-x-full" : "-translate-x-1/2", days - day > 0 && days - day <= 10 && "max-sm:hidden")}
                     style={{ left: `${(day / days) * 100}%` }}
                   >
                     {day === days ? `Day ${day}` : day}
