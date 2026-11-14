@@ -1,10 +1,11 @@
 import { cn } from "cn";
 
-import { formatAmount } from "@/shared/ui/format";
+import { formatSignificant } from "@/shared/ui/format";
 
 import type { Agent } from "../model/types";
 
-const whole = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
+// Whole $CUT, except under 1: a 0.1 $CUT boo reads "0.1", never "0".
+const whole = (value: bigint) => formatSignificant(value, { maxFractionDigits: 0 });
 
 /** "41,200 pile − 0 boos − 1,400 damage": the parts of the score, the ones that hurt in red. */
 export function ScoreBreakdown({ agent, className }: { agent: Pick<Agent, "pile" | "boos" | "damage">; className?: string }) {

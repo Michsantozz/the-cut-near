@@ -1,9 +1,12 @@
-import { formatAmount, formatCount } from "@/shared/ui/format";
+import { formatAmount, formatCount, formatSignificant } from "@/shared/ui/format";
 
 import type { Lineup } from "../server/load-lineup";
 
 /** Whole $CUT for scores, piles and wallets: "38,201". Negative scores keep their sign. */
 export const cut = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
+
+/** Whole $CUT like `cut`, but an amount under 1 keeps its digits: a 0.1 $CUT boo reads "0.1", never "0". */
+export const cutSmall = (value: bigint) => formatSignificant(value, { maxFractionDigits: 0 });
 
 /** Balances and saves keep one decimal: "674.2". */
 export const cutFine = (value: bigint) => formatAmount(value, { maxFractionDigits: 1 });
