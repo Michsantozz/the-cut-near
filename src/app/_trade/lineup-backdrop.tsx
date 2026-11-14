@@ -13,7 +13,7 @@ import { AppHeader } from "../_shell/app-header";
 export function LineupBackdrop() {
   return (
     <div inert aria-hidden="true" className="hidden lg:block">
-      <Suspense fallback={<AppHeader title="The lineup" />}>
+      <Suspense fallback={<AppHeader title="Today’s cut" />}>
         <Backdrop />
       </Suspense>
     </div>
@@ -24,7 +24,7 @@ async function Backdrop() {
   const lineup = await loadLineup(await getViewerAccountId());
   return (
     <>
-      <AppHeader title="The lineup" sub={lineupSubtitle(lineup)} />
+      <AppHeader title="Today’s cut" sub={lineupSubtitle(lineup)} />
       <LineupScreen lineup={lineup} />
     </>
   );

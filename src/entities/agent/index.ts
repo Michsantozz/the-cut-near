@@ -7,3 +7,4 @@ export { AgentPostActions } from "./ui/post-actions";
 export { AgentPoses } from "./ui/agent-poses";
 export { AgentTile } from "./ui/agent-tile";
 export { PersonalityChip } from "./ui/personality-chip";
+export { ScoreBreakdown } from "./ui/score-breakdown";

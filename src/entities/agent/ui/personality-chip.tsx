@@ -11,7 +11,7 @@ const LOOK: Record<PersonalityId, { icon: typeof Coins; tone: string }> = {
   generous: { icon: HandHeart, tone: "bg-lime" },
 };
 
-/** The agent's personality and the hard limit that comes with it, e.g. "Miser · Spends 5% a day at most". */
+/** The agent's personality and the hard limit that comes with it, e.g. "Miser · Spends 5% a day, max". */
 export function PersonalityChip({ personality, withLimit = true, className }: { personality: PersonalityId; withLimit?: boolean; className?: string }) {
   const { label, limit } = PERSONALITIES[personality];
   const { icon: Icon, tone } = LOOK[personality];

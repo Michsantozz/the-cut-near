@@ -34,6 +34,15 @@ export function moveHeadline(move: Pick<Move, "move" | "target" | "amount">, nam
   }
 }
 
+/** The contract's note on a changed move, as a sentence: "downgraded: …" → "The contract downgraded it: …". */
+export function outcomeLine(outcome: string): string {
+  const [head, ...rest] = outcome.split(": ");
+  const why = rest.join(": ");
+  if (head === "downgraded" && why) return `The contract downgraded it to a hold: ${why}.`;
+  if (head === "cut down" && why) return `The contract cut the amount down: ${why}.`;
+  return `The contract changed it: ${outcome}.`;
+}
+
 /**
  * Today's move as a short card: what it does, the reason quoted in the agent's own voice, and a link to the
  * proof. A sample move says it was not signed; a live one links to its signature check on the agent's page.
@@ -50,7 +59,7 @@ export function MoveCard({ move, names, sample, className }: { move: Move; names
         <span className="min-w-0 text-[13px] leading-[17px] font-extrabold">{moveHeadline(move, names)}</span>
       </figcaption>
       <blockquote className="mt-1.5 text-[13px] leading-[18px] font-medium text-pretty text-ink-2">“{move.reason}”</blockquote>
-      {move.outcome && <p className="mt-1 text-[11.5px] leading-[15px] font-bold text-burn">The contract stepped in: {move.outcome}.</p>}
+      {move.outcome && <p className="mt-1 text-[11.5px] leading-[15px] font-bold text-burn">{outcomeLine(move.outcome)}</p>}
       <Link
         href={moveProofHref(move)}
         className="mt-1 inline-flex items-center gap-1 rounded-xs text-[10.5px] font-extrabold tracking-[0.04em] text-ink-3 uppercase outline-none hover:text-ink hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"

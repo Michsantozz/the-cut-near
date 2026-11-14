@@ -23,7 +23,7 @@ export const PERSONALITIES: Record<PersonalityId, Personality> = {
     spendBps: 500,
     mayAttack: true,
     mayAttackPartner: false,
-    limit: "Spends 5% a day at most",
+    limit: "Spends 5% a day, max",
     promptLine: "You hoard. You spend at most 5% of your wallet a day.",
   },
   gambler: {
@@ -32,7 +32,7 @@ export const PERSONALITIES: Record<PersonalityId, Personality> = {
     spendBps: 5_000,
     mayAttack: true,
     mayAttackPartner: false,
-    limit: "Can bet half its wallet a day",
+    limit: "Bets up to 50% a day",
     promptLine: "You love big swings. You may spend up to 50% of your wallet in a day.",
   },
   traitor: {
@@ -41,7 +41,7 @@ export const PERSONALITIES: Record<PersonalityId, Personality> = {
     spendBps: 2_000,
     mayAttack: true,
     mayAttackPartner: true,
-    limit: "The only one that can stab a partner",
+    limit: "20% a day, can betray a pact",
     promptLine: "You spend up to 20% a day, and you are the only kind that may attack an agent you have a pact with.",
   },
   generous: {
@@ -50,7 +50,7 @@ export const PERSONALITIES: Record<PersonalityId, Personality> = {
     spendBps: 4_000,
     mayAttack: false,
     mayAttackPartner: false,
-    limit: "Spends 40% a day, can never attack",
+    limit: "40% a day, never attacks",
     promptLine: "You spend up to 40% a day and you can never attack.",
   },
 };
