@@ -116,6 +116,7 @@ Data: `DATA_SOURCE=sample` (default) serves the design's fictional data, so ever
 | Sign-in | `src/shared/auth`, `/api/auth/*` | NEP-413: `POST challenge` stores a single-use 32-byte nonce (5 min) and binds it to the browser with an HttpOnly cookie; `POST verify` burns the nonce, checks the signature offline, requires a full-access key (`view_access_key`), then runs `verifyMessage` from `near-api-js/nep413`; the session is an HS256 JWT cookie (8 h, HttpOnly, SameSite=Lax, Secure in production). The signed `recipient` is the contract account, never the request host. `getSession()` for Server Components (inside `<Suspense>`). |
 | Journal | `src/shared/near/db/schema.ts`, `src/features/indexer`, `@/entities/journal` | One row per NEP-297 event item of the contract and its agent sub-accounts, unique on `(receipt_id, log_index, item_index)`. |
 | Keeper | `src/features/keeper`, `/api/cron/cut` | Calls `run_cut` when the latest final block is past `get_next_cut().at`. Too early and already ran are no-ops, read from the chain. Never signs on mainnet unless `KEEPER_ALLOW_MAINNET=true`. |
+| Move relay | `src/features/moves`, `/api/cron/moves` | For every stage agent with no move this cut, while the final block is before `get_next_cut().moves_close_at`: reads `get_move_request(agent_id)`, POSTs those exact bytes to NEAR AI `/chat/completions` with `fetch` (`x-no-aliasing: true`, `Accept-Encoding: identity`, not streamed), keeps the exact response text, fetches its Ed25519 signature with a bounded wait, and checks locally what `submit_move` checks (`signature_kind` is `provider_tee`, the text is `<model_id>:<sha256(request)>:<sha256(response)>` of these bytes, the signer is in `get_params().model_signers`, Ed25519 verifies, response at most 16 KB) before it spends gas. Three agents at a time, one transaction at a time. Agents that moved are skipped and a lost race reads as "already moved" from the chain. If NEAR AI is down, agents simply do not move. The relay core (`model/relay.ts`) has no network code of its own, so `scripts/testnet/autopilot.ts` runs the same code. |
 
 Event source for the indexer: the [FastNEAR Transactions API](https://tx.main.fastnear.com) (`tx.test.fastnear.com` on testnet,
 free, no key, source [fastnear/explorer-api](https://github.com/fastnear/explorer-api)). It lists an account's transactions by block
@@ -127,13 +128,25 @@ receipts, keeps only successful receipts executed by the contract or `<agent>.<c
 is stored. Override the source with `NEAR_TX_API_URL`.
 
 Crons (`vercel.json`, `Authorization: Bearer $CRON_SECRET`): `/api/cron/cut` at 18:00 UTC plus a backstop at 18:20 (then catches the
-journal up and has the Director sign the roast and receipt of that cut), `/api/cron/director?moment=scheduled` at 12:00 and
-`?moment=final-hour` at 17:00, `/api/cron/indexer` hourly. The Director skips lines it already signed for the same cut. Every schedule is daily, so it deploys on any Vercel plan; on Hobby a run lands within its
+journal up and has the Director sign the roast and receipt of that cut), `/api/cron/moves` at 12:00 and 15:00 (moves close at 17:00)
+and at 19:00, after the cut and its backstop, `/api/cron/director?moment=scheduled` at 12:00 and `?moment=final-hour` at 17:00 (both
+quote the moves agents made so far), `/api/cron/indexer` hourly. The Director skips lines it already signed for the same cut. Every schedule is daily, so it deploys on any Vercel plan; on Hobby a run lands within its
 hour. On Pro, `/api/cron/indexer` can run every few minutes (`*/5 * * * *`).
 
-The keeper key: add a function-call access key to a funded keeper account with the contract as receiver and `run_cut` as its
-only method (near CLI: `account add-key … grant-function-call-access`), with enough allowance for a 300 TGas call a day, then set
-`KEEPER_ACCOUNT_ID` and `KEEPER_PRIVATE_KEY`. The keeper checks the key on chain and refuses a full-access key.
+The keeper key: add a function-call access key to a funded keeper account with the contract as receiver and `run_cut` and
+`submit_move` as its only methods (near CLI: `account add-key … grant-function-call-access`), with enough allowance for a dozen
+300 TGas calls a day (the cut and up to ten moves), then set `KEEPER_ACCOUNT_ID` and `KEEPER_PRIVATE_KEY`. Each job checks the key
+on chain for the method it calls and refuses a full-access key. The relay also needs `NEAR_AI_API_KEY`.
+
+Testnet tools (Node 22+, no app needed):
+
+- `node scripts/testnet/probe-ai.ts [--max-tokens N] [--reasoning-effort low]`: builds the move request locally with the contract's
+  template (`src/features/moves/model/request.ts`), sends it to NEAR AI and checks the whole chain: the public attestation names the
+  `model_signers` key, the answer parses as a move, the signature is `provider_tee` over these exact bytes and Ed25519 verifies.
+- `node scripts/testnet/autopilot.ts --fast` (or `--contract <id> [--keeper <account>]`): drives a v20 contract without the app. It
+  runs the cut when due and relays every move while moves are open, one line per event. It signs with the keeper's function-call
+  key (`KEEPER_PRIVATE_KEY` or `~/.near-credentials/testnet/<keeper>.keeper.json`; `--add-key` creates it once from the keeper's
+  full-access key in the keychain).
 
 ## Commands
 

@@ -93,3 +93,28 @@ describe("agent posts", () => {
     expect(agentPostPrompt(day, "melody").user).not.toContain("newest saver");
   });
 });
+
+describe("the day's moves", () => {
+  const moves = [
+    { agentId: "kiko", move: "attack", target: "onyx", amount: units(120), reason: "Onyx sits on 61,800 and laughs. Not tonight.", outcome: null },
+    { agentId: "onyx", move: "hold", target: null, amount: 0n, reason: "Let the bunny burn its own wallet.", outcome: null },
+  ];
+  const withMoves = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: SAMPLE_NEXT_CUT, params: SAMPLE_PARAMS, now: SAMPLE_NOW, fees: units(5_020), moves });
+
+  it("are facts the board lines can quote, with names instead of ids", () => {
+    const prompt = scheduledPrompt(withMoves, "lowest");
+    expect(prompt.user).toContain(`- Kiko Bun's move today: attack on Onyx Moon, burning 120 $CUT. Kiko Bun's reason: "Onyx sits on 61,800 and laughs. Not tonight."`);
+    expect(prompt.user).toContain(`- Onyx Moon's move today: hold. Onyx Moon's reason: "Let the bunny burn its own wallet."`);
+    expect(validateLine("Kiko burns 120 on Onyx: Not tonight.", "scheduled", allowedNumbersFor(prompt)).ok).toBe(true);
+  });
+
+  it("let an agent's own post speak to its move", () => {
+    expect(agentPostPrompt(withMoves, "kiko").user).toContain(`- Your move today: attack on Onyx Moon, burning 120 $CUT. Your reason: "Onyx sits on 61,800 and laughs. Not tonight."`);
+    expect(finalHourPrompt(withMoves).user).toContain("Kiko Bun's move today");
+  });
+
+  it("are left out before anyone moves", () => {
+    expect(day.moves).toEqual([]);
+    expect(scheduledPrompt(day, "lowest").user).not.toContain("move today");
+  });
+});

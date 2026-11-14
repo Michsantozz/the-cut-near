@@ -64,6 +64,50 @@ describe("chatCompletion", () => {
   });
 });
 
+describe("postRawCompletion", () => {
+  it("posts the given bytes unchanged and returns the exact reply", async () => {
+    const cloud = fakeNearAiCloud();
+    server.use(...cloud.handlers);
+    // Spacing and escapes a serialize step would change.
+    const body = '{"model":"z-ai/glm-5.3-flash", "messages":[{"role":"user","content":"Caf\\u00e9 \u{1F680}"}],"max_tokens": 600}';
+    const raw = await client().postRawCompletion(body);
+    const sent = cloud.requests.at(-1);
+    expect(sent?.body).toBe(body);
+    expect(raw.requestBody).toBe(body);
+    expect(raw.responseBody).toBe(cloud.chats.get(raw.chatId)?.response);
+    expect(sent?.headers.get("x-no-aliasing")).toBe("true");
+    expect(sent?.headers.get("accept-encoding")).toBe("identity");
+  });
+
+  it("retries 429 and 5xx honoring retry-after, then throws typed errors", async () => {
+    const cloud = fakeNearAiCloud();
+    let calls = 0;
+    server.use(
+      http.post(`${BASE}/chat/completions`, () => {
+        calls++;
+        if (calls === 1) return HttpResponse.json({ error: { message: "slow down" } }, { status: 429, headers: { "retry-after-ms": "5" } });
+        if (calls === 2) return HttpResponse.json({ error: { message: "upstream" } }, { status: 503, headers: { "retry-after-ms": "5" } });
+        return undefined;
+      }),
+      ...cloud.handlers,
+    );
+    expect((await client().postRawCompletion('{"model":"z-ai/glm-5.3-flash","messages":[]}')).chatId).toMatch(/^chatcmpl-/);
+    expect(calls).toBe(3);
+
+    server.use(http.post(`${BASE}/chat/completions`, () => HttpResponse.json({}, { status: 503, headers: { "retry-after-ms": "1" } })));
+    await expect(client().postRawCompletion("{}")).rejects.toMatchObject({ code: "http", status: 503, retryable: true });
+    server.use(http.post(`${BASE}/chat/completions`, () => HttpResponse.json({ error: { message: "bad key" } }, { status: 401 })));
+    await expect(client().postRawCompletion("{}")).rejects.toMatchObject({ code: "config", status: 401 });
+    server.use(
+      http.post(`${BASE}/chat/completions`, async () => {
+        await delay(500);
+        return HttpResponse.json({});
+      }),
+    );
+    await expect(client({ timeoutMs: 50, maxRetries: 0 }).postRawCompletion("{}")).rejects.toMatchObject({ code: "timeout" });
+  });
+});
+
 describe("chatSignature", () => {
   it("waits a bounded time for a signature that is not recorded yet", async () => {
     const cloud = fakeNearAiCloud({ signatureMisses: 2 });

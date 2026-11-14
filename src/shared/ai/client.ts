@@ -2,7 +2,7 @@ import "server-only";
 import OpenAI, { NotFoundError } from "openai";
 import { z } from "zod";
 import { readAiEnv, type AiEnv } from "./env";
-import { NearAiError, toNearAiError } from "./errors";
+import { httpStatusError, NearAiError, toNearAiError } from "./errors";
 import { fromUtf8, utf8 } from "./verify/bytes";
 import { attestationReportSchema, chatSignatureSchema, signatureUnavailableSchema, type AttestationReport, type ChatSignature, type SigningAlgo } from "./verify/schemas";
 
@@ -73,6 +73,11 @@ export interface NearAiClient {
   readonly baseURL: string;
   /** POSTs `/chat/completions` with `request` serialized once, and returns the exact bytes both ways. */
   chatCompletion(request: ChatCompletionRequest): Promise<RawCompletion>;
+  /**
+   * POSTs `/chat/completions` with `requestBody` byte for byte, through `fetch` (the SDK would re-serialize it):
+   * for a request someone else built and hashed, such as a contract's `get_move_request`.
+   */
+  postRawCompletion(requestBody: string): Promise<RawCompletion>;
   /** Gateway report plus NEAR model-report candidates for `model`, bound to `nonce`. */
   attestationReport(params: { model: string; nonce: string; signingAlgo: SigningAlgo }): Promise<AttestationReport>;
   /** The signature of a chat id, waiting a bounded time if it is not recorded yet. */
@@ -88,12 +93,14 @@ const NO_ALIASING = { "x-no-aliasing": "true" } as const;
 
 export function createNearAiClient(options: NearAiClientOptions): NearAiClient {
   const baseURL = (options.baseURL ?? "https://cloud-api.near.ai/v1").replace(/\/+$/, "");
+  const timeoutMs = options.timeoutMs ?? 45_000;
+  const maxRetries = options.maxRetries ?? 3;
   const sdk = new OpenAI({
     // The SDK needs a value; without a real key, calls that need one are refused before any request.
     apiKey: options.apiKey ?? "unset",
     baseURL,
-    timeout: options.timeoutMs ?? 45_000,
-    maxRetries: options.maxRetries ?? 3,
+    timeout: timeoutMs,
+    maxRetries,
     // Resolved per call, so a fetch patched after construction (tests, instrumentation) is used.
     fetch: (input, init) => globalThis.fetch(input, init),
   });
@@ -108,6 +115,54 @@ export function createNearAiClient(options: NearAiClientOptions): NearAiClient {
     const result = schema.safeParse(value);
     if (!result.success) throw new NearAiError("bad-response", `${what}: unexpected body (${z.prettifyError(result.error)}).`);
     return result.data;
+  };
+
+  const completionFrom = (requestBody: string, bytes: Uint8Array): RawCompletion => {
+    let responseBody: string;
+    try {
+      responseBody = fromUtf8(bytes);
+    } catch {
+      throw new NearAiError("bad-response", "Chat completion: the reply is not valid UTF-8.");
+    }
+    let json: unknown;
+    try {
+      json = JSON.parse(responseBody);
+    } catch {
+      throw new NearAiError("bad-response", "Chat completion: the reply is not JSON.");
+    }
+    const completion = parse(chatCompletionSchema, json, "Chat completion");
+    return { requestBody, responseBody, completion, chatId: completion.id, receivedAt: new Date() };
+  };
+
+  /** POSTs the UTF-8 bytes of `text`, unchanged, with the SDK's retry policy: 408/409/429/5xx and network errors, honoring Retry-After. */
+  const postExact = async (path: string, text: string, what: string): Promise<Uint8Array> => {
+    const body = new TextEncoder().encode(text);
+    let delay = 500;
+    for (let attempt = 0; ; attempt++) {
+      let failure: NearAiError;
+      let retryAfterMs: number | null = null;
+      let retryable = true;
+      try {
+        const response = await globalThis.fetch(`${baseURL}${path}`, {
+          method: "POST",
+          body,
+          headers: { authorization: `Bearer ${options.apiKey}`, "content-type": "application/json", accept: "application/json", "accept-encoding": "identity", ...NO_ALIASING },
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+        if (response.ok) return new Uint8Array(await response.arrayBuffer());
+        const detail = (await response.text().catch(() => "")).slice(0, 200) || response.statusText;
+        failure = httpStatusError(response.status, what, detail);
+        retryable = [408, 409, 429].includes(response.status) || response.status >= 500;
+        const ms = Number(response.headers.get("retry-after-ms") ?? Number(response.headers.get("retry-after")) * 1000);
+        retryAfterMs = Number.isFinite(ms) && ms > 0 ? Math.min(ms, 60_000) : null;
+      } catch (error) {
+        const timedOut = error instanceof DOMException && error.name === "TimeoutError";
+        failure = timedOut ? new NearAiError("timeout", `${what}: timed out.`, { cause: error }) : toNearAiError(error, what);
+      }
+      if (!retryable || attempt >= maxRetries) throw failure;
+      await sleep(retryAfterMs ?? delay);
+      delay = Math.min(delay * 2, 8_000);
+    }
   };
 
   return {
@@ -128,20 +183,12 @@ export function createNearAiClient(options: NearAiClientOptions): NearAiClient {
       } catch (error) {
         throw toNearAiError(error, "Chat completion");
       }
-      let responseBody: string;
-      try {
-        responseBody = fromUtf8(bytes);
-      } catch {
-        throw new NearAiError("bad-response", "Chat completion: the reply is not valid UTF-8.");
-      }
-      let json: unknown;
-      try {
-        json = JSON.parse(responseBody);
-      } catch {
-        throw new NearAiError("bad-response", "Chat completion: the reply is not JSON.");
-      }
-      const completion = parse(chatCompletionSchema, json, "Chat completion");
-      return { requestBody, responseBody, completion, chatId: completion.id, receivedAt: new Date() };
+      return completionFrom(requestBody, bytes);
+    },
+
+    async postRawCompletion(requestBody) {
+      requireKey("Chat completion");
+      return completionFrom(requestBody, await postExact("/chat/completions", requestBody, "Chat completion"));
     },
 
     async attestationReport({ model, nonce, signingAlgo }) {

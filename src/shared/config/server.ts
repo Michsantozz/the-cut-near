@@ -25,7 +25,7 @@ const schema = z
     /** Vercel Cron sends it as `Authorization: Bearer <CRON_SECRET>`. */
     CRON_SECRET: optional(z.string().min(16, "must be at least 16 characters")),
     KEEPER_ACCOUNT_ID: optional(accountIdSchema),
-    /** A function-call access key limited to `run_cut` on the main contract. Full-access keys are refused. */
+    /** A function-call access key limited to `run_cut` and `submit_move` on the main contract. Full-access keys are refused. */
     KEEPER_PRIVATE_KEY: optional(secretKey),
     /** The keeper never signs on mainnet unless a human sets this. */
     KEEPER_ALLOW_MAINNET: flag,

@@ -40,12 +40,14 @@ export function toNearAiError(error: unknown, what: string): NearAiError {
   if (error instanceof APIConnectionTimeoutError) return new NearAiError("timeout", `${what}: timed out.`, { cause: error });
   if (error instanceof APIUserAbortError) return new NearAiError("timeout", `${what}: aborted.`, { cause: error });
   if (error instanceof APIConnectionError) return new NearAiError("network", `${what}: network error (${error.message}).`, { cause: error });
-  if (error instanceof APIError) {
-    const status = typeof error.status === "number" ? error.status : undefined;
-    if (status === 429) return new NearAiError("rate-limited", `${what}: rate limited (429).`, { status, cause: error });
-    if (status === 401 || status === 403) return new NearAiError("config", `${what}: the API key was refused (${status}).`, { status, cause: error });
-    return new NearAiError("http", `${what}: HTTP ${status ?? "error"} (${error.message}).`, { status, cause: error });
-  }
+  if (error instanceof APIError) return httpStatusError(typeof error.status === "number" ? error.status : undefined, what, error.message, error);
   const message = error instanceof Error ? error.message : String(error);
   return new NearAiError("network", `${what}: ${message}`, { cause: error });
+}
+
+/** A NearAiError for an HTTP error status. */
+export function httpStatusError(status: number | undefined, what: string, detail: string, cause?: unknown): NearAiError {
+  if (status === 429) return new NearAiError("rate-limited", `${what}: rate limited (429).`, { status, cause });
+  if (status === 401 || status === 403) return new NearAiError("config", `${what}: the API key was refused (${status}).`, { status, cause });
+  return new NearAiError("http", `${what}: HTTP ${status ?? "error"} (${detail}).`, { status, cause });
 }

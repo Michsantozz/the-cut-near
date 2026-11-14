@@ -6,7 +6,10 @@ import { isDeletingCut, type DeletingCut } from "@/entities/cut";
 import { getJournal } from "@/entities/journal/server";
 import { nearAiClientFromEnv, readAiEnv } from "@/shared/ai";
 import { createHardwareVerifier } from "@/shared/ai/verify/server";
-import { buildCutFacts, buildDayFacts } from "../model/facts";
+import { isLive } from "@/shared/config/data-source";
+import { ContractViewError } from "@/shared/near/errors";
+import { movesContract } from "@/shared/near/moves";
+import { buildCutFacts, buildDayFacts, type DayMove } from "../model/facts";
 import { formatCut } from "../model/format";
 import { afterCutReceiptPrompt, afterCutRoastPrompt, finalHourPrompt, agentPostPrompt, scheduledPrompt, type DirectorPrompt, type LatestSave } from "../model/prompts";
 import { DirectorSession, type DirectorDeps } from "./generate";
@@ -53,6 +56,17 @@ async function latestDeletingCut(fromIndex: number): Promise<DeletingCut | null>
   return null;
 }
 
+/** The signed moves made for a cut so far. None with sample data, or on a contract without `get_moves` (before v20). */
+async function movesFor(cutIndex: number): Promise<DayMove[]> {
+  if (!isLive()) return [];
+  try {
+    return await movesContract().getMoves(cutIndex);
+  } catch (error) {
+    if (error instanceof ContractViewError) return [];
+    throw error;
+  }
+}
+
 /** The prompts of a moment, from the entities' data. */
 export async function momentPrompts(moment: DirectorMoment, options: { now?: Date; cutIndex?: number } = {}): Promise<DirectorPrompt[]> {
   const [stage, bench, nextCut, params] = await Promise.all([getStage(), getBench(), getNextCut(), getParams()]);
@@ -63,7 +77,7 @@ export async function momentPrompts(moment: DirectorMoment, options: { now?: Dat
     const facts = buildCutFacts({ cut, agents: [...stage, ...bench], params });
     return [afterCutRoastPrompt(facts), afterCutReceiptPrompt(facts)];
   }
-  const facts = buildDayFacts({ stage, bench, nextCut, params, now: options.now ?? new Date() });
+  const facts = buildDayFacts({ stage, bench, nextCut, params, now: options.now ?? new Date(), moves: await movesFor(nextCut.index) });
   if (moment === "final-hour") return [finalHourPrompt(facts)];
   // The two lowest first: if the model fails midway, the agents that need it most have posted.
   const urgent = [facts.lowest.id, facts.nextUp.id];

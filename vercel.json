@@ -18,6 +18,18 @@
       "schedule": "0 17 * * *"
     },
     {
+      "path": "/api/cron/moves",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/moves",
+      "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/moves",
+      "schedule": "0 19 * * *"
+    },
+    {
       "path": "/api/cron/indexer",
       "schedule": "10 0 * * *"
     },

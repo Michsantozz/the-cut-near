@@ -21,6 +21,12 @@ export type AgentFacts = {
 
 export type BenchFacts = { id: string; name: string; kind: string; queue: string; savers: number };
 
+/** An agent's signed move for the coming cut, as the contract recorded it (`get_moves`). */
+export type DayMove = { agentId: string; move: string; target: string | null; amount: bigint; reason: string; outcome: string | null };
+
+/** A move with names instead of ids, for the lines to quote. */
+export type MoveFacts = { agentId: string; name: string; move: string; target: string | null; amount: string; reason: string; outcome: string | null };
+
 export type DayFacts = {
   /** Day of the show: the first cut runs on day 2. */
   day: number;
@@ -41,6 +47,8 @@ export type DayFacts = {
   /** $CUT the lowest agent needs to pass the next one. */
   gap: string;
   bench: BenchFacts[];
+  /** Moves already made for this cut, by stage agents, in stage order. */
+  moves: MoveFacts[];
 };
 
 export type DayInput = {
@@ -51,6 +59,8 @@ export type DayInput = {
   now: Date;
   /** The day's fees to compute the slice with. Defaults to the fees so far (`NextCut.prizeSoFar`); SPEC-v19 uses the 5,020 expected by 18:00. */
   fees?: bigint;
+  /** The moves made for `nextCut` so far. */
+  moves?: DayMove[];
 };
 
 const HOUR = 3_600_000;
@@ -96,6 +106,12 @@ export function buildDayFacts(input: DayInput): DayFacts {
     bench: [...input.bench]
       .sort((a, b) => (a.pile === b.pile ? 0 : a.pile > b.pile ? -1 : 1))
       .map((agent) => ({ id: agent.id, name: agent.name, kind: agent.kind, queue: formatCut(agent.pile), savers: agent.savers })),
+    moves: stage.flatMap((agent) => {
+      const move = input.moves?.find((m) => m.agentId === agent.id);
+      if (!move) return [];
+      const target = move.target ? (stage.find((other) => other.id === move.target)?.name ?? move.target) : null;
+      return [{ agentId: agent.id, name: agent.name, move: move.move, target, amount: formatCut(move.amount), reason: move.reason, outcome: move.outcome }];
+    }),
   };
 }
 

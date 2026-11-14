@@ -1,4 +1,4 @@
-import type { CutFacts, DayFacts, AgentFacts } from "./facts";
+import type { AgentFacts, CutFacts, DayFacts, MoveFacts } from "./facts";
 import { LINE_LIMITS, type DirectorLineKind } from "./kinds";
 import { DIRECTOR_SYSTEM, agentSystem } from "./persona";
 import { allowedNumbers } from "./validate";
@@ -22,12 +22,38 @@ const user = (task: string, facts: string[]) => `${task}\nFacts:\n${facts.map((f
 const words = (kind: DirectorLineKind) => `One line, at most ${LINE_LIMITS[kind].maxWords} words.`;
 const namesOf = (facts: DayFacts) => [...facts.stage.map((agent) => agent.name), ...facts.bench.map((agent) => agent.name)];
 
+function describeMove(move: MoveFacts, savers: string): string {
+  switch (move.move) {
+    case "hold":
+      return "hold";
+    case "rescue":
+      return `rescue, offering ${move.amount} $CUT to ${savers}`;
+    case "pact":
+      return `pact with ${move.target}, giving ${move.amount} $CUT`;
+    case "attack":
+      return `attack on ${move.target}, burning ${move.amount} $CUT`;
+    default:
+      return move.move;
+  }
+}
+
+/** The agent's signed move for this cut, quoting its reason, or nothing before it moves. `self` writes it in the second person. */
+function moveFacts(facts: DayFacts, agentId: string, self = false): string[] {
+  const move = facts.moves.find((m) => m.agentId === agentId);
+  if (!move) return [];
+  const what = describeMove(move, self ? "your savers" : "its savers");
+  const outcome = move.outcome ? ` The contract noted: ${move.outcome}.` : "";
+  return self ? [`Your move today: ${what}.${outcome} Your reason: "${move.reason}"`] : [`${move.name}'s move today: ${what}.${outcome} ${move.name}'s reason: "${move.reason}"`];
+}
+
 function blockFacts(facts: DayFacts): string[] {
   return [
     `Today's cut is at ${facts.cutAt}, in ${facts.countdown.text}.`,
     `${facts.lowest.name} (${facts.lowest.kind}) has the lowest pile: ${facts.lowest.pile} $CUT. If nothing moves, ${facts.lowest.name} is cut.`,
     `Next up is ${facts.nextUp.name} (${facts.nextUp.kind}) with ${facts.nextUp.pile} $CUT.`,
     `${facts.lowest.name} needs ${facts.gap} $CUT to pass ${facts.nextUp.name}.`,
+    ...moveFacts(facts, facts.lowest.id),
+    ...moveFacts(facts, facts.nextUp.id),
   ];
 }
 
@@ -49,6 +75,7 @@ export function finalHourPrompt(facts: DayFacts): DirectorPrompt {
     `${facts.lowest.name} has the lowest pile: ${facts.lowest.pile} $CUT. If nothing moves, ${facts.lowest.name} is cut.`,
     `Next up is ${facts.nextUp.name} with ${facts.nextUp.pile} $CUT. The gap is ${facts.gap} $CUT.`,
     `Saved on ${facts.lowest.name} today: ${facts.lowest.savedToday} $CUT.`,
+    ...moveFacts(facts, facts.lowest.id),
   ];
   return { kind: "final-hour", subjectId: facts.lowest.id, cutIndex: facts.cutIndex, system: DIRECTOR_SYSTEM, user: user(task, lines), names: namesOf(facts) };
 }
@@ -141,6 +168,7 @@ export function agentPostPrompt(facts: DayFacts, agentId: string, latestSave?: L
       break;
     }
   }
+  lines.push(...moveFacts(facts, agentId, true));
   if (latestSave) {
     task = `${task} Thank ${latestSave.account} by that exact name.`;
     lines.push(`Your newest saver: ${latestSave.account} saved ${latestSave.amount} $CUT on you.`);
