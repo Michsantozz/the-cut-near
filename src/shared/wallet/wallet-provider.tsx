@@ -7,7 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { publicEnv } from "@/shared/config/public";
 
 import { ConnectSheet } from "./connect-sheet";
-import { toActions, type ContractCall } from "./contract-call";
+import type { ContractCall } from "./contract-call";
+import { toActions } from "./to-actions";
 import { NEAR_NETWORK } from "./network";
 import { readViewer, viewerCookie } from "./viewer";
 import { WalletContext, type WalletContextValue, type WalletOption, type WalletStatus } from "./wallet-context";
