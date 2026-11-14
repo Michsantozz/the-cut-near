@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { ArrowUp, ThumbsDown, Trophy } from "lucide-react";
+import { ArrowUp, Gift, ThumbsDown, Trophy } from "lucide-react";
 import Link from "next/link";
 
 import { AgentPoses, ScoreBreakdown, wholeCutsToPass } from "@/entities/agent";
@@ -111,8 +111,11 @@ export function CutLineCard({ lineup, className }: { lineup: Lineup; className?:
       </div>
       <div className="border-t-2 border-ink bg-ink px-4 py-3.5 lg:flex lg:flex-col lg:justify-center lg:border-t-0 lg:border-l-2 lg:px-5">
         <CutClocks movesCloseAt={lineup.movesCloseAt.getTime()} cutAt={lineup.cutAt.getTime()} renderedAt={lineup.renderedAt} className="lg:grid-cols-1 lg:gap-3 xl:grid-cols-2 xl:gap-4" />
-        <p className="mt-3 text-[12.5px] leading-[17px] font-semibold text-violet-soft">
-          Day prize so far: <b className="font-extrabold text-paper">{cut(lineup.prizeSoFar)} $CUT</b>, for the savers of every survivor.
+        <p className="mt-3 flex items-start gap-1.5 text-[12.5px] leading-[17px] font-semibold text-violet-soft">
+          <Gift aria-hidden="true" className="mt-px size-3.5 shrink-0 text-lime" strokeWidth={2.6} />
+          <span>
+            Day prize so far: <b className="font-extrabold text-paper">{cut(lineup.prizeSoFar)} $CUT</b>, for the savers of every survivor.
+          </span>
         </p>
       </div>
     </section>

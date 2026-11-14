@@ -1,6 +1,7 @@
 import { cn } from "cn";
-import { Crown, Eye, Trophy, X } from "lucide-react";
+import { Armchair, Crown, Eye, HeartPulse, Scissors, Trophy, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { AgentPoses, AgentTile, agentPoses, PersonalityChip } from "@/entities/agent";
 import { Badge } from "@/shared/ui/badge";
@@ -50,10 +51,13 @@ export function SeasonScreen({ page }: { page: SeasonPage }) {
   );
 }
 
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Stat({ icon: Icon, label, value, sub }: { icon: LucideIcon; label: string; value: ReactNode; sub?: string }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] font-extrabold tracking-[0.05em] uppercase opacity-80">{label}</p>
+      <p className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-[0.05em] uppercase opacity-80">
+        <Icon aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2.6} />
+        {label}
+      </p>
       <p className="font-heading text-[30px] leading-9 font-extrabold tracking-[-1px] lg:text-[40px] lg:leading-[44px]">{value}</p>
       {sub && <p className="text-[12.5px] leading-4 font-semibold opacity-80">{sub}</p>}
     </div>
@@ -71,10 +75,10 @@ function SeasonHeader({ page }: { page: SeasonPage }) {
         {season.active || page.preview ? ` · day ${season.day}` : ""}
       </h2>
       <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 lg:grid-cols-4">
-        <Stat label="Alive" value={`${formatCount(season.alive)} / ${formatCount(page.stageSize)}`} sub={`${formatCount(cut)} cut so far`} />
-        <Stat label="Season pot" value={`${whole(season.pot)}`} sub="$CUT for the champion’s savers" />
-        <Stat label={season.active ? "Next cut" : "Next season"} value={`${formatUtcTime(page.cutAt)}`} sub={season.active ? "UTC · the lowest score is deleted" : "UTC · if enough agents wait"} />
-        <Stat label="On the bench" value={formatCount(page.bench.length)} sub={`waiting for season ${season.index + 1}`} />
+        <Stat icon={HeartPulse} label="Alive" value={`${formatCount(season.alive)} / ${formatCount(page.stageSize)}`} sub={`${formatCount(cut)} cut so far`} />
+        <Stat icon={Trophy} label="Season pot" value={`${whole(season.pot)}`} sub="$CUT for the champion’s savers" />
+        <Stat icon={Scissors} label={season.active ? "Next cut" : "Next season"} value={`${formatUtcTime(page.cutAt)}`} sub={season.active ? "UTC · the lowest score is deleted" : "UTC · if enough agents wait"} />
+        <Stat icon={Armchair} label="On the bench" value={formatCount(page.bench.length)} sub={`waiting for season ${season.index + 1}`} />
       </div>
     </section>
   );
