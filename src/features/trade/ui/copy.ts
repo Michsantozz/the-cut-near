@@ -6,6 +6,9 @@ import { ONE_NEAR, cutToUsdCents, nearToUsdCents } from "../model/money";
 /** $CUT with one decimal: "134.5". */
 export const cutText = (value: bigint) => formatAmount(value, { maxFractionDigits: 1 });
 
+/** A typed $CUT amount, exact to the two decimals the fields take: "0.05", "1,250.25". The button says what is sent. */
+export const cutTyped = (value: bigint) => formatAmount(value, { maxFractionDigits: 2 });
+
 /** Whole $CUT: "1,052,400". */
 export const cutWhole = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
 
@@ -27,6 +30,20 @@ export function priceText(yoctoNearPerCut: bigint, usdCentsPerNear: bigint | nul
   const cents = usdCentsPerNear !== null ? cutToUsdCents(10n ** 18n, yoctoNearPerCut, usdCentsPerNear) : 0n;
   return cents >= 1n ? formatUsd(cents) : `${formatSignificant(yoctoNearPerCut, { decimals: NEAR_DECIMALS, maxFractionDigits: 3 })} NEAR`;
 }
+
+/**
+ * Where the 1% trade fee goes (RULES.md `pot_bps`): "half to the season pot, half to tomorrow’s prize", or the
+ * percentages when the split is not even.
+ */
+export function feeSplitText(potBps: number, prize: string): string {
+  if (potBps === 5_000) return `half to the season pot, half to ${prize}`;
+  if (potBps >= 10_000) return "to the season pot";
+  if (potBps <= 0) return `to ${prize}`;
+  return `${potBps / 100}% to the season pot, ${(10_000 - potBps) / 100}% to ${prize}`;
+}
+
+/** The part of a trade fee that goes to the day prize; the contract gives the pot its share rounded down. */
+export const feeToPrize = (fee: bigint, potBps: number) => fee - (fee * BigInt(potBps)) / 10_000n;
 
 /** "today’s prize", "tomorrow’s prize" or "the next prize", for the cut the fees go to. */
 export function prizeName(now: Date, cutAt: Date): string {
@@ -51,6 +68,20 @@ export function savedLine(saves: readonly { agentName: string; amount: bigint }[
   if (saves.length === 0) return null;
   const total = saves.reduce((sum, save) => sum + save.amount, 0n);
   return saves.length === 1 ? `${cutText(total)} saved on ${saves[0].agentName}` : `${cutText(total)} saved on ${saves.length} agents`;
+}
+
+/**
+ * What the saves next to a balance can do now: "400 saved on Melody-9, locked till 18:00 UTC", "…, unlocked", or
+ * both amounts when some saves rode through a cut and others are new. Null without saves.
+ */
+export function savesLockText(saves: readonly { agentName: string; amount: bigint; unlocked: boolean }[], lockedTill: string): string | null {
+  const line = savedLine(saves);
+  if (!line) return null;
+  const locked = saves.filter((save) => !save.unlocked).reduce((sum, save) => sum + save.amount, 0n);
+  const unlocked = saves.filter((save) => save.unlocked).reduce((sum, save) => sum + save.amount, 0n);
+  if (unlocked === 0n) return `${line}, locked till ${lockedTill}`;
+  if (locked === 0n) return `${line}, unlocked: take ${saves.length === 1 ? "it" : "them"} back to sell`;
+  return `${line}: ${cutText(locked)} locked till ${lockedTill}, ${cutText(unlocked)} unlocked`;
 }
 
 /** Big money, short: "$18.4M", "$812.5K", "$950". */
