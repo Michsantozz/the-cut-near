@@ -6,7 +6,7 @@ import { getNextCut } from "@/entities/cut/server";
 import type { JournalEntry } from "@/entities/journal";
 import { getJournal, getJournalStats, SAMPLE_CONTRACT_ID } from "@/entities/journal/server";
 import { getBooksAt, getParams, getPool, getTotalSupply, getUsdCentsPerNear } from "@/entities/market/server";
-import { gapToPass, rankByScore, type Agent } from "@/entities/agent";
+import { gapShown, rankByScore, type Agent } from "@/entities/agent";
 import { getBench, getStage } from "@/entities/agent/server";
 import { getSeason } from "@/entities/season/server";
 import { isLive } from "@/shared/config/data-source";
@@ -39,7 +39,7 @@ export type Receipts = {
     feesSoFar: bigint;
     /** Lowest score on the stage: the agent the cut takes if nothing moves. */
     lowest: Agent | null;
-    /** Score it needs to pass the agent above it. */
+    /** Score it needs to pass the agent above it, in the 0.1 $CUT steps every screen shows. */
     gap: bigint;
     cutAt: Date;
     /** Cuts that deleted an agent (a season start cuts nobody). */
@@ -136,7 +136,7 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
       season: { index: season.index, day: season.day, active: season.active, pot: season.pot },
       feesSoFar: nextCut.prizeSoFar,
       lowest,
-      gap: lowest && above ? gapToPass(lowest, above) : 0n,
+      gap: lowest && above ? gapShown(lowest, above) : 0n,
       cutAt: nextCut.at,
       cuts: deletingCuts.length,
       lastCut: lastCutEntry ? describeGroup({ key: lastCutEntry.id, event: "cut", txHash: lastCutEntry.txHash, at: lastCutEntry.at, entries: [lastCutEntry] }, ctx).cut : null,

@@ -35,7 +35,7 @@ deployed afterwards from the fixed build.
 | The game contract, `contracts/thecut` | 116 unit tests | `cd contracts && cargo test -p thecut` |
 | The agent account contract, `contracts/agent` | 6 unit tests | `cd contracts && cargo test -p agent` |
 | Sandbox launch, `contracts/integration-tests` | 1 test: deploy, lock, 0 keys | `cd contracts && cargo test -p integration-tests` |
-| The app | 500 tests (Vitest, MSW, PGlite) | `pnpm test` |
+| The app | 570 tests (Vitest, MSW, PGlite) | `pnpm test` |
 | The simulation | 14 tests | `pnpm sim:test` |
 
 Most contract tests end with `assert_books`: the contract's balance equals the pool, the saves, the fees, the pot, the committed

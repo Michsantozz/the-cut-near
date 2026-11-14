@@ -40,7 +40,7 @@ git clone https://github.com/Michsantozz/the-cut-near && cd the-cut-near && pnpm
 
 node scripts/testnet/status.ts                  # the daily contract now: "access keys 0", the season, the next cut, the stage
 cd contracts && cargo test -p thecut -p agent   # expect "116 passed" (game) and "6 passed" (agent account); cd ..
-pnpm test                                       # expect "500 passed" (app: relay, signature check, views, screens)
+pnpm test                                       # expect "570 passed" (2 skip without a local Postgres) (app: relay, signature check, views, screens)
 pnpm sim:test && pnpm sim                       # 14 tests, then the 60-day table of sim/RESULTS.md, same numbers on any machine
 ```
 
@@ -56,7 +56,7 @@ keys is [below](#the-lock).
 ## What is real, today
 
 <!-- facts-now:start -->
-Read from testnet on 14 November 2026 at 18:13 UTC with `node scripts/testnet/status.ts` (add `--fast` for the fast contract);
+Read from testnet on 14 November 2026 at 19:56 UTC with `node scripts/testnet/status.ts` (add `--fast` for the fast contract);
 run it to read the same figures now.
 
 | | Daily: the app | Fast: a whole season in half an hour |
@@ -68,8 +68,8 @@ run it to read the same figures now.
 | Season | Season 1, day 1: the first cut seated 10 agents at 18:00 UTC | Season 1 finished: 9 agents cut in 9 cuts, **Pixie Volt** crowned |
 | AI moves signed by NEAR AI's TEE | 10 of 10 agents moved for cut 2 | 54 moves over 10 cuts |
 | $CUT supply (10,000,000 minted once) | 9,999,899.4; 100.6 burned | 9,975,860.97; 24,139.03 burned |
-| Saved on agents | 21,311.5 $CUT | 4,120 $CUT (the champion's pile) |
-| Season pot | 2,038.62 $CUT, for season 1's champion | 0: 1,219 $CUT paid to Pixie's savers at the crown |
+| Saved on agents | 21,311.1 $CUT | 4,120 $CUT (the champion's pile) |
+| Season pot | 2,606.89 $CUT, for season 1's champion | 0: 1,219 $CUT paid to Pixie's savers at the crown |
 <!-- facts-now:end -->
 
 **Seen on testnet.** Each rule, once, in a real transaction:
@@ -319,7 +319,7 @@ The deployed build is 454,426 bytes, sha256 `e1527ed5e5e583ed86cd891ad22ee89dcbe
 
 ```bash
 cd contracts && cargo test -p thecut -p agent && cargo test -p integration-tests && cd ..   # 116 + 6, then the sandbox launch
-pnpm check                                                                                  # typecheck, lint, 500 app tests
+pnpm check                                                                                  # typecheck, lint, 570 app tests
 pnpm sim:test                                                                               # 14 simulation tests
 ```
 
@@ -341,7 +341,7 @@ Live mode, the keeper key, the crons and the testnet scripts are in [`docs/ARCHI
 | [`contracts/agent`](contracts/agent) | The keyless, self-deleting agent account. 6 tests. |
 | [`contracts/integration-tests`](contracts/integration-tests) | Sandbox: deploy, lock, 0 keys. |
 | [`src/`](src) | The site, the move relay, the indexer, the Director and the agent API (Next.js; layers app → features → entities → shared). |
-| [`tests/`](tests) | The app's tests, mirroring `src/`. 500 tests. |
+| [`tests/`](tests) | The app's tests, mirroring `src/`. 570 tests. |
 | [`sim/`](sim) | The 60-day simulation and its report [`sim/RESULTS.md`](sim/RESULTS.md). 14 tests. |
 | [`scripts/testnet/`](scripts/testnet) | Launch, status, autopilot and the NEAR AI probe. |
 | [`deploy/`](deploy) | Every account, parameter and launch transaction of both testnet contracts. |
