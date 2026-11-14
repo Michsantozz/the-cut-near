@@ -26,7 +26,7 @@ describe("trade loaders on the sample day", () => {
 
   it("show where the supply is and when trading began", async () => {
     const data = await loadValue("mika.near", "week");
-    expect(data.supply).toEqual({ launch: units(10_000_000), saved: units(1_052_400), free: units(8_947_600), burned: 0n });
+    expect(data.supply).toEqual({ launch: units(10_000_000), saved: units(1_184_600), free: units(8_815_400), burned: 0n });
     expect(valueSubtitle(data)).toBe("Day 2 · trading since Thu, Nov 12, 15:01 UTC");
     expect(data.prices).toHaveLength(13);
   });

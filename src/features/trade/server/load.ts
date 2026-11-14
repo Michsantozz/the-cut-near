@@ -134,18 +134,18 @@ export async function loadValue(accountId: string | null, range: PriceRange): Pr
   // Live robots and prices read the clock: reach request time before any of them.
   await connection();
   const market = await loadMarket();
-  const [prices, all, params, current, stage, holders, account] = await Promise.all([
+  const [prices, all, params, current, stage, bench, holders, account] = await Promise.all([
     getPriceHistory(range),
     range === "all" ? null : getPriceHistory("all"),
     getParams(),
     getTotalSupply(),
     getStage(),
+    getBench(),
     getHolderCount(),
-    accountId
-      ? Promise.all([getBalance(accountId), getSaves(accountId), getBench()]).then(([free, saves, bench]) => ({ free, saves, bench }))
-      : null,
+    accountId ? Promise.all([getBalance(accountId), getSaves(accountId)]).then(([free, saves]) => ({ free, saves })) : null,
   ]);
-  const saved = stage.reduce((sum, robot) => sum + robot.pile, 0n);
+  // Bench queues are locked in the contract like stage piles, the same total Receipts shows.
+  const saved = [...stage, ...bench].reduce((sum, robot) => sum + robot.pile, 0n);
   return {
     ...market,
     range,
@@ -153,7 +153,7 @@ export async function loadValue(accountId: string | null, range: PriceRange): Pr
     launchAt: (all ?? prices)[0]?.at ?? null,
     supply: splitSupply({ launch: params.totalSupply, current, saved }),
     holders,
-    account: account && { accountId: accountId!, free: account.free, saves: heldSaves(account.saves, [...stage, ...account.bench], market.cutIndex) },
+    account: account && { accountId: accountId!, free: account.free, saves: heldSaves(account.saves, [...stage, ...bench], market.cutIndex) },
   };
 }
 
