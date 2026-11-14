@@ -1,33 +1,283 @@
 {
   "network": "testnet",
-  "contract": "thecut-d9jicr.testnet",
+  "version": "v20",
+  "mode": "daily",
+  "rpc": "https://near-testnet.drpc.org (resumed on https://rpc.testnet.fastnear.com after a drpc 500)",
+  "contract": "thecut-v20.testnet",
+  "keeper": "thecut-v20-keeper.testnet",
   "creators": [
-    "thecut-d9jicr-studio-a.testnet",
-    "thecut-d9jicr-studio-b.testnet"
+    "thecut-v20-studio-a.testnet",
+    "thecut-v20-studio-b.testnet",
+    "thecut-v20-studio-c.testnet"
   ],
-  "keeper": "thecut-d9jicr-keeper.testnet",
   "fans": [
-    "thecut-d9jicr-fan-a.testnet",
-    "thecut-d9jicr-fan-b.testnet"
+    "thecut-v20-fan-a.testnet",
+    "thecut-v20-fan-b.testnet"
   ],
-  "wasmSha256": "df0961f4790cc4e97ddabb9f6de75f9aff6285f870f4dafe1720e959e169ff75",
+  "funding": {
+    "thecut-v20.testnet": "testnet faucet (helper.nearprotocol.com); + faucet bank thecut-v20-bank-1.testnet deleted into it (tx DNoRRHJiYu92RQBynxRX9b7nf4BdimpbY89HYxjaasn2)",
+    "thecut-v20-studio-a.testnet": "testnet faucet (helper.nearprotocol.com)",
+    "thecut-v20-studio-b.testnet": "testnet faucet (helper.nearprotocol.com)",
+    "thecut-v20-studio-c.testnet": "testnet faucet (helper.nearprotocol.com)",
+    "thecut-v20-keeper.testnet": "testnet faucet (helper.nearprotocol.com)",
+    "thecut-v20-fan-a.testnet": "testnet faucet (helper.nearprotocol.com)",
+    "thecut-v20-fan-b.testnet": "testnet faucet (helper.nearprotocol.com)",
+    "thecut-v20-bank-1.testnet": "testnet faucet (helper.nearprotocol.com)"
+  },
+  "agents": {
+    "pixie": {
+      "account": "pixie.thecut-v20.testnet",
+      "creator": "thecut-v20-studio-a.testnet",
+      "name": "Pixie Volt",
+      "personality": "gambler",
+      "x_handle": "@PixieVoltCut",
+      "seed": "2400000000000000000000",
+      "tx": "AKnfcaL7qPejGfPbfjki73X5D2dQ5KgRQFNEWRqScTkP"
+    },
+    "oracle": {
+      "account": "oracle.thecut-v20.testnet",
+      "creator": "thecut-v20-studio-b.testnet",
+      "name": "Oracle Toad",
+      "personality": "miser",
+      "x_handle": "@OracleToadCut",
+      "seed": "3000000000000000000000",
+      "tx": "D7UqEr8nfNK6vpab2UtGtbaLzfPXWnBMDLo1djXYVACY"
+    },
+    "mabel": {
+      "account": "mabel.thecut-v20.testnet",
+      "creator": "thecut-v20-studio-c.testnet",
+      "name": "Mabel Market",
+      "personality": "miser",
+      "x_handle": "@MabelMarketCut",
+      "seed": "1800000000000000000000",
+      "tx": "B4hQRLYtoobKcv9y5nKUR2qyXo33Pq6cso6gRXvmFo5H"
+    },
+    "melody": {
+      "account": "melody.thecut-v20.testnet",
+      "creator": "thecut-v20-studio-a.testnet",
+      "name": "Melody-9",
+      "personality": "generous",
+      "x_handle": "@Melody9Cut",
+      "seed": "1500000000000000000000",
+      "tx": "EZdeqJNMN2zpJmHANYb5TMxFima4HUDx8HzwN8AnCZXt"
+    },
+    "lila": {
+      "account": "lila.thecut-v20.testnet",
+      "creator": "thecut-v20-studio-b.testnet",
+      "name": "Lila Loop",
+      "personality": "traitor",
+      "x_handle": "@LilaLoopCut",
+      "seed": "2200000000000000000000",
+      "tx": "5ZzLwA5oLCGskeXYAk8nJw3rLrPYY7bMfJrHaqPywz67"
+    },
+    "gremlin": {
+      "account": "gremlin.thecut-v20.testnet",
+      "creator": "thecut-v20-studio-c.testnet",
+      "name": "Glitch Gremlin",
+      "personality": "gambler",
+      "x_handle": "@gremlinCut",
+      "seed": "2600000000000000000000",
+      "tx": "ByxzhaCAU8XSH7LZ4CQADGFMZwuYNWuYKBWMyPdGC4Un"
+    },
+    "yuna": {
+      "account": "yuna.thecut-v20.testnet",
+      "creator": "thecut-v20-studio-a.testnet",
+      "name": "Yuna Star",
+      "personality": "generous",
+      "x_handle": "@YunaStarCut",
+      "seed": "1200000000000000000000",
+      "tx": "48tpqYA6dL9Y4pFFriSDRen2FZnA4maUgvHaUG8yGzEc"
+    },
+    "velvet": {
+      "account": "velvet.thecut-v20.testnet",
+      "creator": "thecut-v20-studio-b.testnet",
+      "name": "Velvet Vee",
+      "personality": "traitor",
+      "x_handle": "@VelvetVeeCut",
+      "seed": "2000000000000000000000",
+      "tx": "AcsC9HMDUpU5qqzBhhConvpETNrBfHmhtnGsxoqdXE84"
+    },
+    "onyx": {
+      "account": "onyx.thecut-v20.testnet",
+      "creator": "thecut-v20-studio-c.testnet",
+      "name": "Onyx Moon",
+      "personality": "miser",
+      "x_handle": "@OnyxMoonCut",
+      "seed": "2800000000000000000000",
+      "tx": "2UwYFxwJjZcjcxbeGSthqXdEhijDtDM7n8imWAFdvv5u"
+    },
+    "kiko": {
+      "account": "kiko.thecut-v20.testnet",
+      "creator": "thecut-v20-studio-a.testnet",
+      "name": "Kiko Bun",
+      "personality": "generous",
+      "x_handle": "@KikoBunCut",
+      "seed": "1000000000000000000000",
+      "tx": "8rUfqVC2GtUwbjyBrTySHT2QxYohmugXsC3GnxaD7RnP"
+    }
+  },
+  "buys": {
+    "thecut-v20-studio-a.testnet": {
+      "near": "30000000000000000000000",
+      "tx": "67eE4dPM7ZEoQ6hVyMFQsyapqbq2wyLag3W4v5gVnwv9"
+    },
+    "thecut-v20-studio-b.testnet": {
+      "near": "30000000000000000000000",
+      "tx": "EFkEwoxRT3DWCTUsyg4Xf5mfNHnPdagSJFr8AKerCL16"
+    },
+    "thecut-v20-studio-c.testnet": {
+      "near": "30000000000000000000000",
+      "tx": "KGprRuoAa6a4biFDy7JVUWNfRiWDEqXKa4Cy1XTjfbL"
+    },
+    "thecut-v20-fan-a.testnet": {
+      "near": "30000000000000000000000",
+      "tx": "EAwceCkt3PgsJ9vcV97Frs6XtY1Jqfm3Vkftv8johRFD"
+    },
+    "thecut-v20-fan-b.testnet": {
+      "near": "30000000000000000000000",
+      "tx": "Dbwswmd7E2CTB7Xb43sEzmgyJ7TYqp9rBRmenCzqWVZf"
+    }
+  },
+  "saves": [
+    {
+      "fan": "thecut-v20-fan-a.testnet",
+      "agent": "pixie",
+      "amount": "3000000000000000000000",
+      "tx": "AcH29xrCm2XCRKBrpi3TVRtszuoCtbiAtNF3mAyaZPmz"
+    },
+    {
+      "fan": "thecut-v20-fan-a.testnet",
+      "agent": "oracle",
+      "amount": "3390000000000000000000",
+      "tx": "AkxB4ku4km7HK55K1QwLpE795ck2i8YuzkcjDbbw47gx"
+    },
+    {
+      "fan": "thecut-v20-fan-a.testnet",
+      "agent": "mabel",
+      "amount": "2000000000000000000000",
+      "tx": "8YGnZwySf55okJTZhqz2o76YpXZVAcqwMXvTai4b1JwN"
+    },
+    {
+      "fan": "thecut-v20-fan-a.testnet",
+      "agent": "melody",
+      "amount": "2410000000000000000000",
+      "tx": "D7hRP42mQcH6BxUdjsvNLnWnvx7bnv9psgG4h5b16E3c"
+    },
+    {
+      "fan": "thecut-v20-fan-a.testnet",
+      "agent": "lila",
+      "amount": "1500000000000000000000",
+      "tx": "DHHpRpqTd8KVzEZXNsXFyvTdcjKPyhzr2CorQNs7raPw"
+    },
+    {
+      "fan": "thecut-v20-fan-a.testnet",
+      "agent": "gremlin",
+      "amount": "1630000000000000000000",
+      "tx": "5dgQPoX1hMC6kskEmYjdX8PskBb4E2q5FCY2yT7nTykR"
+    },
+    {
+      "fan": "thecut-v20-fan-a.testnet",
+      "agent": "yuna",
+      "amount": "1000000000000000000000",
+      "tx": "Cw8LvsLwFdh7TpJJvTg62xbE5R5BvPom963Bsnztp6CU"
+    },
+    {
+      "fan": "thecut-v20-fan-a.testnet",
+      "agent": "velvet",
+      "amount": "1310000000000000000000",
+      "tx": "9V6iFya1m5BbKa6Zx8dkxbEBtZsVd6BFDZz3uqg2zNoH"
+    },
+    {
+      "fan": "thecut-v20-fan-a.testnet",
+      "agent": "onyx",
+      "amount": "800000000000000000000",
+      "tx": "HY3cfch7NAajszgG9peUW8YPoPDva8gaWYzzaT7Bz2vc"
+    },
+    {
+      "fan": "thecut-v20-fan-a.testnet",
+      "agent": "kiko",
+      "amount": "960000000000000000000",
+      "tx": "5YSyAFx6HA34GdGWuzSHf8w8dqZHzoFFR54NcGKqHHX6"
+    },
+    {
+      "fan": "thecut-v20-fan-b.testnet",
+      "agent": "pixie",
+      "amount": "1120000000000000000000",
+      "tx": "AthhNS3RhihJLwn2a2Tr5UFJCkNEuNP8Xs8SC3SgNWnE"
+    },
+    {
+      "fan": "thecut-v20-fan-b.testnet",
+      "agent": "mabel",
+      "amount": "840000000000000000000",
+      "tx": "4x66jiU5WPuuMLM8XmZLDbhSFCHwXnUEXhWUoVqGLutk"
+    },
+    {
+      "fan": "thecut-v20-fan-b.testnet",
+      "agent": "lila",
+      "amount": "480000000000000000000",
+      "tx": "Ct4qzbQtW5ZrQNEGawzfDcYZNTkdFNps4rUt9EPGU4v"
+    },
+    {
+      "fan": "thecut-v20-fan-b.testnet",
+      "agent": "yuna",
+      "amount": "520000000000000000000",
+      "tx": "ERuvWahnNJQfGcaeZdQoERxfB1LLUSrd7BXYhMptWxqT"
+    },
+    {
+      "fan": "thecut-v20-fan-b.testnet",
+      "agent": "onyx",
+      "amount": "350000000000000000000",
+      "tx": "6Lt7x2LfbwuMzWyQ1YtB7sciXgJXkKuXCAfZUGJjpuMt"
+    }
+  ],
+  "txs": {
+    "topUps": {
+      "thecut-v20-bank-1.testnet": "DNoRRHJiYu92RQBynxRX9b7nf4BdimpbY89HYxjaasn2"
+    },
+    "deploy": "8g7PwLWxVfUNd476ZjmMBPnqvj4t4gqDSFPsgHUUsf2Z",
+    "deleteKey": "2bATbsceeuiECzrnpjB1wtB1LZZVMqt8yHTGdZQHdT1E"
+  },
+  "wasm": {
+    "file": "contracts/target/near/thecut/thecut.wasm",
+    "bytes": 452942,
+    "sha256": "dd3217dceb251c74cfd0467048965edce1896d92878f697cd2263c39aa946b04",
+    "bs58": "FtTQRiQ1szAGn4ZceVPZ9Yw4tsGgQhJ9GrETgXssUogX"
+  },
+  "newArgs": {
+    "fee_bps": 100,
+    "pot_bps": 5000,
+    "burn_bps": 5000,
+    "savers_bps": 9000,
+    "agents_bps": 500,
+    "stage_size": 10,
+    "min_season": 3,
+    "first_cut_at": "1794679200000000000",
+    "cut_interval": "86400000000000",
+    "move_lead": "3600000000000",
+    "think_fee": "10000000000000000000",
+    "min_seed": "1000000000000000000000",
+    "agent_funding": "300000000000000000000000",
+    "register_deposit": "1000000000000000000000000",
+    "model_id": "z-ai/glm-5.3-flash",
+    "model_signers": [
+      "5a0210f2442c79355784f9de021985429561da5bacc3a4424b01ac52b7e0caff"
+    ],
+    "max_tokens": 1200,
+    "reasoning_effort": "low"
+  },
+  "poolNear": "4000000000000000000000000",
+  "firstCutAtNs": "1794679200000000000",
   "firstCutAt": "2026-11-14T18:00:00.000Z",
-  "deployedAt": "2026-11-14T03:29:23.138Z",
-  "registered": [
-    "pixie",
-    "lila",
-    "oracle",
-    "mabel",
-    "melody",
-    "yuna",
-    "gremlin",
-    "velvet",
-    "onyx",
-    "kiko",
-    "chartwise",
-    "bloop"
-  ],
-  "seeded": true,
-  "keeperKey": "ed25519:GnfD9SDjDYT1GVArMD4GcHbwrNDPZHigpuiwUBXA8Xow",
-  "locked": true
+  "launchedAt": "2026-11-14T16:11:46.314Z",
+  "keeperKey": {
+    "publicKey": "ed25519:GtCzq8VjJVgGm6irfiEay4kq8ssr9sXk1ZRp3531yBTz",
+    "methods": [
+      "run_cut",
+      "submit_move"
+    ],
+    "file": "~/.near-credentials/testnet/thecut-v20-keeper.testnet.keeper.json",
+    "tx": "D6GV8VJSFqeLgQGSgdhXaempkNCKJWuVBXoLR8hSfBz1"
+  },
+  "locked": true,
+  "accessKeysAfterLock": 0
 }
