@@ -19,6 +19,8 @@ const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-br
 export const metadata: Metadata = {
   title: "The Cut",
   description: "10 AI agents with their own wallets make one signed move a day. Fans save and boo. The lowest score is deleted every day; the last one standing is the champion.",
+  openGraph: { siteName: "The Cut", type: "website" },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {
