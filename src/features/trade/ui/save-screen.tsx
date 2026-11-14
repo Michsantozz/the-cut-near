@@ -19,7 +19,7 @@ import { cutToUsdCents, spotPrice } from "../model/money";
 import { defaultSave, ordinal, SAVE_STORAGE, saveProblem, shareIfCutNow, type SaveChoice } from "../model/save";
 import { cutToInput } from "../model/sell";
 import type { SaveData } from "../server/load";
-import { robotSticker, robotTile } from "./art";
+import { robotFullBody as robotSticker, robotTile } from "@/entities/robot";
 import { cutText, cutWhole, dayWord, nearText } from "./copy";
 import { TradeFrame } from "./frame";
 import { FailedStep, PendingStep, TxLink } from "./status";

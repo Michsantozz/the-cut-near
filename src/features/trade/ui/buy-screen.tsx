@@ -19,7 +19,7 @@ import { classifyTxError, failedTxHash, type TxFailure } from "../model/errors";
 import { spotPrice, tradePrice } from "../model/money";
 import { quoteBuyAction } from "../server/actions";
 import type { BuyData } from "../server/load";
-import { robotSticker } from "./art";
+import { robotFullBody as robotSticker } from "@/entities/robot";
 import { cutMoney, cutText, nearMoney, nearMoneyWhole, nearText, priceText, prizeName } from "./copy";
 import { FieldLabel, Row, TradeFrame } from "./frame";
 import { FailedStep, PendingStep, TxLink } from "./status";

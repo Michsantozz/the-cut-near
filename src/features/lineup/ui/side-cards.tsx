@@ -3,17 +3,15 @@ import { ArrowUp, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import type { Robot } from "@/entities/robot";
 import { Button } from "@/shared/ui/button";
 import { formatCount, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
 
 import { barPercent } from "../model/board";
 import type { Lineup } from "../server/load-lineup";
-import { DIRECTOR_ART, robotFullBody } from "./art";
+import { DIRECTOR_ART, robotFullBody, RobotTile, type Robot } from "@/entities/robot";
 import { cut, rescueLine, shortName } from "./copy";
 import { TimeLeft } from "./countdown";
-import { RobotTile } from "./robot-tile";
 
 /** Who the cut takes if nothing moves, how far it is from safety, and why rescuing it pays. */
 export function OnTheBlockCard({ lineup, className }: { lineup: Lineup; className?: string }) {

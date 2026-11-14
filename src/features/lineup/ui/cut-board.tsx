@@ -10,7 +10,7 @@ import { WalletGatedLink } from "@/shared/wallet";
 import { barPercent, type BoardEntry } from "../model/board";
 import type { Lineup } from "../server/load-lineup";
 import { cut, cutFine, rescueLine, SLICE_RULE } from "./copy";
-import { RobotTile } from "./robot-tile";
+import { RobotTile } from "@/entities/robot";
 import { SortableBoard } from "./sortable-board";
 
 /** The cut board: robots ranked by pile, the red cut line above the lowest, and what 100 $CUT saved would pay. */

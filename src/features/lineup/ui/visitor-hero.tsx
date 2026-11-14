@@ -8,7 +8,7 @@ import { formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
 
 import type { Lineup } from "../server/load-lineup";
-import { robotFullBody } from "./art";
+import { robotFullBody } from "@/entities/robot";
 import { CountdownPill } from "./countdown";
 
 /** First open: the whole idea in one card, the robots standing on top of it, and a way in. */
