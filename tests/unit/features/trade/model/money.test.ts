@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BUY_PRESETS, buyInputToNear, buyUnit, editAmount, GAS_RESERVE, groupTyped, maxBuyNear, nearToBuyInput } from "@/features/trade/model/buy";
+import { BUY_PRESETS, buyInputToNear, buyUnit, DEFAULT_BUY, editAmount, GAS_RESERVE, groupTyped, maxBuyNear, nearToBuyInput, openingBuyText } from "@/features/trade/model/buy";
 import { cutToNear, cutToUsdCents, nearToUsdCents, shareBps, spotPrice, tradePrice, usdCentsToNear } from "@/features/trade/model/money";
 import { defaultSell, sellShare } from "@/features/trade/model/sell";
 import { splitSupply } from "@/features/trade/model/supply";
@@ -40,6 +40,19 @@ describe("buy amount", () => {
     expect(buyInputToNear("1.5", "near", null)).toBe(units(15, NEAR_DECIMALS - 1));
     expect(buyInputToNear("", "usd", 250n)).toBeNull();
     expect(BUY_PRESETS.usd).toEqual(["50", "100", "250"]);
+  });
+
+  it("opens a NEAR buy small enough for a testnet wallet and pool", () => {
+    // The testnet pool holds about 4 NEAR and a fan wallet under 1: 100 NEAR was an error before the first tap.
+    expect(BUY_PRESETS.near).toEqual(["0.1", "0.5", "1"]);
+    expect(DEFAULT_BUY.near).toBe("0.1");
+    const wallet = maxBuyNear(units(814, NEAR_DECIMALS - 3), 0n);
+    expect(openingBuyText("near", null, wallet)).toBe("0.1");
+    expect(openingBuyText("near", null, null)).toBe("0.1");
+    // A wallet that cannot cover the default opens at its Max; one with nothing to spend keeps the default.
+    expect(openingBuyText("near", null, units(6, NEAR_DECIMALS - 2))).toBe("0.06");
+    expect(openingBuyText("near", null, 0n)).toBe("0.1");
+    expect(openingBuyText("usd", 250n, units(10, NEAR_DECIMALS))).toBe("25");
   });
 
   it("keeps gas and the registration out of Max", () => {

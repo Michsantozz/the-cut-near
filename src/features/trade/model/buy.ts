@@ -9,11 +9,24 @@ export type BuyUnit = "usd" | "near";
 /** NEAR kept back for gas when buying with "Max". */
 export const GAS_RESERVE = ONE_NEAR / 20n;
 
-/** Preset amounts: $50 / $100 / $250, or 10 / 50 / 100 NEAR. */
-export const BUY_PRESETS: Record<BuyUnit, string[]> = { usd: ["50", "100", "250"], near: ["10", "50", "100"] };
+/**
+ * Preset amounts: $50 / $100 / $250 (the design), or 0.1 / 0.5 / 1 NEAR. In NEAR there is no price to scale by, and
+ * the testnet pool holds a few NEAR, so the chips stay small next to it and to a fresh wallet's balance.
+ */
+export const BUY_PRESETS: Record<BuyUnit, string[]> = { usd: ["50", "100", "250"], near: ["0.1", "0.5", "1"] };
 
-/** The amount the screen opens with: $250 (the design), or 100 NEAR. */
-export const DEFAULT_BUY: Record<BuyUnit, string> = { usd: "250", near: "100" };
+/** The amount the screen opens with: $250 (the design), or 0.1 NEAR. */
+export const DEFAULT_BUY: Record<BuyUnit, string> = { usd: "250", near: "0.1" };
+
+/** What the field opens with: the default, or the wallet's "Max" when the default is more than it can buy. */
+export function openingBuyText(unit: BuyUnit, usdCentsPerNear: bigint | null, max: bigint | null): string {
+  const text = DEFAULT_BUY[unit];
+  const nearIn = buyInputToNear(text, unit, usdCentsPerNear);
+  if (max === null || nearIn === null || nearIn <= max) return text;
+  const most = nearToBuyInput(max, unit, usdCentsPerNear);
+  // A wallet that cannot buy even a rounded-down cent keeps the default, and the screen says why.
+  return (buyInputToNear(most, unit, usdCentsPerNear) ?? 0n) > 0n ? most : text;
+}
 
 export const buyUnit = (usdCentsPerNear: bigint | null): BuyUnit => (usdCentsPerNear !== null && usdCentsPerNear > 0n ? "usd" : "near");
 

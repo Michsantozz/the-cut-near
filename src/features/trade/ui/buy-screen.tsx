@@ -13,14 +13,14 @@ import { formatUtcTime } from "@/shared/ui/format";
 import { useNow } from "@/shared/ui/use-now";
 import { useWallet } from "@/shared/wallet";
 
-import { BUY_PRESETS, buyInputToNear, buyUnit, DEFAULT_BUY, editAmount, groupTyped, maxBuyNear, nearToBuyInput } from "../model/buy";
+import { BUY_PRESETS, buyInputToNear, buyUnit, editAmount, groupTyped, maxBuyNear, nearToBuyInput, openingBuyText } from "../model/buy";
 import { buyCalls, minOut, SLIPPAGE_BPS } from "../model/calls";
 import { classifyTxError, failedTxHash, type TxFailure } from "../model/errors";
 import { spotPrice, tradePrice } from "../model/money";
 import { quoteBuyAction } from "../server/actions";
 import type { BuyData } from "../server/load";
 import { agentFullBody as agentSticker } from "@/entities/agent";
-import { cutMoney, cutText, nearMoney, nearMoneyWhole, nearText, priceText, prizeName } from "./copy";
+import { cutMoney, cutText, feeSplitText, feeToPrize, nearMoney, nearMoneyWhole, nearText, priceText, prizeName } from "./copy";
 import { FieldLabel, Row, TradeFrame } from "./frame";
 import { FailedStep, PendingStep, TxLink } from "./status";
 import { toQuote, useQuote } from "./use-quote";
@@ -40,16 +40,16 @@ export function BuyScreen({ data }: { data: BuyData }) {
   const now = new Date(useNow(data.renderedAt));
   const rate = data.usdCentsPerNear;
   const unit = buyUnit(rate);
-  const [text, setText] = useState(DEFAULT_BUY[unit]);
+  const account = data.account;
+  const registration = account && !account.registered ? data.storageMin : null;
+  const max = account?.nearBalance != null ? maxBuyNear(account.nearBalance, registration ?? 0n) : null;
+  const [text, setText] = useState(() => openingBuyText(unit, rate, max));
   const [step, setStep] = useState<Step>({ kind: "amount" });
   const [reviewed, setReviewed] = useState<Quote | null>(null);
 
   const nearIn = buyInputToNear(text, unit, rate);
   const { quote, fresh } = useQuote(quoteBuyAction, nearIn, data.initial);
   const spot = spotPrice(data.pool);
-  const account = data.account;
-  const registration = account && !account.registered ? data.storageMin : null;
-  const max = account?.nearBalance != null ? maxBuyNear(account.nearBalance, registration ?? 0n) : null;
   const tooMuch = nearIn !== null && max !== null && nearIn > max;
   const prize = prizeName(now, data.cutAt);
   const amountLabel = unit === "usd" ? `$${groupTyped(text)}` : `${groupTyped(text)} NEAR`;
@@ -86,7 +86,7 @@ export function BuyScreen({ data }: { data: BuyData }) {
           title="Swapping NEAR for $CUT"
           from={{ label: "NEAR", sub: nearIn ? nearText(nearIn) : "" }}
           to={{ label: "$CUT", sub: cutText(step.quote.amountOut) }}
-          note={`The 1% fee, ${cutMoney(step.quote.fee, spot, rate)}, goes to ${prize}`}
+          note={`The 1% fee, ${cutMoney(step.quote.fee, spot, rate)}, goes ${feeSplitText(data.potBps, prize)}`}
         />
       </TradeFrame>
     );
@@ -145,7 +145,7 @@ export function BuyScreen({ data }: { data: BuyData }) {
             </div>
             <dl className="mt-2.5 lg:mt-3 lg:border-t-[1.5px] lg:border-canvas">
               <Row roomy label="Price per $CUT" value={priceText(tradePrice(nearIn, shown.amountOut + shown.fee), rate)} />
-              <Row roomy label={`Fee (1%) · to ${prize}`} value={cutMoney(shown.fee, spot, rate)} />
+              <Row roomy label={`Fee (1%) · ${feeSplitText(data.potBps, prize)}`} value={cutMoney(shown.fee, spot, rate)} />
               {registration !== null && <Row roomy label="One-time registration" value={`${nearText(registration)} NEAR`} />}
               <Row roomy label="Network fee" value={rate !== null ? "about $0.01" : "under 0.01 NEAR"} />
               <Row roomy label="Most the price can move" value={`${SLIPPAGE_BPS / 100}%`} />
@@ -276,7 +276,7 @@ export function BuyScreen({ data }: { data: BuyData }) {
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2 lg:mt-3.5 lg:gap-2.5">
               <Fact icon={TrendingUp} label="Price" value={priceText(spot, rate)} />
-              <Fact icon={Gift} label={`To ${prize}`} value={quote ? cutMoney(quote.fee, spot, rate) : "—"} />
+              <Fact icon={Gift} label={`To ${prize}`} value={quote ? cutMoney(feeToPrize(quote.fee, data.potBps), spot, rate) : "—"} />
             </div>
           </section>
 
@@ -348,7 +348,7 @@ function Chip({ pressed, onClick, children }: { pressed: boolean; onClick: () =>
       type="button"
       aria-pressed={pressed}
       onClick={onClick}
-      className="h-9 rounded-full border-2 border-ink bg-paper px-4 text-sm font-bold outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:bg-lime lg:h-[44px] lg:rounded-[14px] lg:text-[15px] lg:aria-pressed:font-extrabold"
+      className="h-9 rounded-full border-2 border-ink bg-paper px-3 text-sm font-bold whitespace-nowrap outline-none sm:px-4 focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:bg-lime lg:h-[44px] lg:rounded-[14px] lg:text-[15px] lg:aria-pressed:font-extrabold"
     >
       {children}
     </button>
