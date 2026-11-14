@@ -11,6 +11,7 @@ import { cutText, whenText, type CutReceipt, type ReceiptTag } from "../model/de
 import { FILTER_LABELS, RECEIPT_FILTERS, receiptsHref } from "../model/filters";
 import { percentText } from "../model/supply";
 import type { Receipts, ReceiptRow } from "../server/load-receipts";
+import { JournalUpdating } from "./journal-updating";
 import { RerunAuditButton } from "./rerun-audit-button";
 
 // The Receipts page (Receipts.dc.html, ReceiptsPhone.dc.html): the public log of every mint, burn, trade, save,
@@ -52,11 +53,12 @@ const compactCut = (value: bigint) =>
       ? `${formatAmount(value, { decimals: 21, maxFractionDigits: 0 })}K`
       : cutWhole(value);
 
-export function ReceiptsScreen({ data }: { data: Receipts }) {
+/** `updating`: the server is still reading the newest blocks into the journal; the page loads again shortly. */
+export function ReceiptsScreen({ data, updating = false }: { data: Receipts; updating?: boolean }) {
   const now = new Date(data.renderedAt);
   return (
     <div className="mx-auto w-full max-w-[640px] px-4 pb-8 lg:max-w-none lg:px-8">
-      <Hero data={data} />
+      <Hero data={data} updating={updating} />
       <StatCards data={data} now={now} />
       <SupplyCard data={data} />
       <div className="mt-[22px] flex flex-col gap-[22px] lg:mt-7 lg:flex-row lg:items-start lg:gap-7">
@@ -74,7 +76,7 @@ export function ReceiptsScreen({ data }: { data: Receipts }) {
   );
 }
 
-function Hero({ data }: { data: Receipts }) {
+function Hero({ data, updating }: { data: Receipts; updating: boolean }) {
   const at = new Date(data.renderedAt);
   return (
     <div className="lg:flex lg:items-start lg:justify-between lg:gap-8 lg:pt-2">
@@ -95,6 +97,7 @@ function Hero({ data }: { data: Receipts }) {
           {formatCount(data.entries)} journal entries since launch{data.launchedAt && `, ${formatUtcDate(data.launchedAt).replace(",", "")}`}
           {!data.live && data.stats.usdCentsPerNear !== null && ` · Sample world, 1 NEAR = ${formatUsd(data.stats.usdCentsPerNear)}`}
         </p>
+        {updating && <JournalUpdating />}
         <span className="sr-only">Read at {formatUtcTime(at)} UTC</span>
       </div>
     </div>
