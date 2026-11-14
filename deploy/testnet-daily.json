@@ -281,5 +281,12 @@
     "tx": "tKeH6F1GkgnVTQQ54cus7yTwiagpaSkAbKmgg9jwxdL"
   },
   "locked": true,
-  "accessKeysAfterLock": 0
+  "accessKeysAfterLock": 0,
+  "firstCut": {
+    "index": 1,
+    "tx": "5NUDF6o6XsGrW4if9Bua6kvudqXRxfKKDX4MM8faeNti",
+    "ranAt": "2026-11-14T18:00:07Z",
+    "runner": "thecut-daily-keeper.testnet",
+    "result": "season 1 started, 10 agents seated"
+  }
 }

@@ -285,5 +285,65 @@
     "tx": "At6QTY7xewRTamzuUNgsyTWSkPuvmvPwwmvU9xYDJr3f"
   },
   "locked": true,
-  "accessKeysAfterLock": 0
+  "accessKeysAfterLock": 0,
+  "season1": {
+    "champion": "pixie",
+    "championCut": {
+      "index": 10,
+      "tx": "G9Aqbz6TbcvBxeRTaynJErLt32Y3dZnzkbUjv3tJF98o"
+    },
+    "cuts": {
+      "1": {
+        "tx": "CjevXdb3fNAoa2uWc7trya8vrLEECtrUqZrv6EnieJYF",
+        "deleted": null,
+        "note": "season start, 10 seated"
+      },
+      "2": {
+        "tx": "67pQJFQZJNwzaXkpSaZjMCNWs8s58jEEtdvKGxpzhUcG",
+        "deleted": "velvet",
+        "heir": "lila"
+      },
+      "3": {
+        "tx": "AbaRrJEftWAR2EzsDJyJaYMiBGvEiVQikepKQcKFLuts",
+        "deleted": "kiko",
+        "heir": "melody"
+      },
+      "4": {
+        "tx": "3mzHbDUqBmgpajk8HscoMQSGacXD6wUqgHvcAqiarqyE",
+        "deleted": "yuna",
+        "heir": "melody"
+      },
+      "5": {
+        "tx": "HdkX4EA7ScebUefzCAuz279fhsytkvGUaNhC72tnuTY7",
+        "deleted": "onyx",
+        "heir": "oracle"
+      },
+      "6": {
+        "tx": "BfhkXnDSy4sMrT9AU6EKPjayQ7wv3MHnD5qpF8WwuXkN",
+        "deleted": "gremlin",
+        "heir": "pixie"
+      },
+      "7": {
+        "tx": "7XrV8omW8Js5wX5Jw8q3WELsCrJZvUHd7UxpaftANBnd",
+        "deleted": "lila",
+        "heir": "melody"
+      },
+      "8": {
+        "tx": "5Ha4AzjDj5jRJub9jZmz5nBh3UvLVCeg7yjP2eVUn5k7",
+        "deleted": "melody",
+        "heir": "pixie"
+      },
+      "9": {
+        "tx": "6ndxYma3N5BDV9i9pLkwPNNEbw7y5RAMdEafeRQ6Q9xP",
+        "deleted": "oracle",
+        "heir": "mabel"
+      },
+      "10": {
+        "tx": "G9Aqbz6TbcvBxeRTaynJErLt32Y3dZnzkbUjv3tJF98o",
+        "deleted": "mabel",
+        "heir": "pixie",
+        "champion": "pixie"
+      }
+    }
+  }
 }
