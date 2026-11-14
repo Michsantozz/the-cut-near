@@ -29,6 +29,13 @@ export function robotFullBody(id: string): Art | null {
   return width ? { src: `/robots/${id}.webp`, width, height: FULL_HEIGHT } : null;
 }
 
+/** A steady animation offset per robot, so robots side by side never move in step. */
+export function motionDelay(id: string): { animationDelay: string } {
+  let hash = 0;
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) % 997;
+  return { animationDelay: `-${(hash % 42) / 10}s` };
+}
+
 export const DIRECTOR_ART: Art = { src: "/director.webp", width: 326, height: FULL_HEIGHT };
 
 /** The stage under the scissors, the backdrop of the cut. */

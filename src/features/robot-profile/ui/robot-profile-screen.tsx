@@ -3,7 +3,7 @@ import { BarChart3, ChevronLeft, CreditCard, Layers, PieChart, Plus, ShieldCheck
 import Image from "next/image";
 import Link from "next/link";
 
-import { RobotTile, robotFullBody, robotTile } from "@/entities/robot";
+import { motionDelay, RobotTile, robotFullBody, robotTile } from "@/entities/robot";
 import { Button } from "@/shared/ui/button";
 import { formatAmount, formatCount, formatUtcDate, formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
@@ -97,7 +97,12 @@ export function RobotProfileScreen({ data, posts, directorLine }: { data: RobotP
           width={art.width}
           height={art.height}
           priority
-          className={cn("absolute left-1/2 -translate-x-1/2 object-contain object-bottom", big ? "-bottom-[18px] h-[93%] w-[92%] -rotate-2" : "bottom-0 h-[140px] w-auto", deleted && "opacity-40 grayscale")}
+          style={motionDelay(robot.id)}
+          className={cn(
+            "absolute left-1/2 origin-bottom -translate-x-1/2 object-contain object-bottom",
+            big ? "-bottom-[18px] h-[93%] w-[92%] -rotate-2" : "bottom-0 h-[140px] w-auto",
+            deleted ? "opacity-40 grayscale" : "motion-safe:animate-idle",
+          )}
         />
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center">

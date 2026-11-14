@@ -8,7 +8,7 @@ import { formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
 
 import type { Lineup } from "../server/load-lineup";
-import { robotFullBody } from "@/entities/robot";
+import { motionDelay, robotFullBody } from "@/entities/robot";
 import { CountdownPill } from "./countdown";
 
 /** First open: the whole idea in one card, the robots standing on top of it, and a way in. */
@@ -35,8 +35,9 @@ export function VisitorHero({ lineup }: { lineup: Lineup }) {
               width={art.width}
               height={art.height}
               priority
+              style={motionDelay(robot.id)}
               className={cn(
-                "-mb-0.5 block w-auto first:ml-0",
+                "-mb-0.5 block w-auto origin-bottom first:ml-0 motion-safe:animate-idle",
                 index % 2 ? "h-[62px] lg:h-[66px]" : "h-[70px] lg:h-[74px]",
                 "-ml-[5px] lg:-ml-1.5",
               )}

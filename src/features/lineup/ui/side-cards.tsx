@@ -31,7 +31,7 @@ export function OnTheBlockCard({ lineup, className }: { lineup: Lineup; classNam
         aria-label={`${lowest.name}: see its page`}
         className="flex h-32 items-end justify-center border-b-2 border-ink bg-violet-deep bg-[radial-gradient(circle_at_50%_0%,var(--color-danger)_0%,transparent_70%)] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
-        {art && <Image src={art.src} alt="" width={art.width} height={art.height} className="block h-[118px] w-auto" />}
+        {art && <Image src={art.src} alt="" width={art.width} height={art.height} className="block h-[118px] w-auto origin-bottom motion-safe:animate-shiver" />}
       </Link>
       <div className="px-4 pt-[11px] pb-3.5">
         <p className="text-[11.5px] font-extrabold tracking-[0.05em] uppercase">
@@ -121,7 +121,7 @@ export function DirectorCard({ lineup, className }: { lineup: Lineup & { directo
 
   return (
     <figure className={cn("flex items-end gap-1.5", className)}>
-      <Image src={DIRECTOR_ART.src} alt="The Director" width={DIRECTOR_ART.width} height={DIRECTOR_ART.height} className="block h-[78px] w-auto shrink-0" />
+      <Image src={DIRECTOR_ART.src} alt="The Director" width={DIRECTOR_ART.width} height={DIRECTOR_ART.height} className="block h-[78px] w-auto shrink-0 origin-bottom motion-safe:animate-idle" />
       <div className="grow rounded-[18px_18px_18px_4px] border-2 border-ink bg-pink px-3.5 py-2.5">
         <blockquote className="font-heading text-[17px] leading-[21px] font-extrabold text-balance">“{line.text}”</blockquote>
         <a
