@@ -81,7 +81,7 @@ export function TradeFrame({
             {title}
           </h1>
         )}
-        {hideHeader && nav.kind === "close" && <NavButton nav={nav} className="absolute top-[26px] right-[30px] hidden lg:flex" />}
+        {hideHeader && nav.kind === "close" && tone !== "lime" && <NavButton nav={nav} className="absolute top-[26px] right-[30px] hidden lg:flex" />}
         {children}
       </section>
     </div>

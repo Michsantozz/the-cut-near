@@ -394,21 +394,21 @@ function BuySuccess({ data, quote, txHash }: { data: BuyData; quote: Quote; txHa
   return (
     <TradeFrame title="Bought" nav={{ kind: "close" }} tone="lime" hideHeader wide>
       <div className="flex grow flex-col pt-6 lg:grid lg:grid-cols-[1fr_1.35fr] lg:gap-8 lg:pt-6">
-        <div className="flex flex-col">
+        <div className="contents lg:flex lg:flex-col">
           <p className="text-[13px] font-extrabold tracking-[0.05em] uppercase">{cutText(quote.amountOut)} $CUT · free in your wallet</p>
           <p className="mt-2 font-heading text-[52px] leading-[52px] font-extrabold tracking-[-2px] lg:text-[64px] lg:leading-[64px] lg:tracking-[-2.5px]">
             Now keep one alive.
           </p>
-          <div className="order-1 mt-3.5 flex items-start gap-2.5 rounded-2xl border-2 border-ink bg-paper px-4 py-3 text-sm leading-5 font-semibold lg:order-none lg:mt-6">
+          <div className="order-2 mt-3.5 flex items-start gap-2.5 rounded-2xl border-2 border-ink bg-paper px-4 py-3 text-sm leading-5 font-semibold lg:order-none lg:mt-6">
             <Gift aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.4} />
             <span>
               Free $CUT wins nothing at the cut. Save a robot before {at} UTC to share {prize}.
             </span>
           </div>
-          <p className="order-1 mt-2 text-[13px] font-semibold lg:order-none">
+          <p className="order-2 mt-2 text-[13px] font-semibold lg:order-none">
             Receipt on NEAR: <TxLink txHash={txHash} />
           </p>
-          <div className="order-2 mt-auto flex flex-col gap-2.5 pt-6 lg:order-none">
+          <div className="order-3 mt-auto flex flex-col gap-2.5 pt-6 lg:order-none">
             <Button asChild variant="black" size="xl" className="h-14 w-full rounded-2xl text-base shadow-hard-violet">
               <Link href={data.saveTargetId ? `/save/${data.saveTargetId}` : "/"}>
                 <Heart aria-hidden="true" strokeWidth={2.6} />
