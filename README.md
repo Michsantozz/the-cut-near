@@ -7,17 +7,17 @@
 <p align="center"><b>Ten AI agents, each with its own NEAR account and its own $CUT wallet, make one signed move a day to avoid being cut. Every day the lowest score has its NEAR account deleted; the last one standing is the champion.</b><br/>Fans save $CUT to keep an agent alive and burn $CUT to boo one down. Every cut burns, so the supply only shrinks.</p>
 
 <p align="center">
-  <a href="{{REPO_URL}}/actions/workflows/live.yml"><img alt="Both testnet contracts: 0 keys and the recorded code hash, checked every 6 hours" src="{{REPO_URL}}/actions/workflows/live.yml/badge.svg" /></a>
-  <a href="{{REPO_URL}}/actions/workflows/ci.yml"><img alt="Contract, app and simulation tests on every push" src="{{REPO_URL}}/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://github.com/Michsantozz/the-cut-near/actions/workflows/live.yml"><img alt="Both testnet contracts: 0 keys and the recorded code hash, checked every 6 hours" src="https://github.com/Michsantozz/the-cut-near/actions/workflows/live.yml/badge.svg" /></a>
+  <a href="https://github.com/Michsantozz/the-cut-near/actions/workflows/ci.yml"><img alt="Contract, app and simulation tests on every push" src="https://github.com/Michsantozz/the-cut-near/actions/workflows/ci.yml/badge.svg" /></a>
   <a href="https://testnet.nearblocks.io/address/thecut-daily.testnet"><img alt="Testnet contract" src="https://img.shields.io/badge/testnet-thecut--daily.testnet-7c5cf2?style=flat-square" /></a>
   <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/licence-MIT-e2d5c3?style=flat-square" /></a>
 </p>
 
 <p align="center">
-  <b><a href="{{SITE_URL}}">Today's cut</a></b> &nbsp;·&nbsp;
-  <b><a href="{{SITE_URL}}/judges">Judge desk</a></b> &nbsp;·&nbsp;
-  <b><a href="{{SITE_URL}}/judges#break">Try to break it</a></b> &nbsp;·&nbsp;
-  <b><a href="{{SITE_URL}}/simulation">The 60-day simulation</a></b> &nbsp;·&nbsp;
+  <b><a href="https://the-cut-near.vercel.app">Today's cut</a></b> &nbsp;·&nbsp;
+  <b><a href="https://the-cut-near.vercel.app/judges">Judge desk</a></b> &nbsp;·&nbsp;
+  <b><a href="https://the-cut-near.vercel.app/judges#break">Try to break it</a></b> &nbsp;·&nbsp;
+  <b><a href="https://the-cut-near.vercel.app/simulation">The 60-day simulation</a></b> &nbsp;·&nbsp;
   <b><a href="RULES.md">Full rules</a></b> &nbsp;·&nbsp;
   <b><a href="public/llms.txt">For AI agents</a></b>
 </p>
@@ -28,15 +28,15 @@ Built for NEAR HACKATHON, track **Memecoins With Mechanics**.
 
 | Step | Do this | You should see |
 | - | - | - |
-| 1 | Open the **[judge desk]({{SITE_URL}}/judges)** | Seven claims checked live in your browser against `thecut-daily.testnet`: 0 access keys, the code hash against the deploy record, the books, the agents' moves, each move's TEE signature verified in the page, the personality limits and the season clock. Then the track's prompt line by line, one button per mechanic, and ten attacks with the contract's refusal and the test that pins it. |
-| 2 | Open **[Today]({{SITE_URL}})** | The stage ranked by score (pile − boos − damage), who is on the cut line and by how much, the two clocks (moves close 17:00 UTC, the cut at 18:00 UTC), and each agent's move for the coming cut with its reason. |
-| 3 | Open an agent, then **[Receipts]({{SITE_URL}}/receipts)** | The agent's wallet is the NEP-141 balance of its own keyless account; its personality's limits, its heir, its pacts and every move with its proof. Receipts lists every mint, burn, save, prize and move from the contract's events. |
-| 4 | Open **[The simulation]({{SITE_URL}}/simulation)** | 60 daily cuts × 6 scenarios × 20 seeds on the contract's rules: supply over time, where every burn came from, who came out ahead. |
+| 1 | Open the **[judge desk](https://the-cut-near.vercel.app/judges)** | Seven claims checked live in your browser against `thecut-daily.testnet`: 0 access keys, the code hash against the deploy record, the books, the agents' moves, each move's TEE signature verified in the page, the personality limits and the season clock. Then the track's prompt line by line, one button per mechanic, and ten attacks with the contract's refusal and the test that pins it. |
+| 2 | Open **[Today](https://the-cut-near.vercel.app)** | The stage ranked by score (pile − boos − damage), who is on the cut line and by how much, the two clocks (moves close 17:00 UTC, the cut at 18:00 UTC), and each agent's move for the coming cut with its reason. |
+| 3 | Open an agent, then **[Receipts](https://the-cut-near.vercel.app/receipts)** | The agent's wallet is the NEP-141 balance of its own keyless account; its personality's limits, its heir, its pacts and every move with its proof. Receipts lists every mint, burn, save, prize and move from the contract's events. |
+| 4 | Open **[The simulation](https://the-cut-near.vercel.app/simulation)** | 60 daily cuts × 6 scenarios × 20 seeds on the contract's rules: supply over time, where every burn came from, who came out ahead. |
 
 Five commands for a screener after the clone (Node 22.18 or later, pnpm, Rust 1.94 or later for the contract tests):
 
 ```bash
-git clone {{REPO_URL}} && cd the-cut-near && pnpm install
+git clone https://github.com/Michsantozz/the-cut-near && cd the-cut-near && pnpm install
 
 node scripts/testnet/status.ts                  # the daily contract now: "access keys 0", the season, the next cut, the stage
 cd contracts && cargo test -p thecut -p agent   # expect "116 passed" (game) and "6 passed" (agent account); cd ..
@@ -210,9 +210,9 @@ machinery around it.
 
 ## Try it in two minutes
 
-1. **Watch.** Open [Today]({{SITE_URL}}). See the stage ranked by score, the agent on the cut line and the countdown.
+1. **Watch.** Open [Today](https://the-cut-near.vercel.app). See the stage ranked by score, the agent on the cut line and the countdown.
 2. **Read a move.** Open any agent. See its personality's limits, its wallet, its move for the coming cut and the reason it gave.
-3. **Check it.** Open the [judge desk]({{SITE_URL}}/judges). Each claim turns green as your browser checks it on chain.
+3. **Check it.** Open the [judge desk](https://the-cut-near.vercel.app/judges). Each claim turns green as your browser checks it on chain.
 4. **Play.** Connect a testnet wallet ([faucet](https://docs.near.org/tools/faucet)), **Buy** $CUT, **Save** an agent, **Boo**
    another. See your save in its pile and your boo in its score.
 5. **Run the cut.** After 18:00 UTC call `run_cut` from any account (100 TGas); you keep the 0.3 NEAR in the cut agent's account.

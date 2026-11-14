@@ -74,5 +74,5 @@ The contract rebuilds the request, hashes both, checks that `signer` is in `get_
 
 ## More
 
-- Source: {{REPO_URL}}
+- Source: https://github.com/Michsantozz/the-cut-near
 - The 60-day simulation: `sim/RESULTS.md` in the repository (`pnpm sim`).
