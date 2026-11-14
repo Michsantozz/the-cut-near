@@ -22,6 +22,7 @@ export function TradeFrame({
   tone = "paper",
   hideHeader = false,
   wide = false,
+  bareOnDesk = false,
   children,
 }: {
   title: string;
@@ -33,6 +34,8 @@ export function TradeFrame({
   /** Status steps (pending, done, failed) have no header on the phone. */
   hideHeader?: boolean;
   wide?: boolean;
+  /** The laptop dialog draws its own header (Save a robot). */
+  bareOnDesk?: boolean;
   children: ReactNode;
 }) {
   const titleId = useId();
@@ -60,7 +63,7 @@ export function TradeFrame({
           tone === "lime" ? "lg:bg-lime" : "lg:bg-paper",
         )}
       >
-        <header className={cn("flex items-center justify-between lg:mb-[18px] lg:justify-start lg:gap-3", hideHeader && "hidden")}>
+        <header className={cn("flex items-center justify-between lg:mb-[18px] lg:justify-start lg:gap-3", hideHeader && "hidden", bareOnDesk && "lg:hidden")}>
           <NavButton nav={nav} className={cn(nav.kind === "close" && "lg:hidden")} />
           {Icon && (
             <span aria-hidden="true" className={cn("hidden size-10 items-center justify-center rounded-md border-2 border-ink lg:flex", iconTile)}>

@@ -1,5 +1,6 @@
 import { paysPer100, sliceIfCut, type SplitParams } from "@/entities/cut";
 import { rankByPile, type Robot } from "@/entities/robot";
+import { NEAR_DECIMALS, units } from "@/shared/lib/amount";
 
 // The "Save a robot" picker: every stage robot with what it pays per 100 $CUT saved if the cut ran now
 // (SPEC-v19 §2), and what one save would get from its robot's slice.
@@ -47,3 +48,22 @@ export function ordinal(rank: number): string {
   const suffix = tens >= 11 && tens <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[rank % 10] ?? "th";
   return `${rank}${suffix}`;
 }
+
+/** Smallest new save the contract takes (`MIN_SAVE`): 0.1 $CUT. */
+export const MIN_SAVE = units(1) / 10n;
+
+/** The amount the save screen opens with: 100 $CUT, or all the free $CUT when there is less. */
+export function defaultSave(free: bigint): bigint {
+  return free < units(100) ? free : units(100);
+}
+
+/** Why a save amount cannot be sent yet, or null when it can. */
+export function saveProblem(amount: bigint | null, free: bigint, hasSave: boolean): "empty" | "too-small" | "too-much" | null {
+  if (amount === null || amount <= 0n) return "empty";
+  if (amount > free) return "too-much";
+  if (!hasSave && amount < MIN_SAVE) return "too-small";
+  return null;
+}
+
+/** NEAR attached to a save when the account's storage balance runs thin (see `storageTopUp`). */
+export const SAVE_STORAGE = { enough: units(3, NEAR_DECIMALS) / 1000n, topUp: units(5, NEAR_DECIMALS) / 1000n };

@@ -53,3 +53,11 @@ export function savedLine(saves: readonly { robotName: string; amount: bigint }[
   const total = saves.reduce((sum, save) => sum + save.amount, 0n);
   return saves.length === 1 ? `${cutText(total)} saved on ${saves[0].robotName}` : `${cutText(total)} saved on ${saves.length} robots`;
 }
+
+/** Big money, short: "$18.4M", "$812.5K", "$950". */
+export function compactUsd(cents: bigint): string {
+  const dollars = cents / 100n;
+  if (dollars >= 1_000_000n) return `$${formatAmount(cents, { decimals: 8, maxFractionDigits: 1 })}M`;
+  if (dollars >= 1_000n) return `$${formatAmount(cents, { decimals: 5, maxFractionDigits: 1 })}K`;
+  return formatUsd(cents).replace(/\.00$/, "");
+}

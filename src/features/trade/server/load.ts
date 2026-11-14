@@ -38,13 +38,15 @@ export type Market = {
   cutAt: Date;
   cutIndex: number;
   feesSoFar: bigint;
+  /** $CUT the lowest robot needs to pass the next one (`get_next_cut().gap_to_next`). */
+  gapToNext: bigint;
 };
 
 async function loadMarket(): Promise<Market> {
   // Countdowns and "today" start from the request time, never from a prerendered one.
   await connection();
   const [pool, usdCentsPerNear, nextCut] = await Promise.all([getPool(), getUsdCentsPerNear(), getNextCut()]);
-  return { renderedAt: Date.now(), pool, usdCentsPerNear, cutAt: nextCut.at, cutIndex: nextCut.index, feesSoFar: nextCut.prizeSoFar };
+  return { renderedAt: Date.now(), pool, usdCentsPerNear, cutAt: nextCut.at, cutIndex: nextCut.index, feesSoFar: nextCut.prizeSoFar, gapToNext: nextCut.gapToNext };
 }
 
 function heldSaves(saves: Awaited<ReturnType<typeof getSaves>>, robots: readonly Robot[], cutIndex: number): HeldSave[] {
@@ -117,6 +119,8 @@ export async function loadSell(accountId: string | null): Promise<SellData> {
 export type ValueData = Market & {
   range: PriceRange;
   prices: PricePoint[];
+  /** The first traded price ever: when trading began. */
+  launchAt: Date | null;
   supply: SupplySplit;
   holders: number | null;
   account: { accountId: string; free: bigint; saves: HeldSave[] } | null;
@@ -124,8 +128,9 @@ export type ValueData = Market & {
 
 export async function loadValue(accountId: string | null, range: PriceRange): Promise<ValueData> {
   const market = await loadMarket();
-  const [prices, params, current, stage, holders, account] = await Promise.all([
+  const [prices, all, params, current, stage, holders, account] = await Promise.all([
     getPriceHistory(range),
+    range === "all" ? null : getPriceHistory("all"),
     getParams(),
     getTotalSupply(),
     getStage(),
@@ -139,6 +144,7 @@ export async function loadValue(accountId: string | null, range: PriceRange): Pr
     ...market,
     range,
     prices,
+    launchAt: (all ?? prices)[0]?.at ?? null,
     supply: splitSupply({ launch: params.totalSupply, current, saved }),
     holders,
     account: account && { accountId: accountId!, free: account.free, saves: heldSaves(account.saves, [...stage, ...account.bench], market.cutIndex) },

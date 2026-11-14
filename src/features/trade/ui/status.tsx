@@ -31,11 +31,13 @@ export function PendingStep({
   from,
   to,
   note,
+  caption = "One swap in The Cut’s pool",
 }: {
   title: string;
   from: { label: string; sub: string };
   to: { label: string; sub: string };
   note: ReactNode;
+  caption?: string;
 }) {
   return (
     <div role="status" aria-live="polite" className="flex flex-col items-center pt-[52px] text-center lg:pt-6 lg:pb-4">
@@ -51,7 +53,7 @@ export function PendingStep({
           <div className="h-full w-3/5 animate-pulse bg-blue" />
         </div>
         <p className="mt-2 flex justify-between text-[13px] font-semibold text-ink-3">
-          <span>One swap in The Cut’s pool</span>
+          <span>{caption}</span>
           <span>about 1 second</span>
         </p>
       </div>
