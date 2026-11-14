@@ -19,7 +19,7 @@ import { cutToUsdCents, spotPrice } from "../model/money";
 import { cutToInput, defaultSell, sellShare, SELL_PRESETS } from "../model/sell";
 import { quoteSellAction } from "../server/actions";
 import type { SellData } from "../server/load";
-import { cutMoney, cutText, nearMoney, nearText, priceText, prizeName, savedLine } from "./copy";
+import { cutMoney, cutText, cutTyped, feeSplitText, nearMoney, nearText, priceText, prizeName, savesLockText } from "./copy";
 import { FieldLabel, Row, TradeFrame } from "./frame";
 import { FailedStep, PendingStep, TxLink } from "./status";
 import { toQuote, useQuote } from "./use-quote";
@@ -28,7 +28,8 @@ type Step =
   | { kind: "amount"; note?: string }
   | { kind: "moved"; quote: Quote; was: Quote }
   | { kind: "pending"; cutIn: bigint; quote: Quote }
-  | { kind: "success"; cutIn: bigint; quote: Quote; txHash: string }
+  /** `freeLeft` is counted when the sale is sent: the refresh after it already lowers `free`. */
+  | { kind: "success"; cutIn: bigint; freeLeft: bigint; quote: Quote; txHash: string }
   | { kind: "failed"; reason: TxFailure; txHash: string | null };
 
 const SHARE_WORDS: Record<number, string> = { 25: "a quarter of", 50: "half of", 75: "three quarters of", 100: "all of" };
@@ -49,7 +50,7 @@ export function SellScreen({ data }: { data: SellData }) {
   const spot = spotPrice(data.pool);
   const prize = prizeName(now, data.cutAt);
   const lockedTill = `${formatUtcTime(data.cutAt)} UTC`;
-  const saved = account ? savedLine(account.saves) : null;
+  const saved = account ? savesLockText(account.saves, lockedTill) : null;
   const tooMuch = cutIn !== null && cutIn > free;
   const preset = SELL_PRESETS.find((percent) => cutIn !== null && cutIn > 0n && sellShare(free, percent) === cutIn);
 
@@ -61,7 +62,7 @@ export function SellScreen({ data }: { data: SellData }) {
     setStep({ kind: "pending", cutIn, quote: accepted });
     try {
       const { txHash } = await callContract(sellCalls({ cutIn, minOut: minOut(accepted.amountOut) }));
-      setStep({ kind: "success", cutIn, quote: accepted, txHash });
+      setStep({ kind: "success", cutIn, freeLeft: free - cutIn, quote: accepted, txHash });
       router.refresh();
     } catch (error) {
       const reason = classifyTxError(error);
@@ -87,16 +88,16 @@ export function SellScreen({ data }: { data: SellData }) {
       <TradeFrame title="Selling $CUT" nav={{ kind: "close" }} hideHeader>
         <PendingStep
           title="Swapping $CUT for NEAR"
-          from={{ label: "$CUT", sub: cutText(step.cutIn) }}
+          from={{ label: "$CUT", sub: cutTyped(step.cutIn) }}
           to={{ label: "NEAR", sub: nearText(step.quote.amountOut) }}
-          note={`The 1% fee, ${cutMoney(step.quote.fee, spot, rate)}, goes to ${prize}`}
+          note={`The 1% fee, ${cutMoney(step.quote.fee, spot, rate)}, goes ${feeSplitText(data.potBps, prize)}`}
         />
       </TradeFrame>
     );
   }
 
   if (step.kind === "success") {
-    const left = free - step.cutIn;
+    const left = step.freeLeft;
     const savedTotal = account.saves.reduce((sum, save) => sum + save.amount, 0n);
     const yours = left + savedTotal;
     return (
@@ -116,7 +117,7 @@ export function SellScreen({ data }: { data: SellData }) {
               {cutText(yours)} $CUT{rate !== null ? ` · ${formatUsd(cutToUsdCents(yours, spot, rate))}` : ""}
             </p>
             <p className="text-sm leading-5">
-              {cutText(left)} free{saved ? ` · ${saved}, locked till ${lockedTill}.` : "."}
+              {cutText(left)} free{saved ? ` · ${saved}.` : "."}
             </p>
           </div>
           <p className="mt-3 text-[13px] font-semibold">
@@ -206,7 +207,7 @@ export function SellScreen({ data }: { data: SellData }) {
               </button>
             ))}
           </div>
-          {saved && <LockNote text={`${cutText(free)} free · ${saved}, locked till ${lockedTill}. Only free $CUT can be sold.`} where="hidden lg:flex" />}
+          {saved && <LockNote text={`${cutText(free)} free · ${saved}. Only free $CUT can be sold.`} where="hidden lg:flex" />}
         </div>
 
         <div className="flex grow flex-col">
@@ -217,16 +218,16 @@ export function SellScreen({ data }: { data: SellData }) {
               {shown && rate !== null && <span className="text-[15px] font-bold lg:text-[17px]">{nearMoney(shown.amountOut, rate)}</span>}
             </p>
             <dl className="mt-[7px] lg:mt-2.5 lg:border-t-[1.5px] lg:border-canvas">
-              <Row label={`Fee (1%) · to ${prize}`} value={shown ? cutMoney(shown.fee, spot, rate) : "—"} />
+              <Row label={`Fee (1%) · ${feeSplitText(data.potBps, prize)}`} value={shown ? cutMoney(shown.fee, spot, rate) : "—"} />
               <Row label="Network fee" value={rate !== null ? "about $0.01" : "under 0.01 NEAR"} />
               <Row label="Price per $CUT" value={priceText(spot, rate)} />
-              <Row label="Free $CUT left" value={`${cutText(cutIn !== null && !tooMuch ? free - cutIn : free)} $CUT`} />
+              <Row label="Free $CUT left" value={`${cutTyped(cutIn !== null && !tooMuch ? free - cutIn : free)} $CUT`} />
             </dl>
           </section>
-          {saved && <LockNote text={`${cutText(free)} free · ${saved}, locked till ${lockedTill}. Only free $CUT can be sold.`} where="lg:hidden" />}
+          {saved && <LockNote text={`${cutText(free)} free · ${saved}. Only free $CUT can be sold.`} where="lg:hidden" />}
           {tooMuch && (
             <p role="alert" className="mt-3 rounded-2xl border-2 border-ink bg-danger-soft px-4 py-2.5 text-sm font-semibold">
-              You have {cutText(free)} free $CUT. Saved $CUT stays locked until the cut.
+              You have {cutText(free)} free $CUT. Saved $CUT can be sold only after you take the save back.
             </p>
           )}
           {step.kind === "moved" && (
@@ -247,7 +248,7 @@ export function SellScreen({ data }: { data: SellData }) {
               className="h-14 w-full rounded-2xl text-base shadow-hard-violet"
               onClick={() => shown && void sell(shown)}
             >
-              {status === "signed-out" ? "Connect a wallet to sell" : step.kind === "moved" ? "Accept new price" : `Sell ${cutIn ? cutText(cutIn) : ""} $CUT`}
+              {status === "signed-out" ? "Connect a wallet to sell" : step.kind === "moved" ? "Accept new price" : `Sell ${cutIn ? cutTyped(cutIn) : ""} $CUT`}
             </Button>
           </div>
         </div>
