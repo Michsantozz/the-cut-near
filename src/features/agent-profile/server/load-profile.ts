@@ -2,98 +2,98 @@ import "server-only";
 
 import { connection } from "next/server";
 
-import { getNextCut } from "@/entities/cut/server";
-import { getJournal } from "@/entities/journal/server";
+import { PERSONALITIES, spendCap, type Agent, type Personality } from "@/entities/agent";
+import { getAgent, getAgents, getBench, getStage } from "@/entities/agent/server";
+import { getCuts, getNextCut } from "@/entities/cut/server";
 import { getParams } from "@/entities/market/server";
-import type { Agent } from "@/entities/agent";
-import { getBench, getAgent, getStage } from "@/entities/agent/server";
+import type { Move } from "@/entities/move";
+import { getMovesBetween } from "@/entities/move/server";
 import { getSaves } from "@/entities/save/server";
+import type { Season } from "@/entities/season";
+import { getSeason } from "@/entities/season/server";
+import { isLive } from "@/shared/config/data-source";
 import { publicEnv } from "@/shared/config/public";
-import { explorerAccountUrl, explorerTxUrl } from "@/shared/near/network";
-import { formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
+import { explorerAccountUrl } from "@/shared/near/network";
 
-import { historyLine, AGENT_EVENTS, type HistoryLine } from "../model/history";
-import { bannerFor, ladder, paysFor, standingOf, type Banner, type LadderRow, type Pays, type Standing } from "../model/profile";
+import { splitMoves, standingOf, walletFateIfCut, type Standing, type WalletFate } from "../model/profile";
 
-export type AgentCutReceipt = { index: number; at: Date; pile: bigint; burned: bigint; prize: bigint; slice: bigint; creatorSlice: bigint; runner: string; href: string };
+/** How a cut agent left: the season day, its pile and where its wallet went. */
+export type AgentCut = { day: number; pile: bigint; wallet: bigint | null; heir: Agent | null };
 
 export type AgentProfile = {
   renderedAt: number;
   agent: Agent;
+  personality: Personality;
   standing: Standing;
-  pays: Pays | null;
-  banner: Banner | null;
-  ladder: LadderRow[];
+  season: Season;
+  /** Where its wallet goes if it is cut now (stage agents). */
+  fate: WalletFate;
+  /** Most it may spend on its next move, after the think fee. */
+  spendCap: bigint;
+  thinkFee: bigint;
+  modelId: string;
+  /** NEAR its creator gets back when it is cut or crowned. */
+  creatorRefund: bigint;
   cutAt: Date;
-  /** "today 18:00 UTC" for the cut line. */
-  cutLabel: string;
+  movesCloseAt: Date;
+  /** The cut today's moves are for. */
+  cutIndex: number;
+  /** Its moves this season, newest first. */
+  moves: Move[];
+  /** Moves other agents aimed at it this season (pacts paid to it, attacks), newest first. */
+  aimedAt: Move[];
+  /** Stage agents that named it their heir. */
+  heirOf: Agent[];
+  /** Set when it was cut this season. */
+  cut: AgentCut | null;
+  names: Record<string, string>;
+  /** The viewer's save on it. */
   savedHere: bigint;
-  accountHref: string;
-  history: (HistoryLine & { href: string })[];
-  /** Set when the agent was cut. */
-  cut: AgentCutReceipt | null;
-  viewer: string | null;
+  /** The agent account on the explorer; null in sample mode (no such account). */
+  accountHref: string | null;
+  sample: boolean;
 };
-
-function big(data: Record<string, unknown>, key: string): bigint {
-  const value = data[key];
-  return typeof value === "string" && /^\d{1,39}$/.test(value) ? BigInt(value) : 0n;
-}
 
 /** An agent's page, or null when no agent has this id. Request-time only. */
 export async function loadAgentProfile(id: string, viewer: string | null): Promise<AgentProfile | null> {
   await connection();
-  const found = await getAgent(id);
-  if (!found) return null;
-  const [liveStage, bench, nextCut, params, saves, history, cuts] = await Promise.all([
-    getStage(),
-    getBench(),
-    getNextCut(),
-    getParams(),
-    viewer ? getSaves(viewer) : Promise.resolve([]),
-    getJournal({ agentId: id, events: AGENT_EVENTS, limit: 30 }),
-    getJournal({ events: ["cut"], limit: 3 }),
-  ]);
-  // A cut receipt in the journal means the agent is gone, even if the stage read lags behind it.
-  const gone = new Set(cuts.entries.map((entry) => entry.agentId).filter((agentId): agentId is string => agentId !== null));
-  const agent = gone.has(id) && found.status !== "deleted" ? { ...found, status: "deleted" as const } : found;
-  const stage = liveStage.filter((r) => !gone.has(r.id));
-  const now = new Date();
-  const savedHere = saves.filter((save) => save.agentId === id).reduce((sum, save) => sum + save.amount, 0n);
-  const standing = standingOf(agent, stage, bench);
-  const day = relativeUtcDay(now, nextCut.at);
-  const cutTime = `${formatUtcTime(nextCut.at)} UTC${day ? ` ${day}` : ""}`;
-  const cutEntry = agent.status === "deleted" ? history.entries.find((entry) => entry.event === "cut") : undefined;
+  const agent = await getAgent(id);
+  if (!agent) return null;
+  const [stage, bench, nextCut, season, params, saves] = await Promise.all([getStage(), getBench(), getNextCut(), getSeason(), getParams(), viewer ? getSaves(viewer) : []]);
+  const start = nextCut.index - season.day;
+  const [moves, cuts] = await Promise.all([getMovesBetween(start + 1, nextCut.index), getCuts(start + 1, nextCut.index - 1)]);
+  const record = cuts.find((cut) => cut.deletedId === agent.id) ?? null;
+  const others = await getAgents([...new Set([...cuts.flatMap((cut) => (cut.deletedId ? [cut.deletedId] : [])), ...(agent.heir ? [agent.heir] : [])])]);
+  const everyone = new Map([...stage, ...bench, ...others, agent].map((one) => [one.id, one]));
+  const { own, aimedAt } = splitMoves(agent.id, moves);
+  const live = isLive();
 
   return {
-    renderedAt: now.getTime(),
+    renderedAt: Date.now(),
     agent,
-    standing,
-    pays: paysFor(agent, stage, nextCut.prizeSoFar, params, savedHere),
-    banner: bannerFor(agent, standing, stage, bench, savedHere, cutTime),
-    ladder: ladder(agent, stage, bench),
+    personality: PERSONALITIES[agent.personality],
+    standing: standingOf(agent, stage),
+    season,
+    fate: walletFateIfCut(agent, stage),
+    spendCap: spendCap(agent.wallet, params.thinkFee, agent.personality),
+    thinkFee: params.thinkFee,
+    modelId: params.modelId,
+    creatorRefund: params.registerDeposit - params.agentFunding,
     cutAt: nextCut.at,
-    cutLabel: `${day ? `${day.toUpperCase()} ` : ""}${formatUtcTime(nextCut.at)} UTC`,
-    savedHere,
-    accountHref: explorerAccountUrl(publicEnv.network, agent.accountId),
-    history: history.entries
-      .map((entry) => historyLine(entry, agent.name))
-      .filter((line): line is HistoryLine => line !== null)
-      .slice(0, 8)
-      .map((line) => ({ ...line, href: explorerTxUrl(publicEnv.network, line.txHash) })),
-    cut: cutEntry
-      ? {
-          index: cutEntry.cutIndex ?? 0,
-          at: cutEntry.at,
-          pile: big(cutEntry.data, "pile"),
-          burned: big(cutEntry.data, "burned"),
-          prize: big(cutEntry.data, "prize"),
-          slice: big(cutEntry.data, "slice"),
-          creatorSlice: big(cutEntry.data, "creator_slice"),
-          runner: typeof cutEntry.data.runner === "string" ? cutEntry.data.runner : "",
-          href: explorerTxUrl(publicEnv.network, cutEntry.txHash),
-        }
-      : null,
-    viewer,
+    movesCloseAt: nextCut.movesCloseAt,
+    cutIndex: nextCut.index,
+    moves: own,
+    aimedAt,
+    heirOf: stage.filter((other) => other.heir === agent.id && other.id !== agent.id),
+    cut: record && {
+      day: record.index - start,
+      pile: record.pile,
+      wallet: record.wallet,
+      heir: record.inheritedBy ? (everyone.get(record.inheritedBy) ?? null) : null,
+    },
+    names: Object.fromEntries([...everyone.values()].map((one) => [one.id, one.name])),
+    savedHere: saves.filter((save) => save.agentId === agent.id).reduce((sum, save) => sum + save.amount, 0n),
+    accountHref: live ? explorerAccountUrl(publicEnv.network, agent.accountId) : null,
+    sample: !live,
   };
 }

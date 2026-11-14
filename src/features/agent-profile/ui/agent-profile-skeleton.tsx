@@ -1,6 +1,6 @@
 import { Skeleton } from "@/shared/ui/skeleton";
 
-/** First paint while the agent is read from NEAR. */
+/** First paint while the agent loads. */
 export function AgentProfileSkeleton() {
   return (
     <div aria-busy="true" aria-label="Loading the agent" className="lg:flex lg:gap-6 lg:px-8 lg:pt-1">
