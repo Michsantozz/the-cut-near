@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   agentIdError,
   charterError,
+  depositError,
   formErrors,
+  missingText,
   normalizeXHandle,
   registerArgs,
   seedError,
@@ -11,7 +13,7 @@ import {
   textError,
   xHandleError,
 } from "@/features/register/model/agent-form";
-import { units } from "@/shared/lib/amount";
+import { NEAR_DECIMALS, units } from "@/shared/lib/amount";
 
 const CONTRACT = "thecut.testnet";
 
@@ -59,6 +61,9 @@ describe("text and X handle", () => {
 
   it("checks X handles", () => {
     expect(xHandleError("@ChartwiseCut")).toBeNull();
+    // Optional, like the contract's x_handle (validate_text(.., false)).
+    expect(xHandleError("")).toBeNull();
+    expect(normalizeXHandle("")).toBe("");
     expect(xHandleError("@" + "a".repeat(16))).not.toBeNull();
     expect(xHandleError("@chart wise")).not.toBeNull();
     expect(normalizeXHandle("ChartwiseCut")).toBe("@ChartwiseCut");
@@ -110,6 +115,25 @@ describe("formErrors and registerArgs", () => {
 
   it("lists every field that is wrong", () => {
     const empty = { id: "C", name: "", tagline: "AI", xHandle: "", personality: null, charter: "", seed: "10" };
-    expect(Object.keys(formErrors(empty, limits)).sort()).toEqual(["charter", "id", "name", "personality", "seed", "xHandle"]);
+    expect(Object.keys(formErrors(empty, limits)).sort()).toEqual(["charter", "id", "name", "personality", "seed"]);
+    expect(missingText(formErrors(empty, limits))).toBe("Fix the agent name, NEAR account, personality, charter and seed first.");
+    expect(missingText({ charter: "x" })).toBe("Fix the charter first.");
+    expect(missingText({})).toBeNull();
+  });
+});
+
+describe("depositError", () => {
+  const deposit = units(1, NEAR_DECIMALS);
+
+  it("says before the wallet opens that 0.81 NEAR cannot pay a 1 NEAR deposit", () => {
+    expect(depositError(units(81, NEAR_DECIMALS - 2), deposit)).toBe(
+      "Registering takes 1 NEAR plus about 0.02 NEAR of gas. Your wallet holds 0.81 NEAR: add NEAR to it first.",
+    );
+  });
+
+  it("lets a wallet with the deposit and gas through, and an unknown balance too", () => {
+    expect(depositError(units(2, NEAR_DECIMALS), deposit)).toBeNull();
+    expect(depositError(deposit, deposit)).not.toBeNull();
+    expect(depositError(null, deposit)).toBeNull();
   });
 });
