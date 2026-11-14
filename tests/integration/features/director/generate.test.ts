@@ -154,6 +154,15 @@ describe("runDirectorMoment", () => {
     expect(cloud.calls.attestation).toBe(1);
   });
 
+  it("skips lines the moment already has for the same cut, so a repeated cron costs nothing", async () => {
+    const { cloud, deps } = setup({ lines: plain });
+    await runDirectorMoment("scheduled", { deps, now: SAMPLE_NOW });
+    const again = await runDirectorMoment("scheduled", { deps, now: SAMPLE_NOW });
+    expect(again.lines).toEqual([]);
+    expect(again.skipped).toHaveLength(6);
+    expect(cloud.calls.attestation).toBe(1);
+  });
+
   it("after-cut: the roast and the receipt of the latest cut; failures are reported, not thrown", async () => {
     const { deps } = setup({ lines: ["Kiko Bun is gone. Pack your buns, bunny, the stage moves on."] });
     const report = await runDirectorMoment("after-cut", { deps });

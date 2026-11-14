@@ -10,6 +10,14 @@
       "schedule": "20 18 * * *"
     },
     {
+      "path": "/api/cron/director?moment=scheduled",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/director?moment=final-hour",
+      "schedule": "0 17 * * *"
+    },
+    {
       "path": "/api/cron/indexer",
       "schedule": "10 0 * * *"
     },

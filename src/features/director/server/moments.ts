@@ -24,6 +24,8 @@ export type DirectorRunReport = {
   model: string;
   lines: { id: string; kind: string; subjectId: string | null; text: string; proofStatus: string }[];
   failures: { kind: string; subjectId: string | null; error: string }[];
+  /** Lines this moment already has for the same cut, from an earlier or duplicate run. */
+  skipped: { kind: string; subjectId: string | null }[];
 };
 
 /** Deps from the environment: NEAR_AI_* settings and the default store. Throws a `config` NearAiError without an API key. */
@@ -62,16 +64,30 @@ export async function momentPrompts(moment: DirectorMoment, options: { now?: Dat
   return [scheduledPrompt(facts, "lowest"), scheduledPrompt(facts, "next-up"), ...posters.map((id) => robotPostPrompt(facts, id))];
 }
 
+const promptKey = (line: { kind: string; subjectId: string | null; cutIndex: number | null }) => `${line.kind}|${line.subjectId ?? ""}|${line.cutIndex ?? ""}`;
+
+/** Lines the moment already has for its cut. Crons may fire twice, and each line costs a signed completion. */
+async function doneKeys(deps: DirectorDeps, prompts: DirectorPrompt[]): Promise<Set<string>> {
+  const kinds = [...new Set(prompts.map((prompt) => prompt.kind))];
+  if (kinds.length === 0) return new Set();
+  const lines = await deps.store.latestLines({ kinds, provenOnly: false, limit: 100 });
+  return new Set(lines.map(promptKey));
+}
+
 /**
  * Runs a moment: one attestation, then each line in turn. A line that fails is reported and the rest go on.
+ * Lines the moment already has for the same cut are skipped, so a repeated run costs nothing.
  * Meant for the keeper cron (17:00 final hour, 18:00 after the cut, and a scheduled run before).
  */
 export async function runDirectorMoment(moment: DirectorMoment, options: { deps?: DirectorDeps; now?: Date; cutIndex?: number } = {}): Promise<DirectorRunReport> {
   const deps = options.deps ?? directorDepsFromEnv();
-  const prompts = await momentPrompts(moment, options);
+  const all = await momentPrompts(moment, options);
+  const done = await doneKeys(deps, all);
+  const prompts = all.filter((prompt) => !done.has(promptKey(prompt)));
+  const report: DirectorRunReport = { moment, model: deps.model, lines: [], failures: [], skipped: all.filter((prompt) => done.has(promptKey(prompt))).map(({ kind, subjectId }) => ({ kind, subjectId })) };
+  if (prompts.length === 0) return report;
   const session = new DirectorSession(deps);
   await session.attestation();
-  const report: DirectorRunReport = { moment, model: deps.model, lines: [], failures: [] };
   for (const prompt of prompts) {
     try {
       const line = await session.generate(prompt);

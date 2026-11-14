@@ -67,7 +67,8 @@ receipts, keeps only successful receipts executed by the contract or `<robot>.<c
 is stored. Override the source with `NEAR_TX_API_URL`.
 
 Crons (`vercel.json`, `Authorization: Bearer $CRON_SECRET`): `/api/cron/cut` at 18:00 UTC plus a backstop at 18:20 (then catches the
-journal up), `/api/cron/indexer` hourly. Every schedule is daily, so it deploys on any Vercel plan; on Hobby a run lands within its
+journal up and has the Director sign the roast and receipt of that cut), `/api/cron/director?moment=scheduled` at 12:00 and
+`?moment=final-hour` at 17:00, `/api/cron/indexer` hourly. The Director skips lines it already signed for the same cut. Every schedule is daily, so it deploys on any Vercel plan; on Hobby a run lands within its
 hour. On Pro, `/api/cron/indexer` can run every few minutes (`*/5 * * * *`).
 
 The keeper key: add a function-call access key to a funded keeper account with the contract as receiver and `run_cut` as its
