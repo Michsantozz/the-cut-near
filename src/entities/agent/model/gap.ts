@@ -9,7 +9,7 @@ const ONE_CUT = units(1);
  * Only a strictly older agent wins a tie; a newer one needs one unit more than the difference.
  * Matches the contract's `math::gap_to_next`, behind `get_next_cut().gap_to_next`.
  */
-export function gapToPass(agent: Agent, other: Agent): bigint {
+export function gapToPass(agent: Pick<Agent, "score" | "joinedAt">, other: Pick<Agent, "score" | "joinedAt">): bigint {
   const diff = other.score - agent.score;
   const winsTie = agent.joinedAt.getTime() < other.joinedAt.getTime();
   if (diff < 0n || (diff === 0n && winsTie)) return 0n;

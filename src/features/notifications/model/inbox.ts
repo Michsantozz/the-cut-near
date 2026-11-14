@@ -1,3 +1,4 @@
+import { gapToPass, wholeCutsToPass, type Agent } from "@/entities/agent";
 import type { JournalEntry } from "@/entities/journal";
 import { formatAmount, formatUtcTime } from "@/shared/ui/format";
 
@@ -11,8 +12,8 @@ export type Notice = { key: string; kind: NoticeKind; at: Date; title: string; t
 export type InboxInput = {
   now: Date;
   cutAt: Date;
-  /** The stage, lowest pile last. */
-  ranked: readonly { id: string; name: string; pile: bigint }[];
+  /** The stage, lowest score last: the order the cut uses. */
+  ranked: readonly Pick<Agent, "id" | "name" | "score" | "joinedAt">[];
   /** Agent ids the viewer has a save on. */
   savedOn: ReadonlySet<string>;
   claimable: bigint;
@@ -26,7 +27,6 @@ export type InboxInput = {
 };
 
 const HOUR = 3_600_000;
-const ONE_CUT = 10n ** 18n;
 const cut0 = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
 const cut2 = (value: bigint) => formatAmount(value, { maxFractionDigits: 2 });
 
@@ -47,7 +47,7 @@ export function buildInbox(input: InboxInput): Notice[] {
   const finalHour = cutAt.getTime() - now.getTime() <= HOUR && cutAt > now;
 
   if (lowest && next) {
-    const gap = next.pile - lowest.pile + ONE_CUT;
+    const gap = wholeCutsToPass(gapToPass(lowest, next));
     const mine = input.savedOn.has(lowest.id);
     notices.push({
       key: `block-${lowest.id}`,
@@ -55,7 +55,7 @@ export function buildInbox(input: InboxInput): Notice[] {
       // A state, not an event: it is true right now.
       at: now,
       title: mine ? `Your agent ${lowest.name} is on the block` : `${lowest.name} is on the block`,
-      text: `Lowest pile: ${cut0(lowest.pile)} $CUT, ${cut0(gap)} short of ${next.name}. The cut runs at ${time}.`,
+      text: `Lowest score: ${cut0(lowest.score)}, ${cut0(gap)} $CUT short of ${next.name}. The cut runs at ${time}.`,
       href: `/agents/${lowest.id}`,
     });
     // Danger for a saved agent in the bottom two that is not the lowest.
@@ -65,7 +65,7 @@ export function buildInbox(input: InboxInput): Notice[] {
         kind: "danger",
         at: now,
         title: `Your agent ${next.name} is in the bottom two`,
-        text: `Only ${cut0(next.pile - lowest.pile)} $CUT above ${lowest.name}. If ${lowest.name} passes it, ${next.name} is cut at ${time}.`,
+        text: `Only ${cut0(next.score - lowest.score)} of score above ${lowest.name}. If ${lowest.name} passes it, ${next.name} is cut at ${time}.`,
         href: `/agents/${next.id}`,
       });
     }
@@ -79,7 +79,7 @@ export function buildInbox(input: InboxInput): Notice[] {
       kind: "final",
       at: new Date(cutAt.getTime() - HOUR),
       title: `Final hour: the cut runs at ${formatUtcTime(cutAt)}`,
-      text: `${lowest.name} is ${cut0(next.pile - lowest.pile + ONE_CUT)} $CUT short of ${next.name}. Saves count until ${formatUtcTime(cutAt)}.`,
+      text: `${lowest.name} is ${cut0(wholeCutsToPass(gapToPass(lowest, next)))} $CUT short of ${next.name}. Saves count until ${formatUtcTime(cutAt)}.`,
       href: "/",
     });
   }

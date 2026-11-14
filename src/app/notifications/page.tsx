@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { getViewerPrefs } from "@/features/account/server";
 import { getLatestDirectorLine } from "@/features/director/server";
 import { InboxScreen, InboxVisitor } from "@/features/notifications";
 import { loadInbox } from "@/features/notifications/server";
@@ -33,9 +34,15 @@ export default function NotificationsPage() {
 async function Inbox() {
   const accountId = await getViewerAccountId();
   if (!accountId) return <InboxVisitor />;
-  const inbox = await loadInbox(accountId, async (agentId) => {
-    const post = await getLatestDirectorLine("agent-post", { subjectId: agentId });
-    return post ? { text: post.text, at: new Date(post.createdAt) } : null;
-  });
+  const prefs = await getViewerPrefs();
+  // The alerts switched off in Settings stay out of the inbox.
+  const inbox = await loadInbox(
+    accountId,
+    async (agentId) => {
+      const post = await getLatestDirectorLine("agent-post", { subjectId: agentId });
+      return post ? { text: post.text, at: new Date(post.createdAt) } : null;
+    },
+    prefs.alertsOff,
+  );
   return <InboxScreen inbox={inbox} />;
 }
