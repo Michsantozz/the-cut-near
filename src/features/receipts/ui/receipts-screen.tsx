@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { Check, Clock, Scissors, TrendingUp, TriangleAlert, Users, Wallet, X, type LucideIcon } from "lucide-react";
+import { Check, Clock, Scissors, TrendingUp, TriangleAlert, Trophy, Wallet, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
@@ -12,8 +12,9 @@ import { percentText } from "../model/supply";
 import type { Receipts, ReceiptRow } from "../server/load-receipts";
 import { RerunAuditButton } from "./rerun-audit-button";
 
-// The Receipts page (Receipts.dc.html, ReceiptsPhone.dc.html): the public log of every mint, burn, trade,
-// save, cut and prize, with an audit against the contract. Colors outside the app tokens are the design's own.
+// The Receipts page (Receipts.dc.html, ReceiptsPhone.dc.html): the public log of every mint, burn, trade, save,
+// boo, move, cut and prize, with an audit against the contract. Sample mode says so everywhere and links nowhere.
+// Colors outside the app tokens are the design's own.
 
 const card = "rounded-[22px] border-[2.5px] border-ink bg-paper shadow-hard lg:rounded-[26px] lg:border-[3px] lg:shadow-hard-lg";
 
@@ -24,10 +25,18 @@ const TAG_STYLE: Record<ReceiptTag, string> = {
   fee: "bg-[#ffd84d]",
   save: "bg-pink",
   unsave: "bg-paper",
+  boo: "bg-orange",
+  move: "bg-violet text-paper",
+  pact: "bg-sky",
+  attack: "bg-danger text-paper",
+  rescue: "bg-lime",
+  inherit: "bg-violet-soft",
   cut: "border-dashed bg-paper text-[#d2261e]",
   burn: "bg-danger text-paper",
   prize: "bg-lime",
   join: "bg-lime",
+  season: "bg-violet text-paper",
+  champion: "bg-[#ffd84d]",
   delete: "bg-ink text-paper",
   claim: "bg-lime",
   other: "bg-canvas",
@@ -50,7 +59,8 @@ export function ReceiptsScreen({ data }: { data: Receipts }) {
         </div>
       </div>
       <p className="mt-8 text-[13px] leading-[18px] text-ink-3">
-        {data.live ? "" : "Sample data. Every agent, account and number here is fictional. "}A $CUT transfer between two wallets is not in the journal.
+        {data.live ? "" : "Sample world. Every agent, account, move and number here is made up; nothing is read from NEAR. "}A $CUT transfer between
+        two wallets is not in the journal.
       </p>
     </div>
   );
@@ -64,7 +74,9 @@ function Hero({ data }: { data: Receipts }) {
         <SourceChip data={data} className="lg:hidden" />
         <h2 className="mt-3.5 font-heading text-[60px] leading-[58px] font-extrabold tracking-[-2.5px] lg:hidden">The Receipts.</h2>
         <p className="mt-2.5 text-base leading-[23px] font-medium lg:mt-0 lg:text-[21px] lg:leading-[30px]">
-          Every buy, sell, save, cut, burn and prize since launch, from the contract’s public log on NEAR. Every entry links to its transaction.
+          {data.live
+            ? "Every buy, save, boo, move, cut, burn and prize since launch, from the contract’s public log on NEAR. Every entry links to its transaction."
+            : "Every buy, save, boo, move, cut, burn and prize of the sample world, the way the contract logs them. In live mode each entry links to its transaction on NEAR."}
         </p>
       </div>
       <div className="mt-2 lg:mt-1 lg:flex lg:shrink-0 lg:flex-col lg:items-end lg:gap-2.5">
@@ -72,7 +84,7 @@ function Hero({ data }: { data: Receipts }) {
         <p className="text-[12.5px] leading-[17px] font-semibold text-ink-3 lg:text-[13.5px]">
           {data.latestBlock !== null && `Block ${formatCount(data.latestBlock)} · `}
           {formatCount(data.entries)} journal entries since launch{data.launchedAt && `, ${formatUtcDate(data.launchedAt).replace(",", "")}`}
-          {!data.live && data.stats.usdCentsPerNear !== null && ` · Sample data, 1 NEAR = ${formatUsd(data.stats.usdCentsPerNear)}`}
+          {!data.live && data.stats.usdCentsPerNear !== null && ` · Sample world, 1 NEAR = ${formatUsd(data.stats.usdCentsPerNear)}`}
         </p>
         <span className="sr-only">Read at {formatUtcTime(at)} UTC</span>
       </div>
@@ -88,8 +100,18 @@ function SourceChip({ data, className }: { data: Receipts; className?: string })
         className,
       )}
     >
-      <span aria-hidden="true" className="size-[9px] rounded-full bg-[#2fbf4a] shadow-[0_0_0_4px_rgb(47_191_74/0.25)] lg:size-2.5" />
-      {data.live ? "LIVE" : "SAMPLE"} · read at {formatUtcTime(new Date(data.renderedAt))} UTC from {data.contractId}
+      {data.live ? (
+        <>
+          <span aria-hidden="true" className="size-[9px] rounded-full bg-[#2fbf4a] shadow-[0_0_0_4px_rgb(47_191_74/0.25)] lg:size-2.5" />
+          LIVE · read at {formatUtcTime(new Date(data.renderedAt))} UTC from {data.contractId}
+        </>
+      ) : (
+        <>
+          <span aria-hidden="true" className="size-[9px] rounded-full border-[1.5px] border-ink bg-violet lg:size-2.5" />
+          <span className="lg:hidden">SAMPLE WORLD · made up, not from NEAR</span>
+          <span className="hidden lg:inline">SAMPLE WORLD · made-up entries, nothing read from NEAR</span>
+        </>
+      )}
     </span>
   );
 }
@@ -108,14 +130,21 @@ function StatCards({ data, now }: { data: Receipts; now: Date }) {
       : "In NEAR, from the pool";
   const day = relativeUtcDay(now, stats.cutAt);
   const lastCut = stats.lastCut;
+  const { season } = stats;
   const items: Stat[] = [
     { label: "$CUT PRICE", value: price, sub: priceSub, icon: TrendingUp, bg: "bg-paper" },
-    { label: "BUYERS", value: formatCount(stats.buyers), sub: data.launchedAt ? `Since ${formatUtcDate(data.launchedAt).replace(",", "")}` : "Since launch", icon: Users, bg: "bg-paper" },
-    { label: "FEES SO FAR", value: cutWhole(stats.feesSoFar), sub: "$CUT · to the next prize", icon: Wallet, bg: "bg-[#ffd84d]" },
     {
-      label: "ON THE BLOCK",
+      label: "SEASON POT",
+      value: cutWhole(season.pot),
+      sub: season.active ? `$CUT · season ${season.index}, day ${season.day} · to the champion’s savers` : "$CUT · waits for the next season",
+      icon: Trophy,
+      bg: "bg-paper",
+    },
+    { label: "FEES SO FAR", value: cutWhole(stats.feesSoFar), sub: "$CUT · to today’s prize", icon: Wallet, bg: "bg-[#ffd84d]" },
+    {
+      label: "ON THE CUT LINE",
       value: stats.lowest?.name ?? "Nobody",
-      sub: stats.lowest ? `Pile ${cutWhole(stats.lowest.pile)}${stats.gap > 0n ? ` · ${cutWhole(stats.gap)} short` : ""}` : "The stage is empty",
+      sub: stats.lowest ? `Score ${cutWhole(stats.lowest.score)}${stats.gap > 0n ? ` · ${cutWhole(stats.gap)} short` : ""}` : "No season on the stage",
       icon: TriangleAlert,
       bg: "bg-[#ffc2e8]",
     },
@@ -127,9 +156,9 @@ function StatCards({ data, now }: { data: Receipts; now: Date }) {
       bg: "bg-lime",
     },
     {
-      label: "CUTS SO FAR",
+      label: "AGENTS CUT",
       value: formatCount(stats.cuts),
-      sub: lastCut?.agentName ? `Last: ${lastCut.agentName}, ${cutWhole(lastCut.burned)} burned` : "The first one is next",
+      sub: lastCut?.agentName ? `Last: ${lastCut.agentName}, ${cutWhole(lastCut.burned)} burned` : "Nobody yet",
       icon: Scissors,
       bg: "bg-pink",
     },
@@ -160,18 +189,20 @@ function SupplyCard({ data }: { data: Receipts }) {
   const { supply } = data;
   const parts = [
     { label: "MINTED", value: cutWhole(supply.minted), sub: data.launchedAt ? `Once, ${formatUtcDate(data.launchedAt).replace(",", "")}, ${formatUtcTime(data.launchedAt)}` : "Once, at launch", dot: "bg-ink" },
-    { label: "BURNED", value: cutWhole(supply.burned), sub: supply.burned > 0n ? "Gone for good, at the cuts" : "First burn at the next cut", dot: "bg-danger" },
+    { label: "BURNED", value: cutWhole(supply.burned), sub: supply.burned > 0n ? "Boos, attacks, think fees, cuts" : "Nothing burned yet", dot: "bg-danger" },
     { label: "SAVED IN PILES", value: cutWhole(supply.saved), sub: "Locked till the cut", dot: "bg-lime" },
     { label: "FREE", value: cutWhole(supply.free), sub: "In wallets and the pool", dot: "bg-paper" },
   ];
   const savedWidth = Math.max(supply.savedPermille / 10, 0.5);
+  // A thin saved bar cannot hold its own label: then it moves to the free side, as on the phone.
+  const labelInBar = supply.savedPermille >= 60;
   return (
     <section aria-labelledby="supply-title" className={cn(card, "mt-[22px] p-4 lg:mt-12 lg:px-6 lg:pt-5 lg:pb-[22px]")}>
       <div className="lg:flex lg:items-baseline lg:justify-between">
         <h2 id="supply-title" className="font-heading text-2xl leading-7 font-extrabold tracking-[-0.8px] lg:text-[30px] lg:leading-9 lg:tracking-[-1px]">
           Where all {cutWhole(supply.minted)} $CUT are
         </h2>
-        <p className="mt-0.5 text-[13px] font-semibold text-ink-3 lg:text-sm">Minted once at launch. Supply only drops, at a cut.</p>
+        <p className="mt-0.5 text-[13px] font-semibold text-ink-3 lg:text-sm">Minted once at launch. Supply only drops: every boo, attack, think fee and cut burns.</p>
       </div>
       <dl className="mt-3 grid grid-cols-2 gap-x-2.5 gap-y-3 lg:mt-3.5 lg:grid-cols-4 lg:gap-4">
         {parts.map((part) => (
@@ -190,11 +221,13 @@ function SupplyCard({ data }: { data: Receipts }) {
           className="flex items-center justify-center border-r-[2.5px] border-ink bg-lime text-xs font-extrabold lg:border-r-[3px]"
           style={{ width: `${savedWidth}%` }}
         >
-          <span className="hidden lg:inline">{percentText(supply.savedPermille)}</span>
+          {labelInBar && <span className="hidden lg:inline">{percentText(supply.savedPermille)}</span>}
         </div>
         <div className="flex grow items-center bg-[repeating-linear-gradient(135deg,var(--color-paper)_0_8px,var(--color-canvas)_8px_16px)] pl-2 text-[11px] font-extrabold whitespace-nowrap text-ink-3 lg:pl-3 lg:text-xs">
-          <span className="lg:hidden">{percentText(supply.savedPermille)} saved · </span>
-          {percentText(supply.freePermille)} free · {cutWhole(supply.burned)} burned
+          <span>
+            <span className={labelInBar ? "lg:hidden" : undefined}>{percentText(supply.savedPermille)} saved · </span>
+            {percentText(supply.freePermille)} free · {cutWhole(supply.burned)} burned
+          </span>
         </div>
       </div>
     </section>
@@ -209,7 +242,7 @@ function JournalCard({ data, now }: { data: Receipts; now: Date }) {
         <h2 id="journal-title" className="font-heading text-[26px] leading-[30px] font-extrabold tracking-[-0.8px] lg:text-[30px] lg:tracking-[-1px]">
           The journal
         </h2>
-        <p className="mt-0.5 text-[13px] font-semibold text-ink-3 lg:text-[13.5px]">Newest first · every entry links to NEAR</p>
+        <p className="mt-0.5 text-[13px] font-semibold text-ink-3 lg:text-[13.5px]">{data.live ? "Newest first · every entry links to NEAR" : "Newest first · sample entries, nothing to open on NEAR"}</p>
       </div>
       <nav aria-label="Filter the journal" className="-mr-4 mt-3 flex gap-1.5 overflow-x-auto pb-1 lg:mr-0 lg:mt-3.5 lg:flex-wrap lg:gap-2">
         {RECEIPT_FILTERS.map((id) => {
@@ -284,18 +317,22 @@ function JournalRow({ row, now }: { row: ReceiptRow; now: Date }) {
     <li className="border-t-[1.5px] border-line py-[11px] lg:flex lg:min-h-14 lg:items-center lg:gap-3.5 lg:py-[7px]">
       <div className="flex items-center gap-2 lg:contents">
         <Tag tag={row.tag} label={row.label} />
-        <time dateTime={row.at.toISOString()} className="min-w-0 grow text-[12.5px] font-semibold whitespace-nowrap text-ink-3 lg:order-0 lg:w-[116px] lg:grow-0 lg:text-[13px] lg:leading-[17px] lg:whitespace-normal">
+        <time dateTime={row.at.toISOString()} className="min-w-0 grow text-[12.5px] font-semibold whitespace-nowrap text-ink-3 lg:order-0 lg:w-[116px] lg:shrink-0 lg:grow-0 lg:text-[13px] lg:leading-[17px] lg:whitespace-normal">
           {whenText(row.at, now)}
         </time>
-        <a
-          href={row.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 text-[12.5px] font-bold underline underline-offset-2 lg:order-last lg:text-[13px]"
-          aria-label={`See this ${row.label.toLowerCase()} on NEAR`}
-        >
-          NEAR ↗
-        </a>
+        {row.href ? (
+          <a
+            href={row.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 text-[12.5px] font-bold underline underline-offset-2 lg:order-last lg:text-[13px]"
+            aria-label={`See this ${row.label.toLowerCase()} on NEAR`}
+          >
+            NEAR ↗
+          </a>
+        ) : (
+          <span className="shrink-0 text-[12px] font-bold text-ink-4 lg:order-last lg:w-[50px] lg:text-right">Sample</span>
+        )}
       </div>
       <div className="mt-1.5 min-w-0 lg:mt-0 lg:grow">
         <p className="text-[14.5px] leading-5 font-bold">{row.what}</p>
@@ -327,7 +364,12 @@ function CutReceiptGrid({ cut }: { cut: CutReceipt }) {
         ))}
       </dl>
       <p className="mt-1.5 text-[12.5px] leading-[17px] text-ink-3">
-        {cut.agentAccountId ? `${cut.agentAccountId} deleted · ` : ""}run by <b className="font-bold text-ink">{cut.runner}</b>, who keeps 0.5 NEAR
+        {cut.agentName && (
+          <>
+            Its wallet of <b className="font-bold text-ink">{cutText(cut.wallet)} $CUT</b> {cut.heirName ? `went to its heir ${cut.heirName}` : "burned: no living heir"} ·{" "}
+          </>
+        )}
+        {cut.agentAccountId ? `${cut.agentAccountId} deleted · ` : ""}run by <b className="font-bold text-ink">{cut.runner}</b>, who keeps the account’s leftover NEAR
       </p>
     </div>
   );
@@ -344,9 +386,10 @@ function PendingRow({ pending, renderedAt, now }: { pending: NonNullable<Receipt
         <span className="shrink-0 text-[12.5px] font-bold underline underline-offset-2 lg:order-last lg:text-[13px]">In {formatDuration(pending.at.getTime() - renderedAt)}</span>
       </div>
       <div className="mt-1.5 min-w-0 lg:mt-0 lg:grow">
-        <p className="text-[14.5px] leading-5 font-bold">{pending.index === 1 ? "First cut" : `Cut #${pending.index}`}: the lowest pile is cut</p>
+        <p className="text-[14.5px] leading-5 font-bold">{pending.index === 1 ? "First cut" : `Cut #${pending.index}`}: the lowest score is cut</p>
         <p className="mt-px text-[13px] leading-[18px] text-ink-3 lg:mt-0 lg:text-[14.5px] lg:leading-5">
-          {pending.lowest ? `Right now ${pending.lowest.name}, ${cutWhole(pending.lowest.pile)} $CUT. ` : ""}Half burns; half plus the day’s fees: equal slices, one per survivor.
+          {pending.lowest ? `Right now ${pending.lowest.name}, score ${cutWhole(pending.lowest.score)}. ` : ""}Pacts pay, attacks burn, half its pile burns, the rest
+          plus the day’s fees goes to the survivors.
         </p>
       </div>
     </li>
@@ -357,6 +400,9 @@ function AuditCard({ data }: { data: Receipts }) {
   const { checks, ms } = data.audit;
   const passed = checks.filter((check) => check.pass).length;
   const all = passed === checks.length;
+  // Sample mode replays the sample journal: it shows the numbers add up, never a pass on a real contract.
+  const ok = data.live ? "PASS" : "ADDS UP";
+  const badge = data.live ? `${all ? "PASS" : "FAIL"} · ${passed} of ${checks.length}` : `SAMPLE · ${passed} of ${checks.length} add up`;
   return (
     <section
       aria-labelledby="audit-title"
@@ -367,11 +413,13 @@ function AuditCard({ data }: { data: Receipts }) {
           Audit
         </h2>
         <span className={cn("rounded-full px-3 py-1 text-[13px] font-extrabold tracking-[1px] text-ink lg:text-sm", all ? "bg-lime" : "bg-danger text-paper")}>
-          {all ? "PASS" : "FAIL"} · {passed} of {checks.length}
+          {badge}
         </span>
       </div>
       <p className="mt-1.5 text-sm leading-5 text-[#c9cdd6] lg:mt-2 lg:text-[14.5px] lg:leading-[21px]">
-        Replays all {formatCount(data.entries)} entries and checks them against what the contract holds now.
+        {data.live
+          ? `Replays all ${formatCount(data.entries)} entries and checks them against what the contract holds now.`
+          : `Replays all ${formatCount(data.entries)} entries of the sample journal against the sample world. Live mode checks the contract on NEAR.`}
       </p>
       <ul className="mt-2.5 lg:mt-3">
         {checks.map((check) => (
@@ -385,7 +433,7 @@ function AuditCard({ data }: { data: Receipts }) {
               <span className="text-[#c9cdd6]">{check.detail}</span>
             </p>
             <span className={cn("hidden shrink-0 text-[11.5px] font-extrabold tracking-[0.8px] lg:inline", check.pass ? "text-lime" : "text-danger")}>
-              {check.pass ? "PASS" : "FAIL"}
+              {check.pass ? ok : "FAIL"}
             </span>
           </li>
         ))}
@@ -406,10 +454,14 @@ function ContractCard({ data }: { data: Receipts }) {
         <h2 id="contract-title" className="font-heading text-[22px] font-extrabold lg:text-2xl">
           {data.contractId}
         </h2>
-        {keys !== null && (
-          <span className={cn("rounded-full border-2 border-ink px-[9px] py-0.5 text-[11.5px] font-extrabold lg:px-2.5 lg:text-xs", keys === 0 ? "bg-lime" : "bg-danger text-paper")}>
-            {formatCount(keys)} {keys === 1 ? "key" : "keys"}
-          </span>
+        {data.live ? (
+          keys !== null && (
+            <span className={cn("rounded-full border-2 border-ink px-[9px] py-0.5 text-[11.5px] font-extrabold lg:px-2.5 lg:text-xs", keys === 0 ? "bg-lime" : "bg-danger text-paper")}>
+              {formatCount(keys)} {keys === 1 ? "key" : "keys"}
+            </span>
+          )
+        ) : (
+          <span className="rounded-full border-2 border-ink bg-violet-soft px-[9px] py-0.5 text-[11.5px] font-extrabold lg:px-2.5 lg:text-xs">Sample</span>
         )}
         <span className="rounded-full border-2 border-ink bg-canvas px-[9px] py-0.5 text-[11.5px] font-extrabold lg:px-2.5 lg:text-xs">NEP-141</span>
       </div>
@@ -421,7 +473,9 @@ function ContractCard({ data }: { data: Receipts }) {
           </div>
         ))}
       </dl>
-      <p className="mt-2 border-t-2 border-dashed border-ink pt-2.5 text-[13px] leading-[18px] font-semibold">Set once at launch. The contract has no method to change them.</p>
+      <p className="mt-2 border-t-2 border-dashed border-ink pt-2.5 text-[13px] leading-[18px] font-semibold">
+        {data.live ? "Set once at launch. The contract has no method to change them." : "Sample values, the same as the testnet launch. The contract has no method to change them."}
+      </p>
     </section>
   );
 }
