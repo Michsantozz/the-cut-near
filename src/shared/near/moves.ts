@@ -9,10 +9,19 @@ import { timestampNs, u128, u64Index } from "./units";
 
 const hexKey = z.string().regex(/^(0x)?[0-9a-fA-F]{64}$/, "must be a 32-byte hex key");
 
-/** `get_params()`: the only model whose answers count, and its TEE signing keys. */
+/**
+ * `get_params()`: the only model whose answers count, its TEE signing keys, and the request shape the contract
+ * builds (`max_tokens`, and `reasoning_effort` when set). The relay posts the contract's bytes as they are; the
+ * shape is read for reports and the probe.
+ */
 export const moveModelSchema = z
-  .object({ model_id: z.string().min(1), model_signers: z.array(hexKey).min(1).max(4) })
-  .transform((p) => ({ modelId: p.model_id, signers: p.model_signers }));
+  .object({
+    model_id: z.string().min(1),
+    model_signers: z.array(hexKey).min(1).max(4),
+    max_tokens: z.number().int().min(64).max(4096).optional(),
+    reasoning_effort: z.enum(["low", "medium", "high"]).nullish(),
+  })
+  .transform((p) => ({ modelId: p.model_id, signers: p.model_signers, maxTokens: p.max_tokens ?? null, reasoningEffort: p.reasoning_effort ?? null }));
 export type MoveModel = z.output<typeof moveModelSchema>;
 
 /** `get_next_cut()`: the cut moves count for, and when they close. */

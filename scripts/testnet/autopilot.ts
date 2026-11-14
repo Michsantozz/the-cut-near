@@ -117,6 +117,8 @@ async function main() {
   await checkKey(key);
   const keeper = new Account(KEEPER, provider, KeyPairSigner.fromSecretKey(key));
   log(`driving ${CONTRACT} as ${KEEPER} (${MOVE_SIGNING_ALGO} moves${apiKey ? "" : "; NEAR_AI_API_KEY not set, so agents hold"})`);
+  const shape = await view<{ model_id: string; max_tokens?: number; reasoning_effort?: string | null }>("get_params");
+  log(`requests: ${shape.model_id}, max_tokens ${shape.max_tokens ?? "?"}, reasoning_effort ${shape.reasoning_effort ?? "none"}`);
 
   const passes = new Map<number, number>();
   const announced = new Set<string>();

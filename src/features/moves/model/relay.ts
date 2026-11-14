@@ -11,7 +11,7 @@ import { bytesToHex, hexToBytes, utf8ToBytes } from "@noble/hashes/utils.js";
 export const MOVE_SIGNING_ALGO = "ed25519";
 
 /** The contract refuses a larger `response`. */
-export const MAX_RESPONSE_BYTES = 16 * 1024;
+export const MAX_RESPONSE_BYTES = 32 * 1024;
 
 /** `GET /v1/signature/<chat id>` as NEAR AI returns it. */
 export type MoveSignature = { text: string; signature: string; signing_address: string; signing_algo?: string; signature_kind?: string };
@@ -51,11 +51,12 @@ export type RelayPorts = {
  * - `already_moved`: the agent had a move by the time we got to it (another relayer, or a lost RPC answer).
  * - `no_request`: the contract has no request for the agent (not on the stage, no season).
  * - `ai_unavailable`: NEAR AI did not answer or sign. The agent holds, as the rules say.
+ * - `too_large`: the raw response is over the contract's 32 KB limit; nothing was submitted, the agent holds.
  * - `refused`: the answer failed a check the contract would also fail; nothing was submitted.
  * - `closed`: moves closed before we could submit.
  * - `failed`: a chain read or `submit_move` failed.
  */
-export type AgentRelayStatus = "moved" | "already_moved" | "no_request" | "ai_unavailable" | "refused" | "closed" | "failed";
+export type AgentRelayStatus = "moved" | "already_moved" | "no_request" | "ai_unavailable" | "too_large" | "refused" | "closed" | "failed";
 
 export type MoveAnswer = { move: string; target: string | null; amount: string; reason: string };
 
@@ -98,6 +99,12 @@ export function plainHex(value: string): string | null {
   return hex.length % 2 === 0 && /^[0-9a-fA-F]+$/.test(hex) ? hex.toLowerCase() : null;
 }
 
+/** Why the contract would refuse `responseBody` for its size, or null when it fits. */
+export function oversizeReason(responseBody: string): string | null {
+  const size = utf8ToBytes(responseBody).length;
+  return size > MAX_RESPONSE_BYTES ? `The response is ${size} bytes; the contract takes at most ${MAX_RESPONSE_BYTES}.` : null;
+}
+
 export type SignatureCheck = { ok: true; signature: string; signer: string } | { ok: false; reason: string };
 
 export type SignatureCheckInput = { modelId: string; requestBody: string; responseBody: string; signature: MoveSignature; signers: readonly string[] };
@@ -107,8 +114,8 @@ export function checkMoveSignature({ modelId, requestBody, responseBody, signatu
   const fail = (reason: string): SignatureCheck => ({ ok: false, reason });
   if (signature.signature_kind !== "provider_tee") return fail(`signature_kind is ${signature.signature_kind ?? "missing"}, not provider_tee.`);
   if (signature.signing_algo !== undefined && signature.signing_algo !== MOVE_SIGNING_ALGO) return fail(`signing_algo is ${signature.signing_algo}, not ed25519.`);
-  const size = utf8ToBytes(responseBody).length;
-  if (size > MAX_RESPONSE_BYTES) return fail(`The response is ${size} bytes; the contract takes at most ${MAX_RESPONSE_BYTES}.`);
+  const oversize = oversizeReason(responseBody);
+  if (oversize) return fail(oversize);
   if (signature.text !== signedMoveText(modelId, requestBody, responseBody)) return fail("The signed text is not <model_id>:<sha256(request)>:<sha256(response)> for these exact bytes.");
   const signer = plainHex(signature.signing_address);
   const bytes = plainHex(signature.signature);
@@ -216,6 +223,9 @@ export async function relayMoves(ports: RelayPorts, options: RelayOptions = {}):
       responseBody = await ports.complete(requestBody);
       chatId = chatIdOf(responseBody);
       if (!chatId) return result("ai_unavailable", { detail: "The completion has no chat id." });
+      // A reply the contract would refuse for its size is not worth a signature or a transaction.
+      const oversize = oversizeReason(responseBody);
+      if (oversize) return result("too_large", { chatId, detail: oversize });
       signature = await ports.signature(chatId, window.modelId);
     } catch (error) {
       return result("ai_unavailable", { detail: describe(error) });

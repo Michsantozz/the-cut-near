@@ -1,7 +1,7 @@
 import { ed25519 } from "@noble/curves/ed25519.js";
 import { bytesToHex } from "@noble/hashes/utils.js";
 import { describe, expect, it } from "vitest";
-import { MOVE_MAX_TOKENS, moveRequestBody, RULES_PROMPT } from "@/features/moves/model/request";
+import { moveRequestBody, RULES_PROMPT } from "@/features/moves/model/request";
 import { checkMoveSignature, MAX_RESPONSE_BYTES, moveAnswerOf, relayMoves, signedMoveText, type MoveSignature, type RelayPorts } from "@/features/moves/model/relay";
 
 const MODEL = "z-ai/glm-5.3-flash";
@@ -16,17 +16,27 @@ function signed(requestBody: string, responseBody: string, overrides: Partial<Mo
 }
 
 describe("moveRequestBody", () => {
-  it("builds the spec's request: fields in order, the brief embedded as stored, 600 tokens", () => {
-    const brief = '{"season":1,"agents":[]}';
-    const body = moveRequestBody({ modelId: MODEL, agent: { id: "kiko", name: "Kiko", personality: "traitor", charter: "Trust no one." }, briefJson: brief });
-    const parsed = JSON.parse(body) as { model: string; messages: { role: string; content: string }[]; max_tokens: number };
+  const brief = '{"season":1,"agents":[]}';
+  const agent = { id: "kiko", name: "Kiko", personality: "traitor" as const, charter: "Trust no one." };
 
-    expect(Object.keys(parsed)).toEqual(["model", "messages", "max_tokens"]);
-    expect(parsed.max_tokens).toBe(MOVE_MAX_TOKENS);
+  it("builds the contract's request: fields in order, the brief embedded as stored", () => {
+    const body = moveRequestBody({ modelId: MODEL, maxTokens: 1200, reasoningEffort: "low", agent, briefJson: brief });
+    const parsed = JSON.parse(body) as { model: string; messages: { role: string; content: string }[]; max_tokens: number; reasoning_effort: string };
+
+    expect(Object.keys(parsed)).toEqual(["model", "messages", "max_tokens", "reasoning_effort"]);
+    expect(body.endsWith('],"max_tokens":1200,"reasoning_effort":"low"}')).toBe(true);
     expect(parsed.messages.map((m) => m.role)).toEqual(["system", "user"]);
-    expect(parsed.messages[0].content.startsWith(`${RULES_PROMPT}\n\nYou are Kiko (kiko). Personality: traitor - You spend up to 20% a day`)).toBe(true);
-    expect(parsed.messages[0].content.endsWith("Your character, in your creator's words:\nTrust no one.")).toBe(true);
+    // The personality line keeps its own period, with no extra one.
+    expect(parsed.messages[0].content).toBe(
+      `${RULES_PROMPT}\n\nYou are Kiko (kiko). Personality: traitor - You spend up to 20% a day, and you are the only kind that may attack an agent you have a pact with.\nYour character, in your creator's words:\nTrust no one.`,
+    );
     expect(parsed.messages[1].content).toBe(`{"you":"kiko","board":${brief}}`);
+  });
+
+  it("leaves reasoning_effort out when the contract has none", () => {
+    const body = moveRequestBody({ modelId: MODEL, maxTokens: 600, reasoningEffort: null, agent, briefJson: brief });
+    expect(body.endsWith('],"max_tokens":600}')).toBe(true);
+    expect(body).not.toContain("reasoning_effort");
   });
 });
 
@@ -64,7 +74,7 @@ describe("checkMoveSignature", () => {
 
   it("refuses a response the contract would refuse for its size", () => {
     const big = completion("x".repeat(MAX_RESPONSE_BYTES));
-    expect(check(signed(request, big), { responseBody: big })).toEqual({ ok: false, reason: expect.stringMatching(/at most 16384/) });
+    expect(check(signed(request, big), { responseBody: big })).toEqual({ ok: false, reason: expect.stringMatching(/at most 32768/) });
   });
 });
 
@@ -140,6 +150,24 @@ describe("relayMoves", () => {
     const report = await relayMoves(p, { concurrency: 1, now: () => new Date(now) });
 
     expect(report.agents.map((agent) => agent.status)).toEqual(["closed", "closed", "closed", "closed"]);
+    expect(stats.submitted).toEqual([]);
+  });
+
+  it("skips a response over the contract's 32 KB limit before its signature, with no transaction", async () => {
+    let signatures = 0;
+    const big = completion("x".repeat(MAX_RESPONSE_BYTES), "chat-big");
+    const { ports: p, stats } = ports({
+      waitingAgents: async () => ["a"],
+      complete: async () => big,
+      signature: async () => {
+        signatures++;
+        throw new Error("not reached");
+      },
+    });
+    const [result] = (await relayMoves(p, { now: () => chainNow })).agents;
+
+    expect(result).toEqual({ agentId: "a", status: "too_large", chatId: "chat-big", detail: expect.stringMatching(/at most 32768/) });
+    expect(signatures).toBe(0);
     expect(stats.submitted).toEqual([]);
   });
 

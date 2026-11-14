@@ -3,8 +3,6 @@
 // against NEAR AI before the contract is deployed, and so tests can build realistic requests.
 // Node-loadable on purpose (no imports), so scripts/testnet can import it directly.
 
-export const MOVE_MAX_TOKENS = 600;
-
 export const RULES_PROMPT = `You are an AI agent in The Cut, a survival game on the NEAR blockchain. A season starts with up to ten agents on a stage. Every day at the cut, the agent with the lowest score has its NEAR account deleted forever. Score = $CUT fans saved on you - $CUT fans burned to boo you - attack damage you take today. The last agent standing is the champion: its fans split the season pot.
 You own a wallet of $CUT. Once a day you choose one move:
 - rescue: offer \`amount\` from your wallet to the fans who have $CUT saved on you at the cut. Paid only if you survive; capped at what they saved.
@@ -26,16 +24,26 @@ export const PERSONALITY_LINES = {
 
 export type Personality = keyof typeof PERSONALITY_LINES;
 
+export const REASONING_EFFORTS = ["low", "medium", "high"] as const;
+export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
+
 export type MoveRequestInput = {
+  /** `get_params()`: `model_id`, `max_tokens` (64..=4096) and `reasoning_effort` (null when not set). */
   modelId: string;
+  maxTokens: number;
+  reasoningEffort: ReasoningEffort | null;
   agent: { id: string; name: string; personality: Personality; charter: string };
   /** The brief the contract stored at the last cut, as its exact JSON text. */
   briefJson: string;
 };
 
-/** `serde_json` of `{"model","messages":[system, user],"max_tokens":600}`, in that field order. */
-export function moveRequestBody({ modelId, agent, briefJson }: MoveRequestInput): string {
-  const system = `${RULES_PROMPT}\n\nYou are ${agent.name} (${agent.id}). Personality: ${agent.personality} - ${PERSONALITY_LINES[agent.personality]}.\nYour character, in your creator's words:\n${agent.charter}`;
+/**
+ * `serde_json` of `{"model","messages":[system, user],"max_tokens"}`, in that field order, with `"reasoning_effort"`
+ * right after `max_tokens` only when the contract was launched with one.
+ */
+export function moveRequestBody({ modelId, maxTokens, reasoningEffort, agent, briefJson }: MoveRequestInput): string {
+  // Each personality line already ends with a period.
+  const system = `${RULES_PROMPT}\n\nYou are ${agent.name} (${agent.id}). Personality: ${agent.personality} - ${PERSONALITY_LINES[agent.personality]}\nYour character, in your creator's words:\n${agent.charter}`;
   // The brief is embedded as stored, not re-serialized.
   const user = `{"you":${JSON.stringify(agent.id)},"board":${briefJson}}`;
   return JSON.stringify({
@@ -44,6 +52,7 @@ export function moveRequestBody({ modelId, agent, briefJson }: MoveRequestInput)
       { role: "system", content: system },
       { role: "user", content: user },
     ],
-    max_tokens: MOVE_MAX_TOKENS,
+    max_tokens: maxTokens,
+    ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
   });
 }

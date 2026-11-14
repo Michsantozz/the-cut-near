@@ -17,7 +17,8 @@ const CLOSES_AT = CUT_AT - 3_600_000;
 const ns = (ms: number) => (BigInt(ms) * 1_000_000n).toString();
 const BRIEF = '{"season":1,"day":3,"cut_index":4,"agents":[{"id":"kiko","name":"Kiko","personality":"traitor","pile":"4100","wallet":"860"}],"last_cut":null,"last_moves":[]}';
 
-const requestFor = (id: string, charter = `I am ${id}.`) => moveRequestBody({ modelId: "z-ai/glm-5.3-flash", agent: { id, name: id.toUpperCase(), personality: "traitor", charter }, briefJson: BRIEF });
+const requestFor = (id: string, charter = `I am ${id}.`) =>
+  moveRequestBody({ modelId: "z-ai/glm-5.3-flash", maxTokens: 1200, reasoningEffort: "low", agent: { id, name: id.toUpperCase(), personality: "traitor", charter }, briefJson: BRIEF });
 
 let chain: FakeChain;
 let moved: Set<string>;
@@ -25,7 +26,7 @@ let requests: Map<string, string>;
 
 function setup(cloudOptions: FakeMoveCloudOptions = {}) {
   const cloud = fakeMoveCloud(cloudOptions);
-  chain.view("get_params", { value: { model_id: cloud.model, model_signers: [cloud.signer], move_lead: "3600000000000" } });
+  chain.view("get_params", { value: { model_id: cloud.model, model_signers: [cloud.signer], max_tokens: 1200, reasoning_effort: "low", move_lead: "3600000000000" } });
   server.use(chain.handler(RPC), ...cloud.handlers);
   return cloud;
 }
@@ -91,7 +92,7 @@ describe("relayMovesJob", () => {
 
   it("posts the view's string byte for byte, with the signature headers", async () => {
     // Escapes and spacing that a parse-and-stringify round trip would change.
-    const odd = requestFor("kiko", 'Café \u{1F680} "quoted" \\ </tags>\ttab\nnew line').replace('"max_tokens":600', '"max_tokens": 600').replace("Café", "Caf\\u00e9");
+    const odd = requestFor("kiko", 'Café \u{1F680} "quoted" \\ </tags>\ttab\nnew line').replace('"max_tokens":1200', '"max_tokens": 1200').replace("Café", "Caf\\u00e9");
     expect(JSON.stringify(JSON.parse(odd))).not.toBe(odd);
     requests.set("kiko", odd);
     requests.delete("pixie");

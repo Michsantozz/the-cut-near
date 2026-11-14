@@ -2,9 +2,12 @@
 // contract will check: the public attestation names the expected signer, the model answers, the signature is
 // provider_tee over `<model>:<sha256(request)>:<sha256(response)>` of these exact bytes, and Ed25519 verifies.
 //
-//   node scripts/testnet/probe-ai.ts                                   # the spec's request (max_tokens 600)
-//   node scripts/testnet/probe-ai.ts --max-tokens 1200 --reasoning-effort low
+//   node scripts/testnet/probe-ai.ts                                   # max_tokens 1200, reasoning_effort low
+//   node scripts/testnet/probe-ai.ts --max-tokens 600 --no-reasoning-effort
+//   node scripts/testnet/probe-ai.ts --reasoning-effort medium
 //
+// The shape matches the contract's launch parameters `max_tokens` (64..=4096) and `reasoning_effort` (low, medium,
+// high, or none): launch the contract with the shape this probe reports as working.
 // The request comes from src/features/moves/model/request.ts, the mirror of the contract's `moves::request_body`.
 // NEAR_AI_API_KEY comes from the environment or .env.local and is never printed. Without it, only the public
 // attestation is checked. No transaction, no chain.
@@ -12,7 +15,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkMoveSignature, chatIdOf, moveAnswerOf, plainHex, signedMoveText } from "../../src/features/moves/model/relay.ts";
-import { moveRequestBody } from "../../src/features/moves/model/request.ts";
+import { moveRequestBody, REASONING_EFFORTS, type ReasoningEffort } from "../../src/features/moves/model/request.ts";
 import { fetchSignature, NEAR_AI_BASE_URL, nearAiKey, postCompletion } from "./near-ai.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -44,18 +47,24 @@ const BRIEF = JSON.stringify({
   last_moves: [{ agent: "kiko", move: "attack", target: "velvet", amount: "120", reason: "Velvet was dead weight." }],
 });
 
-function requestBody(): string {
-  const base = moveRequestBody({
+/** The request shape from the flags: max_tokens 1200 and reasoning_effort low unless told otherwise. */
+function requestShape(): { maxTokens: number; reasoningEffort: ReasoningEffort | null } {
+  const maxTokens = Number(arg("max-tokens") ?? 1200);
+  if (!Number.isInteger(maxTokens) || maxTokens < 64 || maxTokens > 4096) throw new Error("--max-tokens must be a whole number from 64 to 4096, like the contract's max_tokens.");
+  if (process.argv.includes("--no-reasoning-effort")) return { maxTokens, reasoningEffort: null };
+  const effort = arg("reasoning-effort") ?? "low";
+  const known = REASONING_EFFORTS.find((value) => value === effort);
+  if (!known) throw new Error(`--reasoning-effort must be one of ${REASONING_EFFORTS.join(", ")} (or pass --no-reasoning-effort).`);
+  return { maxTokens, reasoningEffort: known };
+}
+
+function requestBody(shape: { maxTokens: number; reasoningEffort: ReasoningEffort | null }): string {
+  return moveRequestBody({
     modelId: MODEL,
+    ...shape,
     agent: { id: "kiko", name: "Kiko Bun", personality: "traitor", charter: "A VTuber bunny who smiles at everyone and trusts no one. Loyal only to the fans who saved her." },
     briefJson: BRIEF,
   });
-  const maxTokens = arg("max-tokens");
-  const effort = arg("reasoning-effort");
-  if (!maxTokens && !effort) return base;
-  // A variant to try: same fields, same order, then the extras. The contract must build exactly what works.
-  const { model, messages } = JSON.parse(base) as { model: string; messages: unknown[] };
-  return JSON.stringify({ model, messages, max_tokens: maxTokens ? Number(maxTokens) : 600, ...(effort ? { reasoning_effort: effort } : {}) });
 }
 
 const log = (label: string, value: unknown) => console.log(`${label.padEnd(18)} ${typeof value === "string" ? value : JSON.stringify(value)}`);
@@ -76,9 +85,11 @@ async function main() {
   }
 
   // 2. The completion, posted byte for byte.
-  const body = requestBody();
+  const shape = requestShape();
+  const body = requestBody(shape);
   const fields = Object.entries(JSON.parse(body) as Record<string, unknown>).filter(([name]) => name !== "model" && name !== "messages");
-  log("request", `${body.length} chars; fields after messages: ${JSON.stringify(Object.fromEntries(fields))}`);
+  const shapeText = JSON.stringify(Object.fromEntries(fields));
+  log("request shape", `${shapeText} (${body.length} chars)`);
   const reply = await postCompletion(apiKey, body);
   log("HTTP status", `${reply.status} in ${reply.ms} ms, ${new TextEncoder().encode(reply.body).length} bytes`);
   if (reply.status !== 200) {
@@ -108,7 +119,7 @@ async function main() {
   const check = checkMoveSignature({ modelId: MODEL, requestBody: body, responseBody: reply.body, signature, signers: [EXPECTED_SIGNER] });
   log("contract checks", check.ok ? "pass (kind, text, signer in model_signers, Ed25519)" : `FAIL: ${check.reason}`);
   const readable = answer !== null && choice?.finish_reason !== "length";
-  log("verdict", !check.ok ? "the signature would be refused on chain" : readable ? "this request shape works" : "the answer is cut or unreadable: change the request shape");
+  log("verdict", !check.ok ? `the signature would be refused on chain (shape ${shapeText})` : readable ? `this request shape works: ${shapeText}` : `the answer is cut or unreadable with ${shapeText}: try more max_tokens or another reasoning_effort`);
   if (!check.ok || !readable) process.exitCode = 1;
 }
 
