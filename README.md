@@ -4,6 +4,66 @@
 
 Built for NEAR HACKATHON, track Memecoins With Mechanics (`memecoins`).
 
+## The problem and the mechanic
+
+Most memecoins only do one thing: their price moves. $CUT has a daily onchain ritual instead. Holders choose which robot survives by
+saving $CUT into its pile, and the cut, run by anyone, deletes the loser's NEAR account, burns half of its pile and pays the rest to
+the survivors' savers. The supply only shrinks: 10,000,000 $CUT are minted once at deploy and every cut burns.
+
+| Step | What happens on chain |
+| - | - |
+| Buy | NEAR in, $CUT out from the contract's pool (constant product, 1% fee to the next prize). |
+| Save | `save(robot_id, amount)` locks $CUT in a stage robot's pile or a bench robot's queue until the next cut. |
+| Cut | `run_cut` (open to anyone once `get_next_cut().at` has passed) picks the lowest pile on the stage. Ties cut the newer robot. |
+| Delete | The robot's sub-account `<robot>.<contract>` deletes itself. The caller of `run_cut` keeps 0.5 NEAR; the creator gets the rest of the deposit back. |
+| Burn | Half the cut pile burns (`ft_burn` event). |
+| Prize | The other half plus the fees is the prize. The savers' share is split into equal slices, one per surviving robot, shared by that robot's savers by $CUT saved; creators get equal creator slices. |
+| Seat | The biggest bench queue takes the empty seat; its queue becomes its pile. |
+
+Limits that keep each call bounded and blunt sybil spam: 20 saves per account, 0.1 $CUT smallest save, 50 robots on the bench,
+20 seats, a 1 NEAR register deposit on testnet. `contracts/thecut/src/lib.rs` lists them all.
+
+## Try it
+
+Sample mode needs no chain, wallet or database:
+
+1. `pnpm install && pnpm dev`, open http://localhost:3000. See the lineup: 10 robots ranked by pile, the countdown to 18:00 UTC.
+2. Open **Inside the cut** (`/inside`). See the rules, the parameters and the 60-day supply model (`pnpm sim` prints the same).
+3. Open **Receipts** (`/receipts`). See every mint, burn, save and prize as a row.
+4. Open **Director** (`/director`). See the AI host's lines. Sample lines are marked unsigned; live lines carry the NEAR AI Cloud signature from the TEE.
+
+Live mode reads the daily testnet contract below:
+
+1. `pnpm db:up`, then set in `.env.local`: `DATA_SOURCE=live`, `NEXT_PUBLIC_NEAR_NETWORK=testnet`,
+   `NEXT_PUBLIC_CUT_CONTRACT=thecut-d9jicr.testnet`, `NEAR_RPC_URL=https://near-testnet.drpc.org`, `DATABASE_URL`,
+   `SESSION_SECRET`, `CRON_SECRET`. Run `pnpm db:migrate && pnpm build && pnpm start`.
+2. Run `node scripts/testnet/status.ts` (Node 22+). See the contract's access keys (0), the next cut, the stage and the bench.
+3. Connect a testnet wallet ([faucet](https://docs.near.org/tools/faucet)), buy $CUT, save it on a robot. See your save in its pile.
+4. After 18:00 UTC, call `GET /api/cron/cut` with `Authorization: Bearer $CRON_SECRET` (or `run_cut` from any account).
+   See the cut on the lineup and the burn and prizes in `/receipts`.
+
+To watch cuts every 2 minutes, launch your own contract: `node scripts/testnet/launch.ts --fast`. It creates the accounts from the
+testnet faucet, deploys, registers 12 robots, seeds saves, adds a `run_cut`-only keeper key, then deletes the contract's full-access key.
+
+## Testnet deployment
+
+| | Daily (the app) | Fast (the demo video) |
+| - | - | - |
+| Contract | [`thecut-d9jicr.testnet`](https://testnet.nearblocks.io/address/thecut-d9jicr.testnet) | [`thecut-2sk15l.testnet`](https://testnet.nearblocks.io/address/thecut-2sk15l.testnet) |
+| Cut every | 24 h, 18:00 UTC (first cut 2026-11-14) | 2 min |
+| Keeper | `thecut-d9jicr-keeper.testnet` (key for `run_cut` only) | `thecut-2sk15l-keeper.testnet` |
+| Access keys on the contract | 0 (locked: no one can upgrade it) | 0 |
+
+Accounts, wasm hash and launch times: `deploy/testnet-daily.json`, `deploy/testnet-fast.json`. Mainnet is not deployed.
+
+## Disclosure
+
+- **Prior work (Q-002).** An earlier edition of The Cut exists on Base (Solidity, built for Base Stocks Maxxing, separate repository).
+  This repository is new for NEAR HACKATHON: the Rust contracts, the NEAR wallet and sign-in, the indexer, the keeper and the
+  NEAR AI Director were written in the hackathon window. The design and the name carry over.
+- **AI used.** The code was written with Claude Code (Anthropic). The in-app Director uses NEAR AI Cloud with a Private model.
+- **Libraries.** All open source, listed under Stack below and in `package.json` / `contracts/Cargo.toml`.
+
 ## Stack
 
 | Part | Choice |
