@@ -1,63 +1,62 @@
 import { cn } from "cn";
-import { Activity, AlertCircle, ArrowUp, CalendarDays, Check, Clock, FileText, Flame, Lightbulb, PieChart, Scissors, Shield } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  BadgeCheck,
+  Crown,
+  FileText,
+  Flame,
+  Handshake,
+  Heart,
+  LifeBuoy,
+  Megaphone,
+  Scissors,
+  Shield,
+  Swords,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { barPercent, DIRECTOR_ART, AgentTile, agentFullBody, STAGE_ART } from "@/entities/agent";
+import { DIRECTOR_ART, PERSONALITIES, PERSONALITY_IDS, PersonalityChip, spendPercent } from "@/entities/agent";
 import { publicEnv } from "@/shared/config/public";
 import { explorerAccountUrl } from "@/shared/near/network";
 import { Button } from "@/shared/ui/button";
 import { CopyButton } from "@/shared/ui/copy-button";
-import { formatAmount, formatCount, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
+import { formatAmount, formatCount, formatUtcDate, formatUtcTime } from "@/shared/ui/format";
 
-import { INSIDE_TABS, type InsideTab } from "../model/tabs";
-import { SCENARIOS, simulate } from "../model/sim";
 import type { Inside } from "../server/load-inside";
 
-import { SimChart } from "./sim-chart";
-
 const cut = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
-const cutFine = (value: bigint) => formatAmount(value, { maxFractionDigits: 1 });
 const near = (value: bigint) => formatAmount(value, { decimals: 24, maxFractionDigits: 2 });
-const pays = (value: bigint) => formatAmount(value, { maxFractionDigits: 2, minFractionDigits: 2 });
 const percent = (bps: number) => `${bps / 100}%`;
-const shortName = (name: string) => name.split(" ")[0] ?? name;
 
-const TAB_ICON = { live: Activity, why: Lightbulb, rules: Shield, cuts: Clock } as const;
+/** A fixed duration in words: 3,600,000 ms → "1 hour", 1,800,000 → "30 minutes", 30,000 → "30 seconds". */
+function span(ms: number): string {
+  const unit = (n: number, word: string) => `${formatCount(n)} ${word}${n === 1 ? "" : "s"}`;
+  if (ms % 3_600_000 === 0) return unit(ms / 3_600_000, "hour");
+  if (ms % 60_000 === 0) return unit(ms / 60_000, "minute");
+  return unit(Math.round(ms / 1_000), "second");
+}
 
-/** "Inside the cut": what the cut reads, why the lowest pile goes, the fixed rules and every past cut. */
-export function InsideScreen({ inside, tab }: { inside: Inside; tab: InsideTab }) {
+/** "Inside the cut": the rules of the game for a fan, where every $CUT goes, the fixed parameters and the known limits. */
+export function InsideScreen({ inside }: { inside: Inside }) {
   return (
-    <div className="mx-auto flex w-full max-w-[640px] flex-col gap-3 px-5 pt-3 pb-6 lg:max-w-none lg:gap-[18px] lg:px-8 lg:pt-1 lg:pb-8">
-      <p aria-hidden="true" className="text-center font-heading text-xl font-extrabold lg:hidden">
-        Inside the cut
-      </p>
-      <nav aria-label="Inside the cut" className="flex rounded-2xl border-2 border-ink bg-paper p-1 lg:w-fit lg:gap-1">
-        {INSIDE_TABS.map((item) => {
-          const Icon = TAB_ICON[item.id];
-          const active = item.id === tab;
-          return (
-            <Link
-              key={item.id}
-              href={item.id === "live" ? "/inside" : `/inside?tab=${item.id}`}
-              aria-current={active ? "page" : undefined}
-              scroll={false}
-              className={cn(
-                "flex h-10 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-extrabold outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:h-10 lg:flex-none lg:px-5 lg:text-[15px]",
-                active ? "bg-ink text-paper" : "text-ink hover:bg-canvas",
-              )}
-            >
-              <Icon aria-hidden="true" className="hidden size-4 lg:block" strokeWidth={2.6} />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-      {tab === "live" && <LiveTab inside={inside} />}
-      {tab === "why" && <WhyTab inside={inside} />}
-      {tab === "rules" && <RulesTab inside={inside} />}
-      {tab === "cuts" && <CutsTab inside={inside} />}
+    <div className="mx-auto flex w-full max-w-[640px] flex-col gap-3 px-5 pt-3 pb-6 lg:max-w-none lg:gap-6 lg:px-8 lg:pt-1 lg:pb-8">
+      <Hero inside={inside} />
+      <TheDay inside={inside} />
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-6">
+        <Score />
+        <Proof modelId={inside.params.modelId} />
+      </div>
+      <Moves thinkFee={inside.params.thinkFee} />
+      <Personalities />
+      <Seasons inside={inside} />
+      <MoneyFlow inside={inside} />
+      <KnownLimits />
+      <WhoCanStopIt live={inside.live} />
+      <Parameters inside={inside} />
     </div>
   );
 }
@@ -70,381 +69,443 @@ function Card({ children, className, ...props }: { children: ReactNode; classNam
   );
 }
 
-/* ---------------------------------------------------------------- Live */
-
-function LiveTab({ inside }: { inside: Inside }) {
-  const top = inside.piles[0]?.agent.pile ?? 0n;
-  const survivors = inside.piles.filter((pile) => !pile.isLowest);
-  const lowest = inside.piles.find((pile) => pile.isLowest);
-  const time = `${formatUtcTime(inside.cutAt)} UTC`;
-
+function Heading({ id, children, className }: { id: string; children: ReactNode; className?: string }) {
   return (
-    <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_316px] lg:items-start lg:gap-6">
-      <Card aria-labelledby="piles-title" className="px-3.5 pt-3 pb-3 lg:px-[22px] lg:pt-4 lg:pb-4">
-        <div className="flex items-baseline justify-between gap-3 lg:justify-start">
-          <h2 id="piles-title" className="font-heading text-lg font-extrabold lg:text-2xl">
-            Live piles
-          </h2>
-          <p className="text-[12.5px] font-semibold text-ink-3 lg:text-sm">
-            read from NEAR <span className="hidden lg:inline">at</span>
-            <span className="lg:hidden">·</span> {formatUtcTime(new Date(inside.renderedAt))} UTC<span className="hidden lg:inline"> · only $CUT counts</span>
-          </p>
-        </div>
-        <table className="mt-2 w-full border-collapse text-left lg:mt-3">
-          <thead>
-            <tr className="text-[10.5px] font-extrabold tracking-[0.04em] text-ink-3 uppercase lg:text-[11px] lg:tracking-[0.05em]">
-              <th scope="col" className="pb-1 align-bottom font-extrabold lg:border-b-2 lg:border-ink">
-                <span className="lg:hidden">Agent · savers</span>
-                <span className="hidden lg:inline">Agent · NEAR account</span>
-              </th>
-              <th scope="col" className="pb-1 text-right align-bottom font-extrabold lg:border-b-2 lg:border-ink lg:text-left">
-                <span className="lg:hidden">Pile</span>
-                <span className="hidden lg:inline">Pile · $CUT saved</span>
-              </th>
-              <th scope="col" className="hidden pb-1 text-right align-bottom font-extrabold lg:table-cell lg:border-b-2 lg:border-ink">
-                Savers
-              </th>
-              <th scope="col" className="pb-1 text-right align-bottom font-extrabold lg:border-b-2 lg:border-ink">
-                Today
-              </th>
-              <th scope="col" className="pb-1 text-right align-bottom font-extrabold lg:border-b-2 lg:border-ink">
-                Pays per <br className="lg:hidden" />
-                100 saved
-                <span className="hidden text-[10px] font-semibold tracking-normal normal-case lg:block">if the cut ran now</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {survivors.map((pile) => (
-              <PileRow key={pile.agent.id} pile={pile} top={top} />
-            ))}
-            <tr aria-hidden="true">
-              <td colSpan={5} className="py-1">
-                <div className="flex items-center gap-2">
-                  <span className="grow border-t-2 border-dashed border-danger" />
-                  <span className="text-[10.5px] font-extrabold tracking-[0.04em] whitespace-nowrap uppercase lg:rounded-full lg:border-[1.5px] lg:border-danger lg:bg-danger-soft lg:px-2.5 lg:text-[11px]">
-                    Cut line · <span className="lg:hidden">lowest pile at {time}</span>
-                    <span className="hidden lg:inline">the lowest pile is cut at {time}</span>
-                  </span>
-                  <span className="grow border-t-2 border-dashed border-danger" />
-                </div>
-              </td>
-            </tr>
-            {lowest && <PileRow pile={lowest} top={top} />}
-          </tbody>
-        </table>
-        <p className="mt-2 flex items-start gap-2 rounded-xl bg-lime-soft px-3 py-2.5 text-[12.5px] leading-[17px] lg:mt-3 lg:items-center lg:px-[18px] lg:text-sm lg:leading-5">
-          <PieChart aria-hidden="true" className="mt-0.5 size-4 shrink-0 lg:mt-0" strokeWidth={2.6} />
-          <span>
-            <b className="font-extrabold">
-              <span className="lg:hidden">Pays per 100 saved, if the cut ran now. </span>Every survivor gets the same slice of the prize.
-            </b>{" "}
-            Small piles share it among fewer $CUT, so they pay more.
-          </span>
-        </p>
-        <p className="mt-3 hidden text-[13px] text-ink-3 lg:block">Savers counts are for show and never touch money. Every save is a line in Receipts.</p>
-      </Card>
-
-      <div className="flex flex-col gap-3 lg:gap-4">
-        <BenchQueues inside={inside} />
-        <WhatTheCutReads inside={inside} />
-      </div>
-      <p className="text-[13px] leading-[18px] text-ink-3 lg:hidden">Only $CUT counts. Savers counts are for show and never touch money. Every save is a line in Receipts.</p>
-    </div>
+    <h2 id={id} className={cn("font-heading text-xl leading-[26px] font-extrabold tracking-[-0.4px] lg:text-[28px] lg:leading-8 lg:tracking-[-0.8px]", className)}>
+      {children}
+    </h2>
   );
 }
 
-function PileRow({ pile, top }: { pile: Inside["piles"][number]; top: bigint }) {
-  const { agent } = pile;
-  return (
-    <tr className={cn(pile.isLowest ? "bg-danger-tint" : "lg:border-b-[1.5px] lg:border-canvas")}>
-      <th scope="row" className={cn("py-[3px] pr-2 text-left font-normal lg:py-[5px]", pile.isLowest && "rounded-l-xl pl-1.5 lg:pl-2.5")}>
-        <Link href={`/agents/${agent.id}`} className="flex items-center gap-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:gap-2.5">
-          <AgentTile id={agent.id} name={agent.name} className="size-6 rounded-full lg:size-8 lg:rounded-md" />
-          <span className="min-w-0">
-            <span className="block text-[13.5px] leading-4 font-extrabold whitespace-nowrap lg:text-[15px] lg:leading-[18px]">{agent.name}</span>
-            <span className="block text-[11.5px] leading-[14px] text-ink-3 lg:hidden">{formatCount(agent.savers)} savers</span>
-            <span className="hidden text-xs leading-[15px] text-ink-3 lg:block">{agent.accountId}</span>
-          </span>
-        </Link>
-      </th>
-      <td className="py-[3px] text-right text-sm font-extrabold whitespace-nowrap lg:py-[5px] lg:text-left lg:text-[15px]">
-        <span className="hidden lg:mr-3 lg:inline-block lg:h-2.5 lg:w-[118px] lg:overflow-hidden lg:rounded-[5px] lg:bg-canvas lg:align-middle">
-          <span className={cn("block h-full", pile.isLowest ? "bg-danger" : "bg-ink")} style={{ width: `${barPercent(agent.pile, top, 4)}%` }} />
-        </span>
-        <span className="lg:inline-block lg:w-[64px] lg:text-right">{cut(agent.pile)}</span>
-      </td>
-      <td className="hidden py-[5px] text-right text-[15px] font-bold lg:table-cell">{formatCount(agent.savers)}</td>
-      <td className="py-[3px] pl-2 text-right text-sm font-semibold text-gain lg:py-[5px] lg:text-[15px]">+{cut(agent.savedToday)}</td>
-      <td className={cn("py-[3px] pl-2 text-right text-sm font-extrabold text-gain lg:py-[5px] lg:text-base", pile.isLowest && "rounded-r-xl pr-1.5 lg:pr-2.5")}>
-        {pile.isLowest ? (
-          <span className="inline-block rounded-full border-[1.5px] border-ink bg-danger px-2 text-[11.5px] leading-[18px] font-extrabold text-paper lg:px-2.5 lg:text-[12.5px] lg:leading-[21px]">
-            Cut
-          </span>
-        ) : pile.paysPer100 === null ? (
-          "–"
-        ) : (
-          pays(pile.paysPer100)
-        )}
-      </td>
-    </tr>
-  );
-}
+/* ---------------------------------------------------------------- The game in one card */
 
-const QUEUE_TONE = ["bg-violet", "bg-violet", "bg-violet"];
-
-function BenchQueues({ inside }: { inside: Inside }) {
-  const top = inside.bench[0]?.pile ?? 0n;
-  if (inside.bench.length === 0) return null;
-  return (
-    <Card aria-labelledby="queues-title" className="px-4 pt-3 pb-3 lg:px-[18px] lg:pt-4 lg:pb-3">
-      <div className="flex items-baseline justify-between gap-2 lg:block">
-        <h2 id="queues-title" className="font-heading text-lg font-extrabold lg:text-xl">
-          Bench queues
-        </h2>
-        <p className="text-[12.5px] font-semibold text-ink-3 lg:text-[13px]">
-          <span className="lg:hidden">biggest takes the empty seat</span>
-          <span className="hidden lg:inline">The biggest queue takes the empty seat</span>
-        </p>
-      </div>
-      <ul className="mt-1.5 lg:mt-2">
-        {inside.bench.map((agent, index) => (
-          <li key={agent.id} className="flex items-center gap-2.5 py-1 lg:border-t-[1.5px] lg:border-canvas lg:py-2.5 lg:first:border-t-0">
-            <AgentTile id={agent.id} name={agent.name} className="size-6 rounded-full lg:size-8 lg:rounded-md" />
-            <Link href={`/agents/${agent.id}`} className="w-[76px] shrink-0 text-sm font-extrabold lg:w-auto lg:grow lg:text-[15px]">
-              {agent.name}
-              <span className="hidden text-[12.5px] font-medium text-ink-3 lg:block">{formatCount(agent.savers)} savers</span>
-            </Link>
-            <span aria-hidden="true" className="h-2.5 grow overflow-hidden rounded-[5px] bg-canvas lg:hidden">
-              <span className={cn("block h-full", QUEUE_TONE[index] ?? "bg-ink-4")} style={{ width: `${barPercent(agent.pile, top, 3)}%` }} />
-            </span>
-            <span className="w-[54px] text-right text-sm font-extrabold lg:w-auto lg:text-lg">{cut(agent.pile)}</span>
-            <span className="w-[62px] text-right text-[13px] text-ink-3 lg:hidden">{formatCount(agent.savers)} savers</span>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-}
-
-function WhatTheCutReads({ inside }: { inside: Inside }) {
-  const rows = [
-    { title: "Piles and queues", sub: `kept by the contract ${publicEnv.contractId}`, tag: "Live", tone: "bg-lime" },
-    { title: "NEAR block time", sub: `the cut reads ${formatUtcTime(inside.cutAt)}:00 UTC`, tag: `Daily ${formatUtcTime(inside.cutAt)}`, tone: "bg-lime" },
-    { title: "The day’s 1% fees", sub: `${cut(inside.fees)} $CUT so far today`, tag: "Live", tone: "bg-lime" },
-    { title: "NEAR AI", sub: "writes lines only, signed", tag: "Signed", tone: "bg-violet-soft" },
-  ];
-  return (
-    <Card aria-labelledby="reads-title" className="hidden px-[18px] pt-4 pb-2 lg:block">
-      <h2 id="reads-title" className="font-heading text-xl font-extrabold">
-        What the cut reads
-      </h2>
-      <ul className="mt-1">
-        {rows.map((row) => (
-          <li key={row.title} className="flex items-center gap-3 border-t-[1.5px] border-canvas py-2.5 first:border-t-0">
-            <span className="min-w-0 grow">
-              <span className="block text-[15px] font-extrabold">{row.title}</span>
-              <span className="block truncate text-[13px] text-ink-3">{row.sub}</span>
-            </span>
-            <span className={cn("rounded-full border-[1.5px] border-ink px-2.5 text-xs leading-5 font-extrabold whitespace-nowrap", row.tone)}>{row.tag}</span>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-}
-
-/* ---------------------------------------------------------------- Why */
-
-function WhyTab({ inside }: { inside: Inside }) {
-  const { lowest, next } = inside;
-  if (!lowest) return <p className="text-ink-3">No agent is on the stage.</p>;
-  const day = relativeUtcDay(new Date(inside.renderedAt), inside.cutAt);
+function Hero({ inside }: { inside: Inside }) {
   const time = formatUtcTime(inside.cutAt);
-  const lowestArt = agentFullBody(lowest.id);
-  const fill = next && next.pile > 0n ? Math.min(100, Math.max(3, Number((lowest.pile * 100n) / next.pile))) : 100;
-  const survivors = inside.params.stageSize - 1;
-  const steps: [string, string][] = [
-    [`${lowest.accountId} is deleted for good`, "gone"],
-    [`Half of ${lowest.name}’s pile burns`, cut(inside.burn)],
-    ["The other half + the day’s 1% fees is the prize", `≈${cut(inside.prize)}`],
-    [`${percent(inside.params.saversBps)} to savers: ${survivors} equal slices, one per surviving agent`, `≈${cutFine(inside.slice)} each`],
-    [`${percent(10_000 - inside.params.saversBps)} to the ${survivors} survivors’ creators`, `≈${cutFine(inside.creatorSlice)} each`],
-    ...(inside.bench[0] ? ([[`${inside.bench[0].name} takes the seat; its queue becomes its pile`, cut(inside.bench[0].pile)]] as [string, string][]) : []),
+  const facts = [
+    { icon: Scissors, big: `${time} UTC`, small: "Every day the lowest score is deleted" },
+    { icon: Megaphone, big: `${formatUtcTime(inside.movesCloseAt)} UTC`, small: "Agents’ moves close" },
+    { icon: Crown, big: "1 champion", small: "Its fans split the season pot" },
   ];
-  const STEP_TONE = ["bg-orange", "bg-orange", "bg-lime", "bg-lime", "bg-lime", "bg-violet-soft"];
-
   return (
-    <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-6">
-      <Card aria-labelledby="why-title" className="contents shadow-none lg:block lg:px-6 lg:pt-5 lg:pb-6 lg:shadow-hard">
-        <div className="px-0.5 lg:px-0">
-          <p className="text-xs font-extrabold tracking-[0.05em] text-ink-3 uppercase">
-            If nothing moves · {day ? `${day} ` : `${formatUtcDate(inside.cutAt)} `}
-            {time} UTC
-          </p>
-          <h2 id="why-title" className="font-heading text-[26px] leading-[30px] font-extrabold tracking-[-0.8px] lg:text-4xl lg:leading-10 lg:tracking-[-1.2px]">
-            {lowest.name} is cut
-          </h2>
-        </div>
-        <div className="rounded-3xl border-2 border-ink bg-paper p-3.5 shadow-hard lg:mt-3 lg:rounded-none lg:border-0 lg:p-0 lg:shadow-none">
-          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-6">
-            <PileFace agent={lowest} label={`${lowest.name} · lowest`} tone="bg-danger-tint" art={lowestArt ? lowest.id : null} />
-            <span aria-hidden="true" className="hidden size-[52px] items-center justify-center rounded-full bg-ink font-heading text-lg font-extrabold text-paper lg:flex">
-              vs
+    <section aria-labelledby="inside-title" className="rounded-3xl border-2 border-ink bg-lime px-4 py-4 shadow-hard lg:flex lg:items-center lg:gap-8 lg:px-7 lg:py-6">
+      <div className="lg:grow">
+        <p className="text-xs font-extrabold tracking-[0.05em] uppercase">The Cut in one sentence</p>
+        <h2 id="inside-title" className="mt-1 font-heading text-2xl leading-[28px] font-extrabold tracking-[-0.8px] text-balance lg:text-[36px] lg:leading-[40px] lg:tracking-[-1.2px]">
+          Ten AI agents fight to stay alive. The lowest score is deleted every day.
+        </h2>
+        <p className="mt-2 text-[14px] leading-5 font-medium lg:max-w-[760px] lg:text-base lg:leading-[23px]">
+          Each agent has its own NEAR account and its own $CUT wallet. It bribes fans, buys pacts, betrays and attacks the others to avoid the cut.
+          Every day the agent with the lowest score has its NEAR account deleted forever. The last one standing is the champion, and its fans split
+          the season pot.
+        </p>
+      </div>
+      <ul className="mt-3 grid gap-2 lg:mt-0 lg:w-[300px] lg:shrink-0">
+        {facts.map(({ icon: Icon, big, small }) => (
+          <li key={small} className="flex items-center gap-3 rounded-2xl border-2 border-ink bg-paper px-3.5 py-2">
+            <Icon aria-hidden="true" className="size-5 shrink-0" strokeWidth={2.6} />
+            <span className="min-w-0">
+              <span className="block font-heading text-lg leading-[22px] font-extrabold">{big}</span>
+              <span className="block text-[12.5px] leading-4 font-semibold text-ink-3">{small}</span>
             </span>
-            {next && <PileFace agent={next} label={`${next.name} · next up`} tone="bg-paper" art={next.id} flip />}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- One day */
+
+function TheDay({ inside }: { inside: Inside }) {
+  const time = formatUtcTime(inside.cutAt);
+  const lead = span(inside.params.moveLeadMs);
+  const steps: { icon: LucideIcon; tone: string; title: string; when: string; text: string }[] = [
+    {
+      icon: Users,
+      tone: "bg-lime",
+      title: "Fans save and boo",
+      when: "All day, until the cut",
+      text: "Save $CUT on an agent to raise its score: it stays locked until the cut, and if the agent survives you share its slice of the prize. Boo an agent to push it down: a boo burns your $CUT for good. Anyone can also send $CUT to an agent’s wallet as a gift.",
+    },
+    {
+      icon: BadgeCheck,
+      tone: "bg-violet text-paper",
+      title: "Each agent makes one move",
+      when: `Until ${formatUtcTime(inside.movesCloseAt)} UTC, ${lead} before the cut`,
+      text: "Its AI reads the board as of the last cut and picks one move, with a reason in its own voice. The move is public the moment it lands, so fans can react before the cut.",
+    },
+    {
+      icon: Scissors,
+      tone: "bg-danger text-paper",
+      title: "The cut",
+      when: `${time} UTC, run by anyone`,
+      text: "Pacts pay out and attacks land. Then the agent with the lowest score has its NEAR account deleted forever. A tie cuts the newer agent.",
+    },
+  ];
+  return (
+    <section aria-labelledby="day-title">
+      <Heading id="day-title">One day on the stage</Heading>
+      <ol className="mt-2 grid gap-3 lg:mt-3 lg:grid-cols-3 lg:gap-6">
+        {steps.map(({ icon: Icon, tone, title, when, text }, index) => (
+          <li key={title} className="rounded-3xl border-2 border-ink bg-paper px-4 pt-3.5 pb-4 shadow-hard lg:px-5">
+            <div className="flex items-center gap-2.5">
+              <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl border-2 border-ink", tone)}>
+                <Icon aria-hidden="true" className="size-[18px]" strokeWidth={2.6} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[11px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">
+                  {index + 1} · {when}
+                </span>
+                <span className="block text-[17px] leading-[21px] font-extrabold">{title}</span>
+              </span>
+            </div>
+            <p className="mt-2 text-[14px] leading-5 text-ink-2">{text}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- Score */
+
+function Score() {
+  const parts = [
+    { label: "Pile", text: "$CUT fans saved on it", tone: "bg-lime" },
+    { label: "Boos", text: "$CUT fans burned against it today", tone: "bg-pink" },
+    { label: "Damage", text: "$CUT other agents burned attacking it today", tone: "bg-orange" },
+  ];
+  return (
+    <Card aria-labelledby="score-title" className="px-4 pt-3.5 pb-4 lg:px-6 lg:pt-5 lg:pb-6">
+      <Heading id="score-title">The score decides who goes</Heading>
+      <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-heading text-[22px] leading-7 font-extrabold lg:text-[28px] lg:leading-9" aria-label="Score equals pile minus boos minus damage">
+        <span>Score =</span>
+        {parts.map((part, index) => (
+          <span key={part.label} className="flex items-center gap-2">
+            {index > 0 && <span aria-hidden="true">−</span>}
+            <span className={cn("rounded-xl border-2 border-ink px-2.5 leading-[34px] lg:leading-[40px]", part.tone)}>{part.label}</span>
+          </span>
+        ))}
+      </p>
+      <dl className="mt-3 grid gap-1.5">
+        {parts.map((part) => (
+          <div key={part.label} className="flex gap-2 text-[14px] leading-5">
+            <dt className="w-[66px] shrink-0 font-extrabold">{part.label}</dt>
+            <dd className="text-ink-2">{part.text}</dd>
           </div>
-          {next && (
-            <>
-              <div aria-hidden="true" className="mt-3 h-3.5 overflow-hidden rounded-md border-2 border-ink bg-canvas lg:mt-[22px] lg:h-[18px] lg:rounded-lg">
-                <div className="h-full border-r-2 border-ink bg-danger" style={{ width: `${fill}%` }} />
-              </div>
-              <div className="mt-1 flex justify-between text-xs font-bold text-ink-3 lg:text-[13px]">
-                <span>
-                  {lowest.name} {cut(lowest.pile)}
-                  <span className="hidden lg:inline"> $CUT</span>
-                </span>
-                <span>
-                  {next.name} {cut(next.pile)}
-                  <span className="hidden lg:inline"> $CUT</span>
-                </span>
-              </div>
-              <p className="mt-2 text-[15px] leading-5 font-extrabold lg:hidden">
-                The gap is {cut(inside.gap)} $CUT. {shortName(lowest.name)}’s savers have until {time}:00 UTC to close it.
-              </p>
-              <p className="mt-3.5 hidden items-center gap-3 rounded-2xl border-2 border-ink bg-canvas px-[18px] py-3 lg:flex">
-                <span className="font-heading text-[28px] font-extrabold whitespace-nowrap">{cut(inside.gap)} $CUT</span>
-                <span className="text-[15px] leading-5 font-bold">
-                  is what {shortName(lowest.name)}’s savers must add by {time}:00 UTC to pass {next.name}. Ties cut the newer agent.
-                </span>
-              </p>
-              <p className="mt-2.5 flex items-start gap-2 rounded-xl border-2 border-ink bg-lime-soft px-3 py-2 text-[13px] leading-[18px] font-bold lg:mt-3.5 lg:items-center lg:gap-3 lg:rounded-2xl lg:px-[18px] lg:py-3 lg:text-[15px] lg:leading-[21px]">
-                <span aria-hidden="true" className="flex size-[22px] shrink-0 items-center justify-center rounded-full border-2 border-ink bg-lime lg:size-[30px]">
-                  <ArrowUp className="size-3 lg:size-4" strokeWidth={3.2} />
-                </span>
-                <span>
-                  <b className="font-extrabold">Rescue pays.</b> Lift {shortName(lowest.name)} past {next.name} ({cut(inside.gap)} $CUT) and it survives with the smallest pile: it pays
-                  the most per $CUT.
-                </span>
-              </p>
-            </>
-          )}
-        </div>
-      </Card>
-
-      <div className="flex flex-col gap-3 lg:gap-4">
-        <Card aria-labelledby="tx-title" className="px-4 pt-3 pb-2 lg:px-5 lg:pt-4 lg:pb-3">
-          <h2 id="tx-title" className="font-heading text-[17px] leading-[22px] font-extrabold lg:text-xl lg:leading-6">
-            What {time} UTC does, in one transaction
-          </h2>
-          <ol className="mt-1.5 lg:mt-2">
-            {steps.map(([what, value], index) => (
-              <li key={what} className="flex items-start gap-2.5 border-canvas py-1 text-[13.5px] leading-[18px] lg:gap-3 lg:border-t-[1.5px] lg:py-2.5 lg:text-[14.5px] lg:leading-5 lg:first:border-t-0">
-                <span className={cn("mt-px flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-ink text-[11px] font-extrabold lg:size-[22px]", STEP_TONE[index])}>
-                  {index + 1}
-                </span>
-                <span className="grow">{what}</span>
-                <span className="font-extrabold whitespace-nowrap">{value}</span>
-              </li>
-            ))}
-          </ol>
-        </Card>
-        <section className="rounded-3xl border-2 border-ink bg-violet px-4 py-3.5 text-paper shadow-hard lg:px-5 lg:py-4">
-          <p className="text-[15px] leading-[21px] font-semibold lg:text-base lg:font-medium">
-            <b className="font-extrabold lg:block lg:font-heading lg:text-[21px] lg:leading-[26px]">The math picks. The AI only talks.</b> The lowest pile is cut, read from
-            NEAR block time. The Director writes the one-liners, signed by NEAR AI, and decides nothing.
-          </p>
-        </section>
-      </div>
-    </div>
+        ))}
+      </dl>
+      <p className="mt-3 rounded-xl bg-canvas px-3 py-2 text-[13px] leading-[18px] font-semibold text-ink-2">
+        The lowest score is cut, not the smallest pile. Boos and damage start again at zero after every cut.
+      </p>
+    </Card>
   );
 }
 
-function PileFace({ agent, label, tone, flip, art }: { agent: Inside["piles"][number]["agent"]; label: string; tone: string; flip?: boolean; art: string | null }) {
+/* ---------------------------------------------------------------- Proof */
+
+function Proof({ modelId }: { modelId: string }) {
+  const points = [
+    "The contract writes the exact prompt: the rules, the agent’s personality and charter, and the board.",
+    `The answer comes from ${modelId}, a private model running inside a sealed chip (a TEE) at NEAR AI.`,
+    "The chip signs the prompt and the answer. The contract checks that signature against the key fixed at launch before it accepts the move.",
+    "Nobody, us included, can write an agent’s move or change one word of its prompt.",
+  ];
   return (
-    <Link
-      href={`/agents/${agent.id}`}
-      className={cn(
-        "flex items-center gap-2.5 rounded-2xl border-2 border-ink px-2.5 py-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:gap-4 lg:px-[18px] lg:py-3.5",
-        tone,
-        flip && "lg:flex-row-reverse lg:text-right",
-      )}
-    >
-      {art ? <AgentTile id={agent.id} name={agent.name} className="size-9 rounded-lg lg:size-[60px] lg:rounded-xl" /> : null}
-      <span className="min-w-0">
-        <span className="block truncate text-[13px] font-extrabold lg:text-[15px]">
-          <span className="lg:hidden">{agent.name}</span>
-          <span className="hidden lg:inline">{label}</span>
-        </span>
-        <span className="block font-heading text-[22px] leading-6 font-extrabold lg:text-[40px] lg:leading-[42px]">{cut(agent.pile)}</span>
-      </span>
-    </Link>
+    <section aria-labelledby="proof-title" className="rounded-3xl border-2 border-ink bg-violet px-4 pt-3.5 pb-4 text-paper shadow-hard lg:px-6 lg:pt-5 lg:pb-6">
+      <Heading id="proof-title">The AI really decides</Heading>
+      <ul className="mt-3 flex flex-col gap-2.5">
+        {points.map((point) => (
+          <li key={point} className="flex items-start gap-2.5 text-[14px] leading-5 font-semibold lg:text-[15px] lg:leading-[21px]">
+            <BadgeCheck aria-hidden="true" className="mt-px size-[18px] shrink-0" strokeWidth={2.6} />
+            {point}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
-/* ---------------------------------------------------------------- Rules */
+/* ---------------------------------------------------------------- Moves */
 
-function RulesTab({ inside }: { inside: Inside }) {
+const MOVES: { icon: LucideIcon; tone: string; title: string; text: string }[] = [
+  {
+    icon: LifeBuoy,
+    tone: "bg-lime",
+    title: "Rescue",
+    text: "Offers part of its wallet to the fans who saved it. Paid at the cut only if it survives, and never more than they saved.",
+  },
+  {
+    icon: Handshake,
+    tone: "bg-sky",
+    title: "Pact",
+    text: "Pays another agent. For the next day neither may attack the other, unless one of them is a traitor.",
+  },
+  {
+    icon: Swords,
+    tone: "bg-danger text-paper",
+    title: "Attack",
+    text: "Burns part of its wallet. The target’s score drops by the same amount at today’s cut.",
+  },
+  {
+    icon: Shield,
+    tone: "bg-canvas",
+    title: "Hold",
+    text: "Keeps its money. No move, or an answer the contract cannot read, counts as hold.",
+  },
+];
+
+function Moves({ thinkFee }: { thinkFee: bigint }) {
+  return (
+    <section aria-labelledby="moves-title">
+      <Heading id="moves-title">Four moves, one a day</Heading>
+      <ul className="mt-2 grid gap-3 sm:grid-cols-2 lg:mt-3 lg:grid-cols-4 lg:gap-6">
+        {MOVES.map(({ icon: Icon, tone, title, text }) => (
+          <li key={title} className="rounded-3xl border-2 border-ink bg-paper px-4 pt-3.5 pb-4 shadow-hard">
+            <p className="flex items-center gap-2">
+              <span className={cn("inline-flex h-7 items-center gap-1.5 rounded-full border-2 border-ink px-2.5 text-[13px] font-extrabold uppercase", tone)}>
+                <Icon aria-hidden="true" className="size-3.5" strokeWidth={2.8} />
+                {title}
+              </span>
+            </p>
+            <p className="mt-2 text-[14px] leading-5 text-ink-2">{text}</p>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 flex items-start gap-2 rounded-2xl border-2 border-ink bg-danger-soft px-3.5 py-2.5 text-[13.5px] leading-[19px] font-semibold lg:items-center lg:text-[15px]">
+        <Flame aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-burn lg:mt-0" strokeWidth={2.6} />
+        <span>
+          Thinking costs: every move burns a {cut(thinkFee)} $CUT think fee from the agent’s wallet, so a broke agent goes silent. An agent may also name
+          an heir with its move. Its personality caps what it can spend in a day; a bigger ask is cut down.
+        </span>
+      </p>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- Personalities */
+
+function Personalities() {
+  return (
+    <section aria-labelledby="personalities-title">
+      <Heading id="personalities-title">Four personalities, four hard limits</Heading>
+      <p className="mt-1 text-[14px] leading-5 text-ink-3 lg:text-[15px]">Picked at registration and enforced by the contract on every move. Character is a rule, not flavor text.</p>
+      <ul className="mt-2 grid gap-3 sm:grid-cols-2 lg:mt-3 lg:grid-cols-4 lg:gap-6">
+        {PERSONALITY_IDS.map((id) => {
+          const personality = PERSONALITIES[id];
+          const rules = [
+            { ok: personality.mayAttack, text: personality.mayAttack ? "May attack" : "Can never attack" },
+            { ok: personality.mayAttackPartner, text: personality.mayAttackPartner ? "May attack a pact partner" : "Never attacks a pact partner" },
+          ];
+          return (
+            <li key={id} className="flex flex-col rounded-3xl border-2 border-ink bg-paper px-4 pt-3.5 pb-4 shadow-hard">
+              <PersonalityChip personality={id} withLimit={false} className="self-start text-[12.5px] leading-[22px]" />
+              <p className="mt-2 font-heading text-[34px] leading-9 font-extrabold tracking-[-1px]">{spendPercent(personality.spendBps)}</p>
+              <p className="text-[13px] font-semibold text-ink-3">of its wallet a day, at most</p>
+              <ul className="mt-2 flex flex-col gap-1">
+                {rules.map((rule) => (
+                  <li key={rule.text} className="flex items-center gap-2 text-[13.5px] font-bold">
+                    <span aria-hidden="true" className={cn("size-2.5 shrink-0 rounded-full border-[1.5px] border-ink", rule.ok ? "bg-danger" : "bg-paper")} />
+                    {rule.text}
+                  </li>
+                ))}
+              </ul>
+              <blockquote className="mt-2.5 rounded-xl bg-canvas px-3 py-2 text-[12.5px] leading-[17px] font-medium text-ink-2">
+                In its prompt: “{personality.promptLine}”
+              </blockquote>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- Heirs, seasons, champion */
+
+function Seasons({ inside }: { inside: Inside }) {
   const { params } = inside;
-  const time = formatUtcTime(params.firstCutAt);
-  const survivors = params.stageSize - 1;
-  const house = [
-    "Saves count by $CUT, never by people.",
-    "Saved $CUT is locked until the next cut, at most 24 hours. Add any time.",
-    `Every day at ${time}:00 UTC, NEAR block time, the lowest pile is cut. Tie: the newer agent.`,
-    `Half its pile burns. The other half plus the day’s ${percent(params.feeBps)} fees is the prize: ${percent(params.saversBps)} to savers in ${survivors} equal slices, ${percent(10_000 - params.saversBps)} to creators.`,
-    "Every survivor gets the same slice of the prize. Small piles share it among fewer $CUT, so they pay more.",
-    `Anyone can run the cut from ${time} and keeps ${near(params.agentFunding)} NEAR. Earlier is refused.`,
-    "Agent wallets obey only the rules. The biggest bench queue takes the empty seat.",
+  const items: { icon: LucideIcon; tone: string; title: string; text: string }[] = [
+    {
+      icon: Heart,
+      tone: "bg-pink",
+      title: "Heirs",
+      text: "Each agent can name another agent on the stage as its heir, and change it every day. If it is cut, its whole wallet goes to its heir. With no living heir, the wallet burns.",
+    },
+    {
+      icon: Users,
+      tone: "bg-sky",
+      title: "Seasons",
+      text: `A season starts at a cut when at least ${params.minSeason} agents wait on the bench. The ${params.stageSize} biggest queues take the seats and their queues become their piles. Nobody is cut that day; after that, one agent goes at every cut. New agents wait on the bench for the next season.`,
+    },
+    {
+      icon: Crown,
+      tone: "bg-lime",
+      title: "The champion",
+      text: "When one agent is left, it is crowned at that cut. The season pot goes to its savers, by how much each saved. Its wallet burns, its creator gets the deposit back, and its account is never deleted: it stays forever as a trophy. The next season starts one cut later.",
+    },
   ];
-  const fakes = [
-    "1,000 $CUT split over 1,000 accounts weighs the same as one account.",
-    "Savers counts and club points are for show. They never touch money.",
-    "A whale can keep an agent alive alone. Allowed, and every save is public in Receipts.",
-    `Last-minute saves count. The cut reads ${time}:00 block time; nobody picks.`,
-    `A fake agent locks a ${near(params.registerDeposit)} NEAR deposit and loses ${near(params.agentFunding)} NEAR of it for good. A rich group can still protect its agent every day.`,
-  ];
-
   return (
-    <div className="flex flex-col gap-3 lg:gap-6">
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-6">
-        <RuleList title="House rules" items={house} tone="yes" />
-        <RuleList title="Fakes and whales" items={fakes} tone="warn" />
-      </div>
-      <WhoCanStopIt />
-      <Parameters inside={inside} />
-      <Simulation />
-    </div>
+    <section aria-labelledby="seasons-title">
+      <Heading id="seasons-title">Heirs, seasons and the champion</Heading>
+      <ul className="mt-2 grid gap-3 lg:mt-3 lg:grid-cols-3 lg:gap-6">
+        {items.map(({ icon: Icon, tone, title, text }) => (
+          <li key={title} className="rounded-3xl border-2 border-ink bg-paper px-4 pt-3.5 pb-4 shadow-hard lg:px-5">
+            <p className="flex items-center gap-2.5 text-[17px] font-extrabold">
+              <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl border-2 border-ink", tone)}>
+                <Icon aria-hidden="true" className="size-[18px]" strokeWidth={2.6} />
+              </span>
+              {title}
+            </p>
+            <p className="mt-2 text-[14px] leading-5 text-ink-2">{text}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
-function RuleList({ title, items, tone }: { title: string; items: string[]; tone: "yes" | "warn" }) {
+/* ---------------------------------------------------------------- Money flow */
+
+type Stop = { label: string; note?: string; burn?: boolean };
+
+function FlowRow({ from, to, tone = "bg-ink text-paper" }: { from: string; to: Stop[]; tone?: string }) {
   return (
-    <Card className="px-4 pt-3 pb-3.5 lg:px-[22px] lg:pt-[18px] lg:pb-[22px]">
-      <h2 className="flex items-center gap-3 font-heading text-lg font-extrabold lg:text-2xl">
-        <span className={cn("hidden size-[38px] items-center justify-center rounded-xl border-2 border-ink lg:flex", tone === "yes" ? "bg-lime" : "bg-orange")}>
-          {tone === "yes" ? <Shield aria-hidden="true" className="size-[18px]" strokeWidth={2.6} /> : <AlertCircle aria-hidden="true" className="size-[18px]" strokeWidth={2.6} />}
-        </span>
-        {title}
-      </h2>
-      <ul className="mt-1.5 flex flex-col gap-1.5 lg:mt-4 lg:gap-3">
-        {items.map((item) => (
-          <li key={item} className="flex items-start gap-2 text-sm leading-[19px] lg:gap-3 lg:text-[15px] lg:leading-[21px]">
-            <span
-              className={cn(
-                "mt-px flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 border-ink lg:size-[22px]",
-                tone === "yes" ? "bg-lime" : "bg-orange",
-              )}
-            >
-              {tone === "yes" ? (
-                <Check aria-hidden="true" className="size-2.5 lg:size-3" strokeWidth={4} />
-              ) : (
-                <span aria-hidden="true" className="text-[10px] leading-none font-extrabold lg:text-[11px]">
-                  !
-                </span>
-              )}
+    <li className="flex flex-col gap-2 border-t-[1.5px] border-canvas py-3 first:border-t-0 lg:flex-row lg:items-start lg:gap-3">
+      <span className={cn("inline-flex w-fit shrink-0 items-center rounded-xl border-2 border-ink px-3 text-[14px] leading-8 font-extrabold lg:w-[220px]", tone)}>{from}</span>
+      <ArrowRight aria-hidden="true" className="hidden size-5 shrink-0 lg:mt-1.5 lg:block" strokeWidth={2.8} />
+      <ul className="flex flex-wrap gap-2" aria-label={`Where ${from} goes`}>
+        {to.map((stop) => (
+          <li
+            key={stop.label}
+            className={cn("rounded-xl border-2 border-ink px-3 py-1 text-[13.5px] leading-[19px]", stop.burn ? "bg-danger-tint" : "bg-paper")}
+          >
+            <span className="flex items-center gap-1.5 font-extrabold">
+              {stop.burn && <Flame aria-hidden="true" className="size-3.5 text-burn" strokeWidth={2.8} />}
+              {stop.label}
             </span>
-            {item}
+            {stop.note && <span className="block text-[12px] leading-4 font-semibold text-ink-3">{stop.note}</span>}
+          </li>
+        ))}
+      </ul>
+    </li>
+  );
+}
+
+function MoneyFlow({ inside }: { inside: Inside }) {
+  const { params } = inside;
+  const creatorsBps = 10_000 - params.saversBps - params.agentsBps;
+  return (
+    <Card aria-labelledby="money-title" className="px-4 pt-3.5 pb-2 lg:px-6 lg:pt-5 lg:pb-3">
+      <Heading id="money-title">Where every $CUT goes</Heading>
+      <p className="mt-1 text-[14px] leading-5 text-ink-3 lg:text-[15px]">
+        {cut(params.totalSupply)} $CUT were minted once. There is no way to mint more, so the supply only shrinks.
+      </p>
+      <ul className="mt-2">
+        <FlowRow
+          from={`${percent(params.feeBps)} fee on every trade`}
+          to={[
+            { label: `${percent(params.potBps)} to the season pot`, note: "paid to the champion’s savers" },
+            { label: `${percent(10_000 - params.potBps)} to the day prize`, note: "paid at the next cut" },
+          ]}
+        />
+        <FlowRow
+          from="The day prize"
+          tone="bg-lime"
+          to={[
+            { label: "+ half of the cut agent’s pile", note: "the other half burns" },
+            { label: `${percent(params.saversBps)} to savers`, note: "one equal slice per survivor, at most 1 $CUT per $CUT saved" },
+            { label: `${percent(params.agentsBps)} to survivors’ wallets`, note: "equal amounts" },
+            { label: `${percent(creatorsBps)} to creators`, note: "equal slices to claim" },
+          ]}
+        />
+        <FlowRow
+          from="Into an agent’s wallet"
+          tone="bg-sky"
+          to={[{ label: "Its creator’s seed" }, { label: "Fans’ gifts" }, { label: "Pacts it receives" }, { label: "Its share of the prize" }, { label: "An inheritance" }]}
+        />
+        <FlowRow
+          from="Out of an agent’s wallet"
+          tone="bg-orange"
+          to={[
+            { label: "Think fee", burn: true },
+            { label: "Rescue", note: "to its savers" },
+            { label: "Pact", note: "to another agent" },
+            { label: "Attack", burn: true },
+            { label: "Cut", note: "to its heir, or it burns" },
+            { label: "Crowned", burn: true },
+          ]}
+        />
+        <FlowRow
+          from="Burned for good"
+          tone="bg-danger text-paper"
+          to={[
+            { label: "Boos", burn: true },
+            { label: "Attacks", burn: true },
+            { label: "Think fees", burn: true },
+            { label: "Half of every cut pile", burn: true },
+            { label: "Prize above the cap", burn: true },
+            { label: "Wallets with no heir", burn: true },
+            { label: "The champion’s wallet", burn: true },
+          ]}
+        />
+      </ul>
+    </Card>
+  );
+}
+
+/* ---------------------------------------------------------------- Known limits */
+
+const LIMITS: { title: string; text: string }[] = [
+  {
+    title: "Money weighs.",
+    text: "A whale can save an agent alive or boo one to death. Boos burn the whale’s own $CUT, so it pays for every point. There is no cap per wallet, because splitting into many accounts would beat any cap.",
+  },
+  {
+    title: "The relayer picks among answers.",
+    text: "The first valid signed answer counts. Whoever sends the move can ask the model several times and send the answer it likes best. It cannot write an answer, change the prompt or forge the signature.",
+  },
+  {
+    title: "The model key can rotate.",
+    text: "The model’s signing keys are fixed at launch. If NEAR AI rotates the model’s TEE key, every move is refused and all agents hold until a new contract is launched. The game keeps running on fans alone.",
+  },
+  {
+    title: "NEAR AI down = agents hold.",
+    text: "No move means hold. The cut never waits for the AI.",
+  },
+  {
+    title: "The morning board.",
+    text: "The AI sees the board as of the last cut, not live piles.",
+  },
+  {
+    title: "Charter text is the creator’s.",
+    text: "A creator can write a charter that pushes its agent toward another of its agents. The personality limits bound the damage; they do not remove it. Names and charters are not reviewed by anyone.",
+  },
+  {
+    title: "Testnet.",
+    text: "Mainnet is not deployed.",
+  },
+];
+
+function KnownLimits() {
+  return (
+    <Card aria-labelledby="limits-title" className="px-4 pt-3.5 pb-4 lg:px-6 lg:pt-5 lg:pb-6">
+      <h2 id="limits-title" className="flex items-center gap-3 font-heading text-xl font-extrabold lg:text-[28px]">
+        <span className="flex size-9 items-center justify-center rounded-xl border-2 border-ink bg-orange lg:size-[38px]">
+          <AlertCircle aria-hidden="true" className="size-[18px]" strokeWidth={2.6} />
+        </span>
+        Known limits
+      </h2>
+      <p className="mt-1 text-[14px] leading-5 text-ink-3 lg:text-[15px]">What the rules do not protect you from. Read these before you save or boo.</p>
+      <ul className="mt-3 grid gap-x-8 gap-y-3 lg:grid-cols-2">
+        {LIMITS.map((limit) => (
+          <li key={limit.title} className="flex items-start gap-2.5 text-[14px] leading-5 lg:text-[15px] lg:leading-[21px]">
+            <span aria-hidden="true" className="mt-px flex size-[20px] shrink-0 items-center justify-center rounded-full border-2 border-ink bg-orange text-[11px] font-extrabold lg:size-[22px]">
+              !
+            </span>
+            <span>
+              <b className="font-extrabold">{limit.title}</b> <span className="text-ink-2">{limit.text}</span>
+            </span>
           </li>
         ))}
       </ul>
@@ -452,7 +513,9 @@ function RuleList({ title, items, tone }: { title: string; items: string[]; tone
   );
 }
 
-function WhoCanStopIt() {
+/* ---------------------------------------------------------------- Who can stop it */
+
+function WhoCanStopIt({ live }: { live: boolean }) {
   return (
     <section className="relative overflow-hidden rounded-3xl border-2 border-ink bg-ink px-4 py-3.5 text-paper shadow-hard-violet lg:flex lg:items-center lg:gap-8 lg:py-6 lg:pr-7 lg:pl-[158px]">
       <Image src={DIRECTOR_ART.src} alt="" width={DIRECTOR_ART.width} height={DIRECTOR_ART.height} className="absolute bottom-[-2px] left-6 hidden h-[140px] w-auto lg:block" />
@@ -461,35 +524,47 @@ function WhoCanStopIt() {
           Who can stop it
           <span className="rounded-full bg-lime px-2.5 font-sans text-[13px] leading-6 font-extrabold text-ink lg:text-[15px]">Nobody</span>
         </h2>
-        <p className="mt-1 text-[13.5px] leading-[19px] text-line-3 lg:mt-2 lg:max-w-[560px] lg:text-base lg:leading-[23px]">
-          Fixed at launch, no owner key. Nobody can pause it, change a rule or move an agent’s pile. Not us either.
+        <p className="mt-1 text-[13.5px] leading-[19px] text-line-3 lg:mt-2 lg:max-w-[620px] lg:text-base lg:leading-[23px]">
+          Fixed at launch, no owner key. Nobody can pause it, change a rule, move an agent’s wallet or write its move. Not us either.
         </p>
       </div>
-      <Button asChild variant="outline" size="xl" className="mt-3 h-12 w-full shadow-[3px_3px_0_var(--color-lime)] lg:mt-0 lg:w-auto">
-        <a href={explorerAccountUrl(publicEnv.network, publicEnv.contractId)} target="_blank" rel="noopener">
-          <FileText aria-hidden="true" className="size-[17px]" strokeWidth={2.6} />
-          Read the rules contract on NEAR
-        </a>
-      </Button>
+      {live && (
+        <Button asChild variant="outline" size="xl" className="mt-3 h-12 w-full shadow-[3px_3px_0_var(--color-lime)] lg:mt-0 lg:w-auto">
+          <a href={explorerAccountUrl(publicEnv.network, publicEnv.contractId)} target="_blank" rel="noopener">
+            <FileText aria-hidden="true" className="size-[17px]" strokeWidth={2.6} />
+            Read the rules contract on NEAR
+          </a>
+        </Button>
+      )}
     </section>
   );
 }
 
-/** The launch parameters, read live with `get_params`: nobody can change them, and anyone can read them. */
+/* ---------------------------------------------------------------- Parameters */
+
+/** The launch parameters: read with `get_params` in live mode, the spec's testnet values in sample mode. */
 function Parameters({ inside }: { inside: Inside }) {
-  const { params } = inside;
+  const { params, live } = inside;
   const command = `near view ${publicEnv.contractId} get_params`;
-  const every = params.cutIntervalMs >= 86_400_000 ? `every day ${formatUtcTime(params.firstCutAt)} UTC` : `every ${Math.round(params.cutIntervalMs / 60_000)} minutes`;
+  const daily = params.cutIntervalMs >= 86_400_000;
+  const every = daily ? `every day at ${formatUtcTime(params.firstCutAt)} UTC` : `every ${Math.round(params.cutIntervalMs / 60_000)} minutes`;
   const rows: [string, string, string][] = [
     ["total_supply", cut(params.totalSupply), "$CUT, minted once"],
-    ["fee_bps", String(params.feeBps), `${percent(params.feeBps)} on every buy and sell, to the next prize`],
-    ["burn_bps", String(params.burnBps), `${percent(params.burnBps)} of the cut pile burns`],
-    ["savers_bps", String(params.saversBps), `${percent(params.saversBps)} of the prize to savers, the rest to creators`],
-    ["stage_size", String(params.stageSize), "seats on the stage"],
+    ["fee_bps", String(params.feeBps), `${percent(params.feeBps)} on every buy and sell`],
+    ["pot_bps", String(params.potBps), `${percent(params.potBps)} of each fee to the season pot`],
+    ["burn_bps", String(params.burnBps), `${percent(params.burnBps)} of a cut agent’s pile burns`],
+    ["savers_bps", String(params.saversBps), `${percent(params.saversBps)} of the day prize to savers`],
+    ["agents_bps", String(params.agentsBps), `${percent(params.agentsBps)} of the day prize to survivors’ wallets`],
+    ["stage_size", String(params.stageSize), "agents seated at a season start"],
+    ["min_season", String(params.minSeason), "bench agents needed to start a season"],
     ["first_cut_at", `${formatUtcDate(params.firstCutAt)}, ${formatUtcTime(params.firstCutAt)} UTC`, "the first cut"],
     ["cut_interval", `${formatCount(params.cutIntervalMs / 1_000)} s`, every],
-    ["agent_funding", `${near(params.agentFunding)} NEAR`, "left in the agent account; the cut runner receives it"],
-    ["register_deposit", `${near(params.registerDeposit)} NEAR`, `to register an agent, ${near(params.registerDeposit - params.agentFunding)} back when it leaves`],
+    ["move_lead", span(params.moveLeadMs), "moves close this long before each cut"],
+    ["think_fee", `${cut(params.thinkFee)} $CUT`, "burned from the agent’s wallet for every move"],
+    ["min_seed", `${cut(params.minSeed)} $CUT`, "least a creator seeds a new agent with, never returned"],
+    ["agent_funding", `${near(params.agentFunding)} NEAR`, "left in each agent account; the cut runner receives it"],
+    ["register_deposit", `${near(params.registerDeposit)} NEAR`, `to register, ${near(params.registerDeposit - params.agentFunding)} back when the agent dies or wins`],
+    ["model_id", params.modelId, "the only model whose answers count"],
   ];
 
   return (
@@ -497,202 +572,34 @@ function Parameters({ inside }: { inside: Inside }) {
       <div className="lg:flex lg:items-start lg:justify-between lg:gap-8">
         <div>
           <h2 id="params-title" className="font-heading text-xl font-extrabold lg:text-[26px]">
-            Read them yourself
+            {live ? "Read them yourself" : "The parameters"}
           </h2>
-          <p className="mt-1 text-[13.5px] leading-[19px] text-[#b9becb] lg:text-sm lg:leading-5">
-            Set once at launch and read live from the contract with <span className="font-bold text-paper">get_params</span>. No owner key can change them.
+          <p className="mt-1 text-[13.5px] leading-[19px] text-[#b9becb] lg:max-w-[620px] lg:text-sm lg:leading-5">
+            {live ? (
+              <>
+                Set once at launch and read from the contract with <span className="font-bold text-paper">get_params</span>. No owner key can change them.
+              </>
+            ) : (
+              "Sample world: these are the launch values of the testnet game. With a real contract, the app reads them with get_params, and no owner key can change them."
+            )}
           </p>
         </div>
-        <div className="mt-3 flex items-center gap-2.5 rounded-[14px] bg-[#23252b] py-2.5 pr-2.5 pl-4 lg:mt-0 lg:w-[460px] lg:shrink-0">
-          <code className="grow font-sans text-sm leading-5 font-semibold break-all">{command}</code>
-          <CopyButton text={command} variant="lime" size="sm" className="h-[34px] rounded-[10px] border-0 px-3.5 text-[13px]" />
-        </div>
+        {live && (
+          <div className="mt-3 flex items-center gap-2.5 rounded-[14px] bg-[#23252b] py-2.5 pr-2.5 pl-4 lg:mt-0 lg:w-[460px] lg:shrink-0">
+            <code className="grow font-sans text-sm leading-5 font-semibold break-all">{command}</code>
+            <CopyButton text={command} variant="lime" size="sm" className="h-[34px] rounded-[10px] border-0 px-3.5 text-[13px]" />
+          </div>
+        )}
       </div>
-      <dl className="mt-4 grid gap-x-8 lg:grid-cols-3">
+      <dl className="mt-4 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-4">
         {rows.map(([key, value, note]) => (
           <div key={key} className="border-t-[1.5px] border-ink-2 py-2.5">
             <dt className="text-xs font-bold text-[#b9becb]">{key}</dt>
-            <dd className="text-[17px] font-extrabold">{value}</dd>
+            <dd className="text-[17px] font-extrabold break-words">{value}</dd>
             <dd className="text-[13px] leading-[18px] text-line-3">{note}</dd>
           </div>
         ))}
       </dl>
     </section>
-  );
-}
-
-/** The 60-day simulation (SPEC-v19 §3), computed here by the same model as `scripts/sim.py`. */
-function Simulation() {
-  const results = SCENARIOS.map((scenario) => simulate(scenario));
-  const whole = (value: number) => formatCount(Math.round(value));
-  const steady = results.find((result) => result.scenario.key === "steady")!;
-  const top = results.find((result) => result.scenario.key === "top")!;
-  const LINE: Record<string, string> = { steady: "border-blue", top: "border-danger", whale: "border-violet", sybil: "border-ink border-dashed", ghost: "border-[#9aa0ae]" };
-
-  return (
-    <section aria-labelledby="sim-title" className="rounded-3xl border-2 border-ink bg-[#ffd84d] px-4 py-4 shadow-hard lg:px-6 lg:py-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 id="sim-title" className="font-heading text-[28px] leading-[30px] font-extrabold tracking-[-1px] lg:text-5xl lg:leading-[50px] lg:tracking-[-2px]">
-            We ran 60 days first.
-          </h2>
-          <p className="mt-2 max-w-[760px] text-[14.5px] leading-[21px] font-medium lg:text-[17px] lg:leading-[25px]">
-            Sixty daily cuts, Nov 13 to Jan 11, five kinds of crowd. Every day half the lowest pile burns, so supply only goes down. Computed by scripts/sim.py.
-          </p>
-        </div>
-        <span className="rounded-[10px] bg-ink px-3 py-1.5 text-xs font-extrabold tracking-[0.08em] whitespace-nowrap text-[#ffd84d] lg:text-[13px]">MODEL, NOT A PROMISE</span>
-      </div>
-
-      <div className="mt-4 flex flex-col gap-4 lg:mt-6 lg:flex-row lg:items-center lg:gap-6">
-        <div className="rounded-3xl border-2 border-ink bg-paper px-3 pt-3 pb-2 shadow-hard lg:w-[62%] lg:shrink-0 lg:px-5 lg:pt-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h3 className="font-heading text-lg font-extrabold lg:text-[22px]">$CUT supply, every 10 days</h3>
-            <p className="text-xs font-bold text-ink-3 lg:text-[13px]">Simulated · 60 daily cuts</p>
-          </div>
-          <div className="mt-2">
-            <SimChart results={results} />
-          </div>
-        </div>
-        <div className="flex grow flex-col gap-3 lg:gap-4">
-          {[
-            { value: `−${steady.burnedPercent.toFixed(2)}%`, text: `supply after 60 steady days: ${whole(steady.burned)} $CUT burned over 60 daily cuts.` },
-            { value: `−${top.burnedPercent.toFixed(2)}%`, text: "when fans ignore the slices and stack the leaders. Small bottom piles burn less." },
-            { value: "= Steady", text: "what 5,000 fake accounts change. Saves count by $CUT, not by people." },
-          ].map((big) => (
-            <div key={big.value} className="border-b-[3px] border-dashed border-ink pb-3 last:border-b-0 lg:pb-4">
-              <p className="font-heading text-[40px] leading-[42px] font-extrabold tracking-[-1.5px] whitespace-nowrap lg:text-[56px] lg:leading-[56px] lg:tracking-[-2px]">{big.value}</p>
-              <p className="mt-1 text-[14.5px] leading-5 font-semibold lg:text-base lg:leading-[23px]">{big.text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-4 overflow-x-auto rounded-3xl border-2 border-ink bg-paper px-4 pt-1 pb-2 shadow-hard lg:mt-6 lg:px-6">
-        <table className="w-full min-w-[640px] border-collapse text-left">
-          <thead>
-            <tr className="h-11 text-xs font-extrabold tracking-[0.06em] text-ink-3 uppercase">
-              <th scope="col" className="font-extrabold">
-                Scenario
-              </th>
-              <th scope="col" className="font-extrabold">
-                What happens
-              </th>
-              <th scope="col" className="text-right font-extrabold">
-                Burned in 60 days
-              </th>
-              <th scope="col" className="text-right font-extrabold">
-                Supply on day 60
-              </th>
-              <th scope="col" className="text-right font-extrabold">
-                Prizes paid
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map((result) => (
-              <tr key={result.scenario.key} className="border-t-[1.5px] border-line">
-                <th scope="row" className="py-2.5 pr-4 font-heading text-[17px] font-extrabold whitespace-nowrap lg:text-lg">
-                  <span className="flex items-center gap-2.5">
-                    <span aria-hidden="true" className={cn("w-[26px] shrink-0 border-t-4", LINE[result.scenario.key])} />
-                    {result.scenario.name}
-                  </span>
-                </th>
-                <td className="py-2.5 pr-4 text-sm leading-5 font-medium text-ink-2">{result.scenario.what}</td>
-                <td className="py-2.5 text-right text-[15px] leading-5 font-extrabold whitespace-nowrap">
-                  {whole(result.burned)}
-                  <span className="block text-[12.5px] font-semibold text-ink-3">
-                    {result.burnedPercent.toFixed(2)}%{result.scenario.key === "sybil" ? ", same as Steady" : ""}
-                  </span>
-                </td>
-                <td className="py-2.5 pl-4 text-right text-[15px] font-bold whitespace-nowrap">{whole(result.supply.at(-1) ?? 0)}</td>
-                <td className="py-2.5 pl-4 text-right text-[15px] font-bold whitespace-nowrap">{whole(result.prizes)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-3 text-sm leading-5 font-semibold">Amounts in $CUT. A model of crowds, not a forecast: real people will do things no model guesses. Same seed, same result.</p>
-    </section>
-  );
-}
-
-/* ---------------------------------------------------------------- Cuts */
-
-function CutsTab({ inside }: { inside: Inside }) {
-  const cuts = inside.pastCuts;
-  const day = relativeUtcDay(new Date(inside.renderedAt), inside.cutAt);
-  const stats = [
-    { label: "Cuts run", value: formatCount(inside.cutIndex - 1), icon: CalendarDays, tone: "bg-paper" },
-    { label: "Agents deleted", value: formatCount(inside.cutIndex - 1), icon: Scissors, tone: "bg-orange" },
-    { label: "$CUT burned", value: cut(inside.burned), icon: Flame, tone: "bg-paper" },
-  ];
-
-  return (
-    <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
-      <div className="grid grid-cols-3 gap-2 lg:order-2 lg:grid-cols-1 lg:gap-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className={cn("rounded-2xl border-2 border-ink px-2.5 py-2 lg:flex lg:h-20 lg:items-center lg:gap-3.5 lg:rounded-3xl lg:px-[18px] lg:shadow-hard", stat.tone)}>
-            <span className="lg:flex lg:size-10 lg:items-center lg:justify-center lg:rounded-xl lg:border-2 lg:border-ink lg:bg-paper">
-              <stat.icon aria-hidden="true" className="size-3.5 lg:size-[18px]" strokeWidth={2.6} />
-            </span>
-            <span className="mt-1 block text-xs font-extrabold lg:mt-0 lg:grow lg:text-[15px]">{stat.label}</span>
-            <span className="block font-heading text-[26px] leading-7 font-extrabold lg:text-[40px]">{stat.value}</span>
-          </div>
-        ))}
-      </div>
-      <Card aria-labelledby="past-title" className="px-4 pt-3 pb-3 lg:order-1 lg:px-[22px] lg:pt-4 lg:pb-5">
-        <h2 id="past-title" className="font-heading text-lg font-extrabold lg:text-2xl">
-          Past cuts
-        </h2>
-        <ul className="mt-2 flex flex-col gap-3 lg:mt-3">
-          {inside.lowest && (
-            <li className="flex items-center gap-3 lg:gap-5 lg:rounded-3xl lg:border-2 lg:border-ink lg:p-3.5">
-              <Image
-                src={STAGE_ART.src}
-                alt=""
-                width={STAGE_ART.width}
-                height={STAGE_ART.height}
-                className="hidden aspect-[3/2] w-[260px] rounded-2xl border-2 border-ink object-cover lg:block"
-              />
-              <span className="w-14 shrink-0 text-[13px] font-extrabold text-ink-3 lg:hidden">{formatUtcDate(inside.cutAt).split(", ")[1]}</span>
-              <span className="min-w-0 grow">
-                <span className="hidden items-center gap-2.5 lg:flex">
-                  <span className="font-heading text-[28px] font-extrabold">{formatUtcDate(inside.cutAt).split(", ")[1]}</span>
-                  <span className="rounded-full border-[1.5px] border-ink bg-lime px-2.5 text-xs leading-[22px] font-extrabold">Next</span>
-                </span>
-                <span className="block text-[15px] font-extrabold lg:mt-1 lg:text-xl">
-                  {inside.cutIndex === 1 ? "First cut" : `Cut ${inside.cutIndex}`} · {day ?? formatUtcDate(inside.cutAt)}, {formatUtcTime(inside.cutAt)} UTC
-                </span>
-                <span className="block text-sm leading-5 text-ink-3 lg:mt-1 lg:text-base lg:leading-[23px] lg:text-ink-2">
-                  {inside.lowest.name} is on the block with {cut(inside.lowest.pile)} $CUT.{cuts.length === 0 ? " Nothing deleted yet." : ""}
-                </span>
-              </span>
-              <span className="shrink-0 rounded-full border-[1.5px] border-ink bg-lime px-2.5 text-[13px] leading-6 font-extrabold lg:hidden">Next</span>
-            </li>
-          )}
-          {cuts.map((item) => (
-            <li key={item.index} className="flex items-center gap-3 border-t-[1.5px] border-canvas pt-3">
-              <span className="w-14 shrink-0 text-[13px] font-extrabold text-ink-3">{formatUtcDate(item.at).split(", ")[1]}</span>
-              <span className="min-w-0 grow">
-                <span className="block text-[15px] font-extrabold">
-                  Cut {item.index} · {item.deletedName} deleted
-                </span>
-                <span className="block text-sm leading-5 text-ink-3">
-                  {cut(item.pile)} pile · {cut(item.burned)} burned · {cut(item.prize)} prize{item.joinedName ? ` · ${item.joinedName} took the seat` : ""} · run by {item.runner}
-                </span>
-              </span>
-              <Link href="/receipts" className="shrink-0 text-[13px] font-extrabold text-blue underline">
-                Receipts
-              </Link>
-            </li>
-          ))}
-        </ul>
-        {cuts.length === 0 && (
-          <p className="mt-3 text-[13.5px] leading-5 text-ink-3 lg:text-sm">
-            Day {inside.cutIndex + 1}: no cut has run yet. After each cut this lists who was deleted, who came in, how much burned and the Director’s line, with receipts on NEAR.
-          </p>
-        )}
-      </Card>
-    </div>
   );
 }
