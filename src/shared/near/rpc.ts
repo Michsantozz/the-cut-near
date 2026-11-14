@@ -153,6 +153,17 @@ export class NearRpc {
     }
   }
 
+  /** Liquid NEAR of `accountId` in yoctoNEAR (`amount`, staked NEAR excluded), or null when the account does not exist. */
+  async nearBalance(accountId: string): Promise<bigint | null> {
+    try {
+      const account = await this.run((provider) => provider.viewAccount({ accountId, blockQuery: { finality: "optimistic" } }));
+      return BigInt(account.amount);
+    } catch (error) {
+      if (error instanceof AccountDoesNotExistError) return null;
+      throw error;
+    }
+  }
+
   async block(finality: "final" | "optimistic" = "final"): Promise<BlockInfo> {
     const { header } = await this.run((provider) => provider.viewBlock({ finality }));
     const timestampNs = BigInt(header.timestamp_nanosec);
