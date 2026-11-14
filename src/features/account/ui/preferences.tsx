@@ -84,6 +84,9 @@ export function AlertSwitches({ initialOff, finalHour }: { initialOff: AlertKind
           />
         </li>
       ))}
+      <li className="border-t-[1.5px] border-canvas py-2 text-[12.5px] leading-4 text-ink-3 lg:text-[13px]">
+        They show in Notifications on this browser. Nothing is pushed or emailed yet.
+      </li>
     </>
   );
 }
