@@ -50,27 +50,26 @@ export type Prizes = PrizesPreview & {
 /** The viewer's prizes: ready to collect, how the last one was made, and past slices. Request-time only. */
 export async function loadPrizes(accountId: string): Promise<Prizes> {
   await connection();
-  // An after-cut screen: sample data shows it a minute after cut #1 ran.
   const [claimable, saves, registered, cuts, prizes, claims, nextCut, params, pool, usd, stage, bench, registers] = await Promise.all([
     getClaimable(accountId),
     getSaves(accountId),
     isStorageRegistered(accountId),
-    getJournal({ events: ["cut"], limit: 10, sampleMoment: "after-cut" }),
-    getJournal({ events: ["prize"], limit: 200, sampleMoment: "after-cut" }),
-    getJournal({ accountId, events: ["claim"], limit: 20, sampleMoment: "after-cut" }),
+    getJournal({ events: ["cut"], limit: 10 }),
+    getJournal({ events: ["prize"], limit: 200 }),
+    getJournal({ accountId, events: ["claim"], limit: 20 }),
     getNextCut(),
     getParams(),
     getPool(),
     getUsdCentsPerNear(),
     getStage(),
     getBench(),
-    getJournal({ events: ["register"], limit: 200, sampleMoment: "after-cut" }),
+    getJournal({ events: ["register"], limit: 200 }),
   ]);
   const names: Record<string, string> = {};
   for (const entry of registers.entries) if (entry.agentId && typeof entry.data.name === "string") names[entry.agentId] = entry.data.name;
   for (const agent of [...stage, ...bench]) names[agent.id] = agent.name;
 
-  const breakdown = latestBreakdown(cuts.entries, prizes.entries, saves, params.saversBps);
+  const breakdown = latestBreakdown(cuts.entries, prizes.entries, saves, params.saversBps, params.burnBps);
   const latestCut = cuts.entries.reduce((max, entry) => Math.max(max, entry.cutIndex ?? 0), 0);
   const alive = new Set([...stage, ...bench].map((agent) => agent.id));
   // A save can be taken back once the cut it was locked for has run, on an agent that is still there.

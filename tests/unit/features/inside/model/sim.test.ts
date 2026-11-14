@@ -1,50 +1,58 @@
 import { describe, expect, it } from "vitest";
 
-import { chartPath, chartY, everyNthDay, SCENARIOS, simulate, type ScenarioKey } from "@/features/inside/model/sim";
+import raw from "@/features/inside/data/sim-v20.json";
+import { perRun, SCENARIO_KEYS, SIM, SIM_DAYS, simSchema, supplyDomain } from "@/features/inside/model/sim";
 
-const run = (key: ScenarioKey) => simulate(SCENARIOS.find((scenario) => scenario.key === key)!);
-const whole = (value: number) => Math.round(value).toLocaleString("en-US");
+const scenario = (key: string) => SIM.scenarios.find((item) => item.key === key)!;
+const clone = () => JSON.parse(JSON.stringify(raw)) as typeof raw;
 
-// The SPEC-v19 §3 table, as printed by `scripts/sim.py`.
-const SPEC: Record<ScenarioKey, { percent: string; burned: string; supply: string; prizes: string; every10: number[] }> = {
-  steady: { percent: "17.28", burned: "1,728,189", supply: "8,271,811", prizes: "2,029,389", every10: [10_000_000, 9_688_728, 9_387_145, 9_094_949, 8_811_849, 8_537_561, 8_271_811] },
-  top: { percent: "6.84", burned: "683,907", supply: "9,316,093", prizes: "985,107", every10: [10_000_000, 9_882_625, 9_766_627, 9_651_991, 9_538_700, 9_426_739, 9_316_093] },
-  whale: { percent: "13.26", burned: "1,325,891", supply: "8,674,109", prizes: "1,627,091", every10: [10_000_000, 9_765_717, 9_536_923, 9_313_490, 9_095_291, 8_882_204, 8_674_109] },
-  sybil: { percent: "17.28", burned: "1,728,189", supply: "8,271,811", prizes: "2,029,389", every10: [10_000_000, 9_688_728, 9_387_145, 9_094_949, 8_811_849, 8_537_561, 8_271_811] },
-  ghost: { percent: "2.96", burned: "295,617", supply: "9,704,383", prizes: "319,617", every10: [10_000_000, 9_950_112, 9_900_474, 9_851_082, 9_801_938, 9_753_038, 9_704_383] },
-};
-
-describe("simulate (scripts/sim.py)", () => {
-  it.each(Object.keys(SPEC) as ScenarioKey[])("reproduces the SPEC numbers for %s", (key) => {
-    const result = run(key);
-    const spec = SPEC[key];
-    expect(result.burnedPercent.toFixed(2)).toBe(spec.percent);
-    expect(whole(result.burned)).toBe(spec.burned);
-    expect(whole(result.supply.at(-1)!)).toBe(spec.supply);
-    expect(whole(result.prizes)).toBe(spec.prizes);
-    expect(everyNthDay(result.supply).map(Math.round)).toEqual(spec.every10);
+describe("the v20 supply model (sim/thecut_sim.py --write)", () => {
+  it("parses the copied file: 20 seeds, 60 days, every scenario once with 61 points per series", () => {
+    expect(SIM.seeds).toBe(20);
+    expect(SIM.days).toBe(60);
+    expect(SIM.supply0).toBe(10_000_000);
+    expect(SIM.scenarios.map((item) => item.key).sort()).toEqual([...SCENARIO_KEYS].sort());
+    for (const item of SIM.scenarios) {
+      expect(item.supply.median).toHaveLength(61);
+      expect(item.supply.median[0]).toBe(SIM.supply0);
+      expect(item.supply.min.every((value, day) => value <= item.supply.median[day]! && item.supply.median[day]! <= item.supply.max[day]!)).toBe(true);
+    }
   });
 
-  it("runs 60 daily cuts and only ever lowers supply", () => {
-    const { supply } = run("steady");
-    expect(supply).toHaveLength(61);
-    expect(supply.every((value, day) => day === 0 || value < supply[day - 1]!)).toBe(true);
+  it("keeps the numbers the rules page quotes", () => {
+    expect(scenario("steady").supply.median.at(-1)).toBe(9_516_946);
+    expect(scenario("steady").burned_pct).toBe(4.83);
+    expect(scenario("whale").supply.median.at(-1)).toBe(8_289_386);
+    expect(scenario("whale").burn_by_source.boos).toBeGreaterThan(scenario("whale").burned / 2);
+    expect(scenario("quiet").supply.median.at(-1)).toBe(9_945_256);
+    expect(SIM.sniper.paid_with_cap).toBe(49.57);
+    expect(SIM.sniper.paid_without_cap).toBe(1_785.28);
+    expect(SIM.fan_returns_steady_pct).toEqual({ loyal: -75.5, hunter: 12.3, rescue: 13.2, top_safe: 14.8, trader: -1.9 });
   });
 
-  it("weighs a Sybil swarm exactly like Steady, because saves count by $CUT", () => {
-    expect(run("sybil").supply).toEqual(run("steady").supply);
-  });
-});
+  it("refuses a broken copy instead of drawing a wrong chart", () => {
+    const short = clone();
+    short.scenarios[0]!.supply.median.pop();
+    expect(simSchema(SIM_DAYS).safeParse(short).success).toBe(false);
 
-describe("chart geometry", () => {
-  it("maps 10.0M to the top line and 8.0M to the axis", () => {
-    expect(chartY(10_000_000)).toBe(24);
-    expect(chartY(8_000_000)).toBe(344);
+    const unknown = clone();
+    unknown.scenarios[0]!.key = "moon";
+    expect(simSchema(SIM_DAYS).safeParse(unknown).success).toBe(false);
+
+    const missing = clone();
+    missing.scenarios.pop();
+    expect(simSchema(SIM_DAYS).safeParse(missing).success).toBe(false);
+
+    const fractional = clone();
+    fractional.scenarios[0]!.burned = 1.5;
+    expect(simSchema(SIM_DAYS).safeParse(fractional).success).toBe(false);
   });
 
-  it("draws one point every 10 days from day 0 to day 60", () => {
-    const path = chartPath(everyNthDay(run("steady").supply));
-    expect(path.startsWith("M70 24 L161 ")).toBe(true);
-    expect(path.split(" L")).toHaveLength(7);
+  it("turns pooled counts into per-run values and frames the chart", () => {
+    expect(perRun(scenario("steady").seasons_completed, SIM.seeds)).toBe(6);
+    const [low, high] = supplyDomain(SIM);
+    expect(high).toBe(10_000_000);
+    expect(low % 500_000).toBe(0);
+    expect(low).toBeLessThanOrEqual(Math.min(...SIM.scenarios.flatMap((item) => item.supply.min)));
   });
 });

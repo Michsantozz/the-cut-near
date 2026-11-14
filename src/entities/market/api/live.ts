@@ -12,8 +12,9 @@ const DAY_MS = 86_400_000;
 
 /** The launch parameters the app shows; the pool's initial reserves stay on the view. */
 export function toParams(view: ParamsView): Params {
-  const { totalSupply, feeBps, burnBps, saversBps, stageSize, firstCutAt, cutIntervalMs, agentFunding, registerDeposit } = view;
-  return { totalSupply, feeBps, burnBps, saversBps, stageSize, firstCutAt, cutIntervalMs, agentFunding, registerDeposit };
+  const { totalSupply, feeBps, potBps, burnBps, saversBps, agentsBps, stageSize, minSeason, firstCutAt, cutIntervalMs, moveLeadMs } = view;
+  const { thinkFee, minSeed, agentFunding, registerDeposit, modelId } = view;
+  return { totalSupply, feeBps, potBps, burnBps, saversBps, agentsBps, stageSize, minSeason, firstCutAt, cutIntervalMs, moveLeadMs, thinkFee, minSeed, agentFunding, registerDeposit, modelId };
 }
 
 export async function getLiveParams(): Promise<Params> {

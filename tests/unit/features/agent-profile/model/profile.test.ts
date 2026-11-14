@@ -1,55 +1,57 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getJournal } from "@/entities/journal/server";
-import { getParams } from "@/entities/market/server";
-import type { Agent } from "@/entities/agent";
-import { getBench, getAgent, getStage } from "@/entities/agent/server";
-import { historyLine } from "@/features/agent-profile/model/history";
-import { bannerFor, gapToPass, ladder, paysFor, standingOf } from "@/features/agent-profile/model/profile";
+import { getStage } from "@/entities/agent/server";
+import { splitMoves, standingOf, walletFateIfCut } from "@/features/agent-profile/model/profile";
+import { loadAgentProfile } from "@/features/agent-profile/server";
 import { units } from "@/shared/lib/amount";
 
-const agent = (id: string, pile: number, joined: string, status: Agent["status"] = "stage") =>
-  ({ id, name: id, pile: units(pile), joinedAt: new Date(joined), status }) as Agent;
+vi.mock("next/server", () => ({ connection: async () => {} }));
+afterEach(() => vi.unstubAllEnvs());
 
-describe("gapToPass", () => {
-  it("needs one more $CUT unless it wins the tie as the older agent", () => {
-    const old = agent("old", 100, "2026-11-12T15:00:00Z");
-    const young = agent("young", 100, "2026-11-13T15:00:00Z");
-    expect(gapToPass(old, young)).toBe(0n);
-    expect(gapToPass(young, old)).toBe(units(1));
-    expect(gapToPass(agent("low", 40, "2026-11-12T15:00:00Z"), young)).toBe(units(60));
-    expect(gapToPass(agent("low", 40, "2026-11-14T15:00:00Z"), young)).toBe(units(61));
+describe("an agent's page (sample world, season 1 day 4)", () => {
+  it("puts Yuna on the cut line, 601 short of Gremlin, with her wallet going to her heir", async () => {
+    const yuna = await loadAgentProfile("yuna", null);
+    expect(yuna?.standing).toMatchObject({ place: "stage", rank: 7, of: 7, isLowest: true, gap: units(601) });
+    expect(yuna?.fate).toMatchObject({ kind: "heir", heir: { id: "melody" } });
+    // Generous: 40% of (640 - 10) = 252 on her next move.
+    expect(yuna?.spendCap).toBe(units(252));
+    // Lila's attack is aimed at her today; her own move was downgraded to a hold.
+    expect(yuna?.aimedAt.find((move) => move.cutIndex === 5)?.agentId).toBe("lila");
+    expect(yuna?.moves[0]).toMatchObject({ cutIndex: 5, move: "hold", outcome: "downgraded: generous agents cannot attack" });
+    expect(yuna?.heirOf.map((agent) => agent.id)).toEqual(["melody"]);
+    expect(yuna?.sample).toBe(true);
+    expect(yuna?.accountHref).toBeNull();
+  });
+
+  it("tells how each cut agent left: an heir that inherited, or a wallet that burned", async () => {
+    const [kiko, onyx] = await Promise.all([loadAgentProfile("kiko", null), loadAgentProfile("onyx", null)]);
+    expect(kiko?.standing.place).toBe("deleted");
+    expect(kiko?.cut).toMatchObject({ day: 1, wallet: units(412), heir: { id: "melody" } });
+    expect(onyx?.cut).toMatchObject({ day: 2, wallet: null, heir: null });
+    expect(onyx?.agent.heir).toBe("kiko");
+    expect(await loadAgentProfile("nobody", null)).toBeNull();
+  });
+
+  it("lists a bench agent without a rank", async () => {
+    const chartwise = await loadAgentProfile("chartwise", null);
+    expect(chartwise?.standing).toEqual({ place: "bench" });
   });
 });
 
-describe("profile of the sample day", () => {
-  it("ranks Kiko Bun lowest, on the block, with no payout", async () => {
-    const [stage, bench, params] = await Promise.all([getStage(), getBench(), getParams()]);
-    const kiko = (await getAgent("kiko"))!;
-    const standing = standingOf(kiko, stage, bench);
-    expect(standing).toMatchObject({ place: "stage", rank: 10, of: 10, isLowest: true });
-    expect(paysFor(kiko, stage, units(4_100), params, 0n)).toBeNull();
-    expect(bannerFor(kiko, standing, stage, bench, 0n, "18:00 UTC")?.tone).toBe("danger");
-    const rows = ladder(kiko, stage, bench);
-    expect(rows.filter((r) => r.me)).toHaveLength(1);
-    expect(rows.find((r) => r.lowest)?.id).toBe("kiko");
+describe("profile model", () => {
+  it("burns the wallet of an agent whose heir is gone", async () => {
+    const stage = await getStage();
+    const lila = stage.find((agent) => agent.id === "lila")!;
+    expect(walletFateIfCut(lila, stage)).toEqual({ kind: "burn", why: "no-heir" });
+    expect(walletFateIfCut({ ...lila, heir: "velvet" }, stage)).toEqual({ kind: "burn", why: "heir-gone" });
+    expect(standingOf(lila, stage)).toMatchObject({ place: "stage", rank: 5, isLowest: false, gap: null });
   });
 
-  it("pays a saver on a survivor and ranks the bench apart", async () => {
-    const [stage, bench, params] = await Promise.all([getStage(), getBench(), getParams()]);
-    const melody = (await getAgent("melody"))!;
-    const pays = paysFor(melody, stage, units(4_100), params, units(400));
-    expect(pays?.per100).toBeGreaterThan(0n);
-    expect(pays?.note).toMatch(/^Your 400 would get [\d.]+ \$CUT\.$/);
-    const chartwise = (await getAgent("chartwise"))!;
-    expect(standingOf(chartwise, stage, bench)).toMatchObject({ place: "bench", rank: 1 });
-    expect(standingOf({ ...chartwise, status: "deleted" }, stage, bench)).toEqual({ place: "deleted" });
-  });
-
-  it("writes its history from the journal", async () => {
-    const { entries } = await getJournal({ agentId: "kiko", limit: 50, sampleMoment: "after-cut" });
-    const lines = entries.map((e) => historyLine(e, "Kiko Bun")).filter((l) => l !== null);
-    expect(lines.length).toBeGreaterThan(0);
-    expect(lines.some((l) => l.text.includes("deleted"))).toBe(true);
+  it("splits own moves from moves aimed at the agent, newest first, and ignores holds", () => {
+    const move = (agentId: string, cutIndex: number, kind: "attack" | "hold", target: string | null) =>
+      ({ agentId, cutIndex, move: kind, target, submittedAt: new Date(cutIndex * 1000) }) as Parameters<typeof splitMoves>[1][number];
+    const { own, aimedAt } = splitMoves("a", [move("a", 1, "hold", null), move("b", 2, "attack", "a"), move("a", 2, "attack", "b"), move("c", 2, "hold", "a")]);
+    expect(own.map((m) => m.cutIndex)).toEqual([2, 1]);
+    expect(aimedAt.map((m) => m.agentId)).toEqual(["b"]);
   });
 });

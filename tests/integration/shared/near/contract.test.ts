@@ -4,22 +4,10 @@ import { ContractResponseError, ContractViewError } from "@/shared/near/errors";
 import { NearRpc } from "@/shared/near/rpc";
 import { server } from "../../../msw/server";
 import { FakeChain } from "../../../msw/near-rpc";
+import { CUT, agentView, nextCutView, ns, paramsView } from "../../../fixtures/v2-views";
 
 const URL = "https://rpc.test";
-const CUT = 10n ** 18n;
-const ns = (iso: string) => (BigInt(Date.parse(iso)) * 1_000_000n).toString();
-const agent = (id: string, pile: bigint, status = "stage") => ({
-  id,
-  account_id: `${id}.thecut.testnet`,
-  name: id,
-  kind: "AI agent",
-  x_handle: `@${id}`,
-  creator: `${id}-studio.testnet`,
-  status,
-  pile: pile.toString(),
-  savers: 3,
-  joined_at: ns("2026-11-12T15:01:00Z"),
-});
+const agent = (id: string, pile: bigint, status = "stage") => agentView(id, pile, status);
 
 let chain: FakeChain;
 const contract = () => cutContract(new NearRpc([URL]), "thecut.testnet");
@@ -32,7 +20,7 @@ beforeEach(() => {
 describe("cutContract views", () => {
   it("read every view in the interface with typed results", async () => {
     chain
-      .view("get_params", { value: { total_supply: (10_000_000n * CUT).toString(), fee_bps: 100, burn_bps: 5000, savers_bps: 9500, stage_size: 10, first_cut_at: ns("2026-11-13T18:00:00Z"), cut_interval: "120000000000", agent_funding: "500000000000000000000000", register_deposit: "5000000000000000000000000", pool_cut_reserve: "1", pool_near_reserve: "2" } })
+      .view("get_params", { value: paramsView({ cut_interval: "120000000000" }) })
       .view("get_stage", { value: [agent("pixie", 182_400n * CUT), agent("kiko", 23_600n * CUT)] })
       .view("get_bench", { value: [agent("chartwise", 88_400n * CUT, "bench")] })
       .view("get_agent", (args) => ({ value: args.id === "kiko" ? agent("kiko", 1n) : null }))
@@ -40,7 +28,7 @@ describe("cutContract views", () => {
       .view("get_pool", { value: { near_reserve: "736", cut_reserve: "1000", fee_bps: 100 } })
       .view("quote_buy", (args) => ({ value: { amount_out: String(Number(args.near_in) * 2), fee: "1" } }))
       .view("quote_sell", (args) => ({ value: { amount_out: String(Number(args.cut_in) / 2), fee: "1" } }))
-      .view("get_next_cut", { value: { index: 1, at: ns("2026-11-13T18:00:00Z"), lowest_id: "kiko", gap_to_next: (38_201n * CUT).toString(), prize_so_far: (4_100n * CUT).toString() } })
+      .view("get_next_cut", { value: nextCutView({ index: 1, at: ns("2026-11-13T18:00:00Z"), lowest_id: "kiko", gap_to_next: (38_201n * CUT).toString(), prize_so_far: (4_100n * CUT).toString() }) })
       .view("get_cut", (args) => ({ value: args.index === 1 ? { index: 1, at: ns("2026-11-13T18:00:00Z"), deleted_id: "kiko", pile: "4", burned: "2", prize: "3", slice: "1", creator_slice: "0", joined_id: "chartwise", runner: "bob.testnet" } : null }))
       .view("get_claimable", { value: "632" })
       .view("ft_balance_of", { value: "674" })

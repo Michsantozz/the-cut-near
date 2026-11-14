@@ -1,13 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { SAMPLE_FIRST_CUT, SAMPLE_NEXT_CUT, SAMPLE_NOW } from "@/entities/cut/api/sample";
-import { SAMPLE_PARAMS } from "@/entities/market/api/sample";
-import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/agent/api/sample";
+import { V19_BENCH, V19_FIRST_CUT, V19_NEXT_CUT, V19_NOW, V19_PARAMS, V19_STAGE } from "../../../../fixtures/v19-day";
 import { units } from "@/shared/lib/amount";
 import { buildCutFacts, buildDayFacts } from "@/features/director/model/facts";
 import { countdownParts, formatCut, formatRatio } from "@/features/director/model/format";
 
 // SPEC-v19 §2: day 2, Fri Nov 13 13:48 UTC; the slice uses the 5,020 fees expected by 18:00.
-const day = () => buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: SAMPLE_NEXT_CUT, params: SAMPLE_PARAMS, now: SAMPLE_NOW, fees: units(5_020) });
+const day = () => buildDayFacts({ stage: V19_STAGE, bench: V19_BENCH, nextCut: V19_NEXT_CUT, params: V19_PARAMS, now: V19_NOW, fees: units(5_020) });
 
 describe("buildDayFacts with the SPEC sample day", () => {
   it("finds Kiko Bun on the block, 38,201 short of Onyx Moon, 4h 12m before the 18:00 UTC cut", () => {
@@ -41,7 +39,7 @@ describe("buildDayFacts with the SPEC sample day", () => {
   });
 
   it("uses the fees so far by default and flags the Final hour", () => {
-    const facts = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: SAMPLE_NEXT_CUT, params: SAMPLE_PARAMS, now: new Date("2026-11-13T17:17:50Z") });
+    const facts = buildDayFacts({ stage: V19_STAGE, bench: V19_BENCH, nextCut: V19_NEXT_CUT, params: V19_PARAMS, now: new Date("2026-11-13T17:17:50Z") });
     expect(facts.fees).toBe("4,100");
     expect(facts.finalHour).toBe(true);
     expect(facts.countdown.clock).toBe("0:42:10");
@@ -50,7 +48,7 @@ describe("buildDayFacts with the SPEC sample day", () => {
 
 describe("buildCutFacts with the SPEC sample cut", () => {
   it("names the cut, the burn, the prize, the slice and Chartwise taking the seat", () => {
-    const facts = buildCutFacts({ cut: SAMPLE_FIRST_CUT, agents: [...SAMPLE_STAGE, ...SAMPLE_BENCH], params: SAMPLE_PARAMS });
+    const facts = buildCutFacts({ cut: V19_FIRST_CUT, agents: [...V19_STAGE, ...V19_BENCH], params: V19_PARAMS });
     expect(facts).toEqual({
       index: 1,
       title: "First cut",

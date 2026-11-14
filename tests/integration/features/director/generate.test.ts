@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SAMPLE_NEXT_CUT, SAMPLE_NOW } from "@/entities/cut/api/sample";
-import { SAMPLE_PARAMS } from "@/entities/market/api/sample";
-import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/agent/api/sample";
+import { V19_BENCH, V19_NEXT_CUT, V19_NOW, V19_PARAMS, V19_STAGE } from "../../../fixtures/v19-day";
 import { createNearAiClient } from "@/shared/ai";
 import { sha256Hex } from "@/shared/ai/verify";
 import { units } from "@/shared/lib/amount";
@@ -12,7 +10,7 @@ import { defaultDirectorStore, DirectorGenerationError, DirectorSession, getDire
 import { fakeHardware, fakeNearAiCloud, type FakeCloudOptions } from "../../../msw/near-ai";
 import { server } from "../../../msw/server";
 
-const facts = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: SAMPLE_NEXT_CUT, params: SAMPLE_PARAMS, now: SAMPLE_NOW, fees: units(5_020) });
+const facts = buildDayFacts({ stage: V19_STAGE, bench: V19_BENCH, nextCut: V19_NEXT_CUT, params: V19_PARAMS, now: V19_NOW, fees: units(5_020) });
 const KIKO = "23,600 $CUT and 4 hours. A miracle or a whale, bunny.";
 
 function setup(cloudOptions: FakeCloudOptions = {}, overrides: Partial<DirectorDeps> = {}) {
@@ -147,23 +145,24 @@ describe("runDirectorMoment", () => {
 
   it("scheduled: one attestation, the two block lines and a post from every agent on the stage and the bench leader", async () => {
     const { cloud, deps } = setup({ lines: plain });
-    const report = await runDirectorMoment("scheduled", { deps, now: SAMPLE_NOW });
+    const report = await runDirectorMoment("scheduled", { deps, now: V19_NOW });
     expect(report.failures).toEqual([]);
-    const posters = ["kiko", "onyx", "pixie", "lila", "oracle", "mabel", "melody", "yuna", "gremlin", "velvet", "chartwise"];
-    expect(report.lines.map((l) => `${l.kind}:${l.subjectId}`)).toEqual(["scheduled:kiko", "scheduled:onyx", ...posters.map((id) => `agent-post:${id}`)]);
+    // The app's sample world (SPEC-v20, season 1 day 4): Yuna is on the cut line, Gremlin right above her.
+    const posters = ["yuna", "gremlin", "pixie", "oracle", "mabel", "melody", "lila", "chartwise"];
+    expect(report.lines.map((l) => `${l.kind}:${l.subjectId}`)).toEqual(["scheduled:yuna", "scheduled:gremlin", ...posters.map((id) => `agent-post:${id}`)]);
     expect(report.lines.every((l) => l.proofStatus === "verified")).toBe(true);
     expect(cloud.calls.attestation).toBe(1);
-    // mika.near saved 400 on Melody-9 that morning: Melody's post is asked to thank that account.
+    // The sample journal's newest save on Melody-9 is melody-fans.sample's 3,400: her post is asked to thank that account.
     const melody = cloud.requests.find((r) => r.body?.includes("You are Melody-9"));
-    expect(melody?.body).toContain("Your newest saver: mika.near saved 400 $CUT on you.");
+    expect(melody?.body).toContain("Your newest saver: melody-fans.sample saved 3,400 $CUT on you.");
   });
 
   it("skips lines the moment already has for the same cut, so a repeated cron costs nothing", async () => {
     const { cloud, deps } = setup({ lines: plain });
-    await runDirectorMoment("scheduled", { deps, now: SAMPLE_NOW });
-    const again = await runDirectorMoment("scheduled", { deps, now: SAMPLE_NOW });
+    await runDirectorMoment("scheduled", { deps, now: V19_NOW });
+    const again = await runDirectorMoment("scheduled", { deps, now: V19_NOW });
     expect(again.lines).toEqual([]);
-    expect(again.skipped).toHaveLength(13);
+    expect(again.skipped).toHaveLength(10);
     expect(cloud.calls.attestation).toBe(1);
   });
 

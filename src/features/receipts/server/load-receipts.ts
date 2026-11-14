@@ -6,23 +6,24 @@ import { getNextCut } from "@/entities/cut/server";
 import type { JournalEntry } from "@/entities/journal";
 import { getJournal, getJournalStats, SAMPLE_CONTRACT_ID } from "@/entities/journal/server";
 import { getParams, getPool, getTotalSupply, getUsdCentsPerNear } from "@/entities/market/server";
-import { rankByPile, type Agent } from "@/entities/agent";
+import { gapToPass, rankByScore, type Agent } from "@/entities/agent";
 import { getBench, getStage } from "@/entities/agent/server";
+import { getSeason } from "@/entities/season/server";
 import { isLive } from "@/shared/config/data-source";
 import { publicEnv } from "@/shared/config/public";
 import { explorerTxUrl } from "@/shared/near/network";
 import { getRpc } from "@/shared/near/server";
 
 import { runAudit, type AuditCheck } from "../model/audit";
-import { describeGroup, groupEntries, type ReceiptLine } from "../model/describe";
+import { describeGroup, groupEntries, isFoldedBurn, type ReceiptLine } from "../model/describe";
 import { filterEvents, type Cursor, type ReceiptFilter } from "../model/filters";
 import { supplyOf, type Supply } from "../model/supply";
 
 const PAGE_SIZE = 50;
 const DAY_MS = 86_400_000;
-const TEST_CUT_INTERVAL_MS = 120_000;
 
-export type ReceiptRow = ReceiptLine & { href: string };
+/** A journal line and its transaction on the explorer; null in sample mode, where no transaction exists. */
+export type ReceiptRow = ReceiptLine & { href: string | null };
 
 export type Receipts = {
   renderedAt: number;
@@ -34,11 +35,14 @@ export type Receipts = {
   stats: {
     priceYoctoNear: bigint;
     usdCentsPerNear: bigint | null;
-    buyers: number;
+    season: { index: number; day: number; active: boolean; pot: bigint };
     feesSoFar: bigint;
+    /** Lowest score on the stage: the agent the cut takes if nothing moves. */
     lowest: Agent | null;
+    /** Score it needs to pass the agent above it. */
     gap: bigint;
     cutAt: Date;
+    /** Cuts that deleted an agent (a season start cuts nobody). */
     cuts: number;
     lastCut: ReceiptLine["cut"];
   };
@@ -65,7 +69,7 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
   const contractId = isLive() ? publicEnv.contractId : SAMPLE_CONTRACT_ID;
   const needsViewer = filter === "mine" && !viewer;
 
-  const [nextCut, params, pool, stage, bench, stats, totalSupply, usdCentsPerNear, registers, page, lastCuts, fullAccessKeys] = await Promise.all([
+  const [nextCut, params, pool, stage, bench, stats, totalSupply, usdCentsPerNear, registers, page, lastCuts, fullAccessKeys, season] = await Promise.all([
     getNextCut(),
     getParams(),
     getPool(),
@@ -78,8 +82,9 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
     needsViewer
       ? Promise.resolve({ entries: [] as JournalEntry[], next: null })
       : getJournal({ events: filterEvents(filter), accountId: filter === "mine" ? (viewer ?? undefined) : undefined, before, limit: PAGE_SIZE }),
-    getJournal({ events: ["cut"], limit: 1 }),
-    isLive() ? getRpc().fullAccessKeyCount(contractId) : Promise.resolve(0),
+    getJournal({ events: ["cut"], limit: 200 }),
+    isLive() ? getRpc().fullAccessKeyCount(contractId) : Promise.resolve(null),
+    getSeason(),
   ]);
   const now = new Date();
 
@@ -96,32 +101,25 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
   for (const entry of page.entries) byTx.set(entry.txHash, [...(byTx.get(entry.txHash) ?? []), entry]);
   const ctx = { names, now, cutAt, siblings: (txHash: string) => byTx.get(txHash) ?? [] };
 
-  const rows = groupEntries(page.entries).map((group) => {
+  const groups = groupEntries(page.entries).filter((group) => filter === "burns" || !isFoldedBurn(group, ctx));
+  const rows = groups.map((group) => {
     const line = describeGroup(group, ctx);
-    return { ...line, href: explorerTxUrl(publicEnv.network, line.txHash) };
+    return { ...line, href: isLive() ? explorerTxUrl(publicEnv.network, line.txHash) : null };
   });
 
   // The agent of the latest cut is gone, even if the stage read lags behind the journal.
   const gone = lastCuts.entries[0]?.agentId ?? null;
-  const ranked = rankByPile(stage.filter((agent) => agent.id !== gone));
+  const ranked = rankByScore(stage.filter((agent) => agent.id !== gone));
   const lowest = ranked.at(-1) ?? null;
   const above = ranked.at(-2) ?? null;
+  const deletingCuts = lastCuts.entries.filter((entry) => entry.agentId !== null);
   const agents = [...stage, ...bench];
   const piles = agents.reduce((sum, agent) => sum + agent.pile, 0n);
   const isFirstPage = !before;
   const cutDone = (index: number) => lastCuts.entries.some((entry) => entry.cutIndex !== null && entry.cutIndex >= index);
-  const lastCutEntry = lastCuts.entries[0];
+  const lastCutEntry = deletingCuts[0];
 
-  const checks = runAudit({
-    contractId,
-    fullAccessKeys,
-    stats,
-    totalSupply,
-    agents,
-    params,
-    // The sample day is mainnet-shaped: a cut every day.
-    launchIntervalMs: !isLive() || publicEnv.network === "mainnet" ? DAY_MS : TEST_CUT_INTERVAL_MS,
-  });
+  const checks = runAudit({ contractId, sample: !isLive(), fullAccessKeys, stats, totalSupply, agents, params });
 
   return {
     renderedAt: now.getTime(),
@@ -133,12 +131,12 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
     stats: {
       priceYoctoNear: pool.cutReserve > 0n ? (pool.nearReserve * ONE_CUT) / pool.cutReserve : 0n,
       usdCentsPerNear,
-      buyers: stats.buyers,
+      season: { index: season.index, day: season.day, active: season.active, pot: season.pot },
       feesSoFar: nextCut.prizeSoFar,
       lowest,
-      gap: lowest && above ? above.pile - lowest.pile + ONE_CUT : 0n,
+      gap: lowest && above ? gapToPass(lowest, above) : 0n,
       cutAt: nextCut.at,
-      cuts: stats.cuts,
+      cuts: deletingCuts.length,
       lastCut: lastCutEntry ? describeGroup({ key: lastCutEntry.id, event: "cut", txHash: lastCutEntry.txHash, at: lastCutEntry.at, entries: [lastCutEntry] }, ctx).cut : null,
     },
     supply: supplyOf(stats.minted || params.totalSupply, stats.burned, piles),
@@ -156,18 +154,23 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
 
 function paramRows(params: Awaited<ReturnType<typeof getParams>>): { label: string; value: string }[] {
   const near = (yocto: bigint) => (Number(yocto / 10n ** 21n) / 1000).toString();
+  const whole = (value: bigint) => (value / ONE_CUT).toLocaleString("en-US");
   const daily = params.cutIntervalMs === DAY_MS;
-  const at = params.firstCutAt.toISOString().slice(11, 19);
+  const at = params.firstCutAt.toISOString().slice(11, 16);
+  const lead = params.moveLeadMs >= 3_600_000 ? `${params.moveLeadMs / 3_600_000} h` : `${Math.round(params.moveLeadMs / 1000)} s`;
+  const creatorsBps = 10_000 - params.saversBps - params.agentsBps;
   return [
-    { label: "Supply, minted once", value: `${(params.totalSupply / ONE_CUT).toLocaleString("en-US")} $CUT` },
+    { label: "Supply, minted once", value: `${whole(params.totalSupply)} $CUT` },
     { label: "The cut", value: daily ? `Every day, ${at} UTC` : `Every ${Math.round(params.cutIntervalMs / 1000)} s` },
-    { label: "Who is cut", value: "Lowest pile · tie: newer agent" },
-    { label: "Burn", value: `${params.burnBps / 100}% of the cut pile` },
-    { label: "Fee on every buy and sell", value: `${params.feeBps / 100}% · to the prize` },
-    { label: "Prize split", value: `${params.saversBps / 100}% savers · ${(10_000 - params.saversBps) / 100}% creators` },
-    { label: `Savers’ ${params.saversBps / 100}%`, value: `${params.stageSize - 1} equal slices, one per survivor` },
-    { label: "Run the cut", value: `Anyone · keeps ${near(params.agentFunding)} NEAR` },
-    { label: "Agent deposit", value: `${near(params.registerDeposit)} NEAR · ${near(params.registerDeposit - params.agentFunding)} back` },
-    { label: "Seats on the stage", value: params.stageSize.toString() },
+    { label: "Moves close", value: `${lead} before each cut` },
+    { label: "Who is cut", value: "Lowest score: pile − boos − damage · tie: newer agent" },
+    { label: "Think fee", value: `${whole(params.thinkFee)} $CUT burned per move` },
+    { label: "Fee on every buy and sell", value: `${params.feeBps / 100}% · ${params.potBps / 100}% of it to the season pot` },
+    { label: "Cut pile", value: `${params.burnBps / 100}% burns · the rest joins the day prize` },
+    { label: "Day prize", value: `${params.saversBps / 100}% savers · ${params.agentsBps / 100}% agents · ${creatorsBps / 100}% creators` },
+    { label: "Savers’ share", value: "One equal slice per survivor, at most 1 per $CUT saved" },
+    { label: "New agent", value: `${near(params.registerDeposit)} NEAR deposit · ${near(params.registerDeposit - params.agentFunding)} back · ${whole(params.minSeed)}+ $CUT seed` },
+    { label: "Seats", value: `${params.stageSize} · a season starts with ${params.minSeason} on the bench` },
+    { label: "Model", value: params.modelId },
   ];
 }

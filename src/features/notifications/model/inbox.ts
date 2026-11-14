@@ -102,7 +102,7 @@ export function buildInbox(input: InboxInput): Notice[] {
       kind: "cut",
       at: entry.at,
       title: agent ? `${agent} was cut` : `Cut #${entry.cutIndex ?? ""}: nobody was cut`,
-      text: agent ? `Its NEAR account is gone. ${cut0(big(entry.data, "burned"))} $CUT burned and ${cut0(big(entry.data, "prize"))} $CUT went out as the prize.` : "The stage was not full. The prize waits for the next cut.",
+      text: agent ? `Its NEAR account is gone. ${cut0(big(entry.data, "burned"))} $CUT burned and ${cut0(big(entry.data, "prize"))} $CUT went out as the prize.` : "A season started. The day prize carries to the next cut.",
       href: "/receipts?filter=cuts",
     });
   }

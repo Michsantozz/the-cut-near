@@ -1,15 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getCut, getNextCut } from "@/entities/cut/server";
-import { paysPer100, sliceIfCut } from "@/entities/cut";
 import { getJournal, getJournalStats } from "@/entities/journal/server";
 import { getBalance, getParams, getPool, getTotalSupply } from "@/entities/market/server";
-import { rankByPile } from "@/entities/agent";
+import { rankByScore } from "@/entities/agent";
 import { getBench, getStage } from "@/entities/agent/server";
-import { getSaves } from "@/entities/save/server";
-import { loadLineup } from "@/features/lineup/server";
+import { getSeason } from "@/entities/season/server";
+import { getClaimable, getSaves } from "@/entities/save/server";
 import { loadReceipts } from "@/features/receipts/server";
-import { loadAgentProfile } from "@/features/agent-profile/server";
 import { units } from "@/shared/lib/amount";
 
 vi.mock("next/server", () => ({ connection: async () => {} }));
@@ -17,10 +15,10 @@ afterEach(() => vi.unstubAllEnvs());
 
 const sum = (values: bigint[]) => values.reduce((total, value) => total + value, 0n);
 
-// Every screen reads one sample world (docs/design/SPEC-v19.md §2): day 2 at 13:48, before cut #1. Only the
-// after-cut screens see cut #1, and the world after it adds up too.
+// Every screen reads one sample world (SPEC-v20): season 1, day 4, before cut #5. The journal, the cut records, the
+// piles, the supply and the member's saves must tell the same story.
 describe("the sample world", () => {
-  it("adds up before the cut: supply = minted − burned = saved + free + pool", async () => {
+  it("adds up: supply = minted − burned = saved + free + pool", async () => {
     const [stats, supply, stage, bench, pool, mika, saves] = await Promise.all([
       getJournalStats(),
       getTotalSupply(),
@@ -32,71 +30,65 @@ describe("the sample world", () => {
     ]);
     const saved = sum([...stage, ...bench].map((agent) => agent.pile));
     expect(stats.minted).toBe(units(10_000_000));
-    expect(stats.burned).toBe(0n);
-    expect(stats.cuts).toBe(0);
     expect(stats.minted - stats.burned).toBe(supply);
     expect(stats.saved).toBe(saved);
-    // What is neither burned nor saved is free: the pool's reserve plus every wallet, mika's 274.2 among them.
     const wallets = supply - saved - pool.cutReserve;
     expect(wallets).toBeGreaterThanOrEqual(mika);
-    expect(saved + pool.cutReserve + wallets).toBe(stats.minted - stats.burned);
-    // mika's saves are in the journal and in Melody-9's pile.
+    // mika's saves are in the journal and in Melody-9's pile; with what mika holds they make what mika bought.
     const mikaSaved = (await getJournal({ accountId: "mika.near", events: ["save"] })).entries.reduce((total, e) => total + (e.amount ?? 0n), 0n);
     expect(mikaSaved).toBe(sum(saves.map((s) => s.amount)));
     expect(mika + mikaSaved).toBe(units(6742) / 10n);
   });
 
-  it("is still before cut #1: its receipt is not in the journal yet", async () => {
-    const [nextCut, stage] = await Promise.all([getNextCut(), getStage()]);
-    expect(nextCut.index).toBe(1);
-    expect(rankByPile(stage).at(-1)?.id).toBe(nextCut.lowestId);
-    expect((await getJournal({ events: ["cut", "delete", "ft_burn", "prize"] })).entries).toEqual([]);
+  it("has the cut records the journal logged, and nobody cut at the season start", async () => {
+    const [cuts, nextCut, season] = await Promise.all([getJournal({ events: ["cut"] }), getNextCut(), getSeason()]);
+    expect(nextCut.index).toBe(5);
+    expect(season).toMatchObject({ index: 1, day: 4, alive: 7, active: true });
+    expect(cuts.entries.map((e) => e.cutIndex)).toEqual([4, 3, 2, 1]);
+    for (const entry of cuts.entries) {
+      const record = await getCut(entry.cutIndex!);
+      expect(record?.deletedId ?? null).toBe(entry.agentId);
+      expect(BigInt(String(entry.data.pile))).toBe(record?.pile);
+      expect(BigInt(String(entry.data.slice))).toBe(record?.slice);
+      // `burned` is every burn of the cut's transaction: attacks, half the pile, a wallet with no living heir.
+      const burns = (await getJournal({ events: ["ft_burn"], limit: 200 })).entries.filter((e) => e.txHash === entry.txHash);
+      expect(BigInt(String(entry.data.burned))).toBe(sum(burns.map((e) => e.amount ?? 0n)));
+      expect(BigInt(String(entry.data.burned))).toBe(record?.burned);
+      const [inherit] = (await getJournal({ events: ["inherit"], cutIndex: entry.cutIndex! })).entries;
+      expect(inherit ? String(inherit.data.heir) : null).toBe(record?.inheritedBy ?? null);
+    }
+    const inherits = await getJournal({ events: ["inherit"] });
+    expect(inherits.entries.map((e) => `${e.agentId}>${String(e.data.heir)}`)).toEqual(["velvet>lila", "kiko>melody"]);
+    const seated = await getJournal({ events: ["season_start"] });
+    expect(seated.entries).toHaveLength(10);
+    expect(sum(seated.entries.map((e) => e.amount ?? 0n))).toBe(units(147_200));
   });
 
-  it("adds up after the cut on the after-cut screens", async () => {
-    const [stats, cut, params] = await Promise.all([getJournalStats("after-cut"), getCut(1), getParams()]);
-    expect(cut?.deletedId).toBe("kiko");
-    expect(stats.cuts).toBe(1);
-    expect(stats.burned).toBe(cut?.burned);
-    expect(stats.minted - stats.burned).toBe(units(9_988_200));
-    const stage = (await getStage()).filter((agent) => agent.id !== "kiko");
-    const bench = await getBench();
-    expect(stats.saved).toBe(sum([...stage, ...bench].map((agent) => agent.pile)));
-    // The cut's slice is the shared prize math on its own numbers (23,600 cut with the day's 5,020 in fees),
-    // rounded to 0.1 $CUT like the design's 1,775.4.
-    const tenth = units(1) / 10n;
-    expect(sliceIfCut(cut!.pile, units(5_020), params) / tenth).toBe(cut!.slice / tenth);
-    const prizes = await getJournal({ events: ["prize"], sampleMoment: "after-cut" });
-    expect(prizes.entries).toHaveLength(params.stageSize - 1);
+  it("logs today's boos and moves as the stage shows them", async () => {
+    const [stage, boos, moves] = await Promise.all([getStage(), getJournal({ events: ["boo"], cutIndex: 5 }), getJournal({ events: ["move"], cutIndex: 5 })]);
+    for (const agent of stage) {
+      const booed = sum(boos.entries.filter((e) => e.agentId === agent.id).map((e) => e.amount ?? 0n));
+      expect(booed).toBe(agent.boos);
+      expect(moves.entries.some((e) => e.agentId === agent.id)).toBe(agent.moved);
+    }
   });
 
-  it("shows the same stage, rank and pays per 100 on the lineup, the agent page and the receipts", async () => {
-    const [lineup, pixie, receipts, nextCut, params, stage] = await Promise.all([
-      loadLineup(null),
-      loadAgentProfile("pixie", null),
-      loadReceipts({ filter: "all", viewer: null }),
-      getNextCut(),
-      getParams(),
-      getStage(),
-    ]);
-    const lowest = rankByPile(stage).at(-1)!;
-    const slice = sliceIfCut(lowest.pile, nextCut.prizeSoFar, params);
-    const pixiePays = paysPer100(slice, units(182_400));
+  it("pays mika.near its share of Melody-9's slice at cut #4", async () => {
+    const [prizes, claimable] = await Promise.all([getJournal({ events: ["prize"], agentId: "melody", cutIndex: 4 }), getClaimable("mika.near")]);
+    const [prize] = prizes.entries;
+    expect((BigInt(String(prize.data.slice)) * units(400)) / BigInt(String(prize.data.pile))).toBe(claimable);
+  });
 
-    expect(lineup.board.entries).toHaveLength(10);
-    expect(lineup.board.lowest?.id).toBe("kiko");
-    const onLineup = lineup.board.entries.find((entry) => entry.agent.id === "pixie");
-    expect(onLineup?.rank).toBe(1);
-    expect(onLineup?.paysPer100).toBe(pixiePays);
-
-    expect(pixie?.standing).toEqual({ place: "stage", rank: 1, of: 10, isLowest: false, isSecondLowest: false });
-    expect(pixie?.pays?.per100).toBe(pixiePays);
-    expect(pixie?.ladder.filter((row) => !row.bench)).toHaveLength(10);
-
-    expect(receipts.stats.cuts).toBe(0);
-    expect(receipts.stats.lowest?.id).toBe("kiko");
-    expect(receipts.supply.burned).toBe(0n);
-    expect(receipts.pending?.index).toBe(1);
-    expect(receipts.audit.checks.map((check) => check.pass)).toEqual([true, true, true, true, true]);
+  it("shows the same cut line and supply on the receipts", async () => {
+    const [receipts, stage, params] = await Promise.all([loadReceipts({ filter: "all", viewer: null }), getStage(), getParams()]);
+    expect(receipts.stats.cuts).toBe(3);
+    expect(receipts.stats.lowest?.id).toBe(rankByScore(stage).at(-1)?.id);
+    expect(receipts.stats.lowest?.id).toBe("yuna");
+    expect(receipts.supply.minted - receipts.supply.burned).toBe(await getTotalSupply());
+    expect(receipts.pending?.index).toBe(5);
+    expect(receipts.live).toBe(false);
+    expect(receipts.rows.every((row) => row.href === null)).toBe(true);
+    expect(receipts.audit.checks.map((check) => check.pass)).toEqual([true, true, true, true]);
+    expect(params.stageSize).toBe(10);
   });
 });

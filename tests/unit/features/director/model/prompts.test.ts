@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SAMPLE_FIRST_CUT, SAMPLE_NEXT_CUT, SAMPLE_NOW } from "@/entities/cut/api/sample";
-import { SAMPLE_PARAMS } from "@/entities/market/api/sample";
-import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/agent/api/sample";
+import { V19_BENCH, V19_FIRST_CUT, V19_NEXT_CUT, V19_NOW, V19_PARAMS, V19_STAGE } from "../../../../fixtures/v19-day";
 import { units } from "@/shared/lib/amount";
 import { buildCutFacts, buildDayFacts } from "@/features/director/model/facts";
 import { DIRECTOR_SYSTEM } from "@/features/director/model/persona";
@@ -9,10 +7,10 @@ import { afterCutReceiptPrompt, afterCutRoastPrompt, allowedNumbersFor, finalHou
 import { SAMPLE_LINES } from "@/features/director/model/sample";
 import { validateLine } from "@/features/director/model/validate";
 
-const day = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: SAMPLE_NEXT_CUT, params: SAMPLE_PARAMS, now: SAMPLE_NOW, fees: units(5_020) });
+const day = buildDayFacts({ stage: V19_STAGE, bench: V19_BENCH, nextCut: V19_NEXT_CUT, params: V19_PARAMS, now: V19_NOW, fees: units(5_020) });
 // The sample world the app shows: 4,100 $CUT of fees so far, so Onyx pays 2.72 per 100 and Pixie 0.92.
-const world = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: SAMPLE_NEXT_CUT, params: SAMPLE_PARAMS, now: SAMPLE_NOW, fees: units(4_100) });
-const cut = buildCutFacts({ cut: SAMPLE_FIRST_CUT, agents: [...SAMPLE_STAGE, ...SAMPLE_BENCH], params: SAMPLE_PARAMS });
+const world = buildDayFacts({ stage: V19_STAGE, bench: V19_BENCH, nextCut: V19_NEXT_CUT, params: V19_PARAMS, now: V19_NOW, fees: units(4_100) });
+const cut = buildCutFacts({ cut: V19_FIRST_CUT, agents: [...V19_STAGE, ...V19_BENCH], params: V19_PARAMS });
 
 describe("scheduled line prompt", () => {
   it("gives the countdown, the lowest pile and the gap with the SPEC numbers", () => {
@@ -42,7 +40,7 @@ describe("scheduled line prompt", () => {
 
 describe("final hour prompt", () => {
   it("uses the clock countdown and the saves of the day", () => {
-    const late = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: SAMPLE_NEXT_CUT, params: SAMPLE_PARAMS, now: new Date("2026-11-13T17:17:50Z") });
+    const late = buildDayFacts({ stage: V19_STAGE, bench: V19_BENCH, nextCut: V19_NEXT_CUT, params: V19_PARAMS, now: new Date("2026-11-13T17:17:50Z") });
     const prompt = finalHourPrompt(late);
     expect(prompt.user).toContain("in 0:42:10 (42 minutes)");
     expect(prompt.user).toContain("Saved on Kiko Bun today: 300 $CUT.");
@@ -99,7 +97,7 @@ describe("the day's moves", () => {
     { agentId: "kiko", move: "attack", target: "onyx", amount: units(120), reason: "Onyx sits on 61,800 and laughs. Not tonight.", outcome: null },
     { agentId: "onyx", move: "hold", target: null, amount: 0n, reason: "Let the bunny burn its own wallet.", outcome: null },
   ];
-  const withMoves = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: SAMPLE_NEXT_CUT, params: SAMPLE_PARAMS, now: SAMPLE_NOW, fees: units(5_020), moves });
+  const withMoves = buildDayFacts({ stage: V19_STAGE, bench: V19_BENCH, nextCut: V19_NEXT_CUT, params: V19_PARAMS, now: V19_NOW, fees: units(5_020), moves });
 
   it("are facts the board lines can quote, with names instead of ids", () => {
     const prompt = scheduledPrompt(withMoves, "lowest");

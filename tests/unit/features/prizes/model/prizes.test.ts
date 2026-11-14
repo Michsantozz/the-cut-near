@@ -14,20 +14,21 @@ describe("shareOf", () => {
 });
 
 describe("latestBreakdown", () => {
-  it("explains mika.near's 6.32 $CUT from cut #1", async () => {
+  it("explains mika.near's share of Melody-9's slice at cut #4", async () => {
     const [cuts, prizes, saves, claimable] = await Promise.all([
-      getJournal({ events: ["cut"], limit: 10, sampleMoment: "after-cut" }),
-      getJournal({ events: ["prize"], limit: 50, sampleMoment: "after-cut" }),
+      getJournal({ events: ["cut"], limit: 10 }),
+      getJournal({ events: ["prize"], limit: 50 }),
       getSaves("mika.near"),
       getClaimable("mika.near"),
     ]);
-    const b = latestBreakdown(cuts.entries, prizes.entries, saves, 9_500)!;
-    expect(b).toMatchObject({ cutIndex: 1, cutAgentId: "kiko", agentId: "melody", pile: units(23_600), burned: units(11_800), prize: units(16_820), survivors: 9 });
-    expect(b.fees).toBe(units(5_020));
+    const b = latestBreakdown(cuts.entries, prizes.entries, saves, 9_000)!;
+    expect(b).toMatchObject({ cutIndex: 4, cutAgentId: "velvet", agentId: "melody", pile: units(11_400), burned: units(5_700), prize: units(7_630), survivors: 7 });
+    expect(b.fees).toBe(units(1_930));
+    expect(b.agentPile).toBe(units(20_700));
     expect(b.share).toBe(claimable);
-    expect(latestBreakdown(cuts.entries, prizes.entries, [], 9_500)).toBeNull();
-    // A save locked for a later cut was not in the pile when cut #1 ran.
-    expect(latestBreakdown(cuts.entries, prizes.entries, saves.map((s) => ({ ...s, lockedForCut: 2 })), 9_500)).toBeNull();
+    expect(latestBreakdown(cuts.entries, prizes.entries, [], 9_000)).toBeNull();
+    // A save locked for a later cut was not in the pile when cut #4 ran.
+    expect(latestBreakdown(cuts.entries, prizes.entries, saves.map((s) => ({ ...s, lockedForCut: 5 })), 9_000)).toBeNull();
   });
 });
 

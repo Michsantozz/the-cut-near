@@ -1,13 +1,13 @@
 import { paysPer100, sliceIfCut, type SplitParams } from "@/entities/cut";
-import { rankByPile, type Agent } from "@/entities/agent";
+import { rankByScore, type Agent } from "@/entities/agent";
 import { NEAR_DECIMALS, units } from "@/shared/lib/amount";
 
-// The "Save an agent" picker: every stage agent with what it pays per 100 $CUT saved if the cut ran now
-// (SPEC-v19 §2), and what one save would get from its agent's slice.
+// The "Save an agent" picker: every stage agent ranked by score, with what it pays per 100 $CUT saved if the cut
+// ran now, and what one save would get from its agent's slice of the day prize.
 
 export type SaveChoice = {
   agent: Agent;
-  /** 1 = top pile. */
+  /** 1 = top score. */
   rank: number;
   /** The agent the cut takes if nothing moves: its savers get nothing. */
   isLowest: boolean;
@@ -16,9 +16,9 @@ export type SaveChoice = {
 
 export type SavePicker = { choices: SaveChoice[]; slice: bigint; stageSize: number };
 
-/** Stage agents by pile with their pays per 100, using the fees so far (the same numbers as the lineup). */
+/** Stage agents by score with their pays per 100, using the fees so far (the lowest score is the one cut). */
 export function buildPicker(stage: readonly Agent[], feesSoFar: bigint, params: SplitParams): SavePicker {
-  const ranked = rankByPile(stage);
+  const ranked = rankByScore(stage);
   const lowest = ranked.at(-1) ?? null;
   const slice = lowest ? sliceIfCut(lowest.pile, feesSoFar, params) : 0n;
   return {

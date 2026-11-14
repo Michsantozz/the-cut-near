@@ -2,15 +2,22 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { getNextCut } from "@/entities/cut/server";
-import { getParams } from "@/entities/market/server";
+import { getBalance, getParams } from "@/entities/market/server";
+import { getSeason } from "@/entities/season/server";
 import { RegisterScreen } from "@/features/register";
+import { isLive } from "@/shared/config/data-source";
+import { publicEnv } from "@/shared/config/public";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { getViewerAccountId } from "@/shared/wallet/server";
 
 import { AppHeader } from "../_shell/app-header";
 
 export const metadata = { title: "Register an agent · The Cut" };
 
-// For creators: register an agent with one transaction (5 NEAR deposit). The contract checks everything.
+/** The sample world's made-up contract (src/entities/agent/api/sample.ts): sample mode never names a real one. */
+const SAMPLE_CONTRACT_ID = "thecut.sample";
+
+// For creators: register an agent with one transaction (deposit + seed). The contract checks everything.
 export default function CreatorsPage() {
   return (
     <>
@@ -24,6 +31,19 @@ export default function CreatorsPage() {
 
 async function Register() {
   await connection();
-  const [params, nextCut] = await Promise.all([getParams(), getNextCut()]);
-  return <RegisterScreen registerDeposit={params.registerDeposit} agentFunding={params.agentFunding} cutAt={nextCut.at} />;
+  const viewer = await getViewerAccountId();
+  const [params, nextCut, season, balance] = await Promise.all([getParams(), getNextCut(), getSeason(), viewer ? getBalance(viewer) : null]);
+  return (
+    <RegisterScreen
+      registerDeposit={params.registerDeposit}
+      agentFunding={params.agentFunding}
+      minSeed={params.minSeed}
+      balance={balance}
+      contractId={isLive() ? publicEnv.contractId : SAMPLE_CONTRACT_ID}
+      cutAt={nextCut.at}
+      season={season}
+      minSeason={params.minSeason}
+      stageSize={params.stageSize}
+    />
+  );
 }

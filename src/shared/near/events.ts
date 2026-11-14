@@ -5,9 +5,32 @@ import { z } from "zod";
 
 export const EVENT_PREFIX = "EVENT_JSON:";
 
-/** The main contract's own events (docs/contract-interface.md "Events"). */
+/**
+ * The main contract's own events: v2 (docs/contract-interface.md "Events") plus `fee` and `join`, which only v1 emitted
+ * and old journal rows still hold. v2 puts the fee split on `buy` and `sell`, and `season_start` replaces `join`.
+ */
 export const CUT_STANDARD = "thecut";
-export const CUT_EVENTS = ["buy", "sell", "fee", "save", "unsave", "cut", "delete", "prize", "join", "register", "claim"] as const;
+export const CUT_EVENTS = [
+  "buy",
+  "sell",
+  "save",
+  "unsave",
+  "boo",
+  "move",
+  "pact",
+  "attack",
+  "rescue",
+  "inherit",
+  "cut",
+  "prize",
+  "champion",
+  "season_start",
+  "delete",
+  "register",
+  "claim",
+  "fee",
+  "join",
+] as const;
 /** `ft_mint` and `ft_burn` (and `ft_transfer`) follow NEP-141. */
 export const FT_STANDARD = "nep141";
 
@@ -54,8 +77,9 @@ export type EventRefs = { accountId: string | null; agentId: string | null; cutI
 
 type RefKeys = { account: readonly string[]; amount: readonly string[] };
 
-// Field names per event, as emitted by contracts/thecut/src/events.rs (docs/contract-interface.md "Events").
-// The account is the person the event is about: the buyer, the cut's runner, the creator. Never an agent account.
+// Field names per event, as emitted by contracts/thecut/src/events.rs (listed in docs/contract-interface.md "Events").
+// The account is the person the event is about: the buyer, the booer, the cut's runner, the creator. Never an agent
+// account, so `champion.account_id`, `delete.account_id` and `register.account_id` (agent accounts) are left out.
 const REF_KEYS: Record<string, RefKeys> = {
   buy: { account: ["account_id"], amount: ["cut_out"] },
   sell: { account: ["account_id"], amount: ["cut_in"] },
@@ -66,8 +90,16 @@ const REF_KEYS: Record<string, RefKeys> = {
   prize: { account: ["creator"], amount: ["slice"] },
   join: { account: [], amount: ["pile"] },
   delete: { account: ["beneficiary"], amount: [] },
-  register: { account: ["creator"], amount: [] },
+  register: { account: ["creator"], amount: ["seed"] },
   claim: { account: ["account_id"], amount: ["amount"] },
+  boo: { account: ["account_id"], amount: ["amount"] },
+  move: { account: [], amount: ["amount"] },
+  pact: { account: [], amount: ["amount"] },
+  attack: { account: [], amount: ["amount"] },
+  rescue: { account: [], amount: ["paid"] },
+  inherit: { account: [], amount: ["amount"] },
+  champion: { account: [], amount: ["pot"] },
+  season_start: { account: [], amount: ["pile"] },
   ft_mint: { account: ["owner_id"], amount: ["amount"] },
   ft_burn: { account: ["owner_id"], amount: ["amount"] },
   ft_transfer: { account: ["old_owner_id"], amount: ["amount"] },

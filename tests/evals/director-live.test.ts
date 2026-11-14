@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SAMPLE_NEXT_CUT, SAMPLE_NOW } from "@/entities/cut/api/sample";
-import { SAMPLE_PARAMS } from "@/entities/market/api/sample";
-import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/agent/api/sample";
+import { V19_BENCH, V19_NEXT_CUT, V19_NOW, V19_PARAMS, V19_STAGE } from "../fixtures/v19-day";
 import { createNearAiClient, nearAiClientFromEnv, readAiEnv } from "@/shared/ai";
 import { collectAttestation, createHardwareVerifier } from "@/shared/ai/verify/server";
 import { units } from "@/shared/lib/amount";
@@ -45,7 +43,7 @@ describe.skipIf(!withKey)("NEAR AI Cloud signed line, live", () => {
       reasoningEffort: env.NEAR_AI_REASONING_EFFORT === "none" ? undefined : env.NEAR_AI_REASONING_EFFORT,
       maxAttempts: 3,
     });
-    const facts = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: SAMPLE_NEXT_CUT, params: SAMPLE_PARAMS, now: SAMPLE_NOW, fees: units(5_020) });
+    const facts = buildDayFacts({ stage: V19_STAGE, bench: V19_BENCH, nextCut: V19_NEXT_CUT, params: V19_PARAMS, now: V19_NOW, fees: units(5_020) });
     const line = await session.generate(scheduledPrompt(facts, "lowest"));
     console.info(`[live] ${line.text} | ${line.chatId} | ${line.proof?.status} (${line.proof?.signatureKind})`);
 

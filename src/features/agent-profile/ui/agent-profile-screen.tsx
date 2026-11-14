@@ -1,427 +1,310 @@
 import { cn } from "cn";
-import { BarChart3, ChevronLeft, CreditCard, Layers, PieChart, Plus, ShieldCheck, TrendingUp, Users, UserX } from "lucide-react";
-import Image from "next/image";
+import { ArrowUpRight, Check, Crown, Flame, Gift, Handshake, Plus, ThumbsDown, X } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
-import { AgentPoses, AgentPostActions, AgentTile, agentFullBody, agentTile } from "@/entities/agent";
+import { AgentPoses, AgentTile, agentPoses, PersonalityChip, ScoreBreakdown, spendPercent } from "@/entities/agent";
+import { MoveCard, moveHeadline } from "@/entities/move";
+import { NEAR_DECIMALS } from "@/shared/lib/amount";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { formatAmount, formatCount, formatUtcDate, formatUtcTime } from "@/shared/ui/format";
+import { formatAmount, formatCount, formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
 
-import type { Banner } from "../model/profile";
 import type { AgentProfile } from "../server/load-profile";
+import { MoveHistory } from "./move-history";
 
-// An agent's page (Profile.dc.html, DeskProfile.dc.html): its sticker on its color, its numbers, its own NEAR
-// account, its posts, where it stands, its history, and its cut receipt once it is deleted.
+const whole = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
+const near = (yocto: bigint) => formatAmount(yocto, { decimals: NEAR_DECIMALS, maxFractionDigits: 2 });
 
-/** A line the agent or the Director posted, signed inside NEAR AI when `signed`. */
-export type ProfileLine = { id: string; text: string; createdAt: string; signed: boolean; href: string | null };
-
-const HERO_BG: Record<string, string> = {
-  pixie: "bg-sky",
-  lila: "bg-pink",
-  oracle: "bg-violet",
-  mabel: "bg-[#ffd84d]",
-  melody: "bg-orange",
-  yuna: "bg-blue",
-  gremlin: "bg-lime",
-  velvet: "bg-[#2b2d35]",
-  onyx: "bg-[#1e2b57]",
-  kiko: "bg-[#ffc2e8]",
-};
-
-const BANNER: Record<Banner["tone"], string> = {
-  danger: "bg-orange text-ink",
-  bench: "bg-violet text-paper",
-  mine: "bg-lime text-ink",
-  close: "bg-danger-tint text-ink",
-};
-
-const cut = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
-const cutFine = (value: bigint) => formatAmount(value, { maxFractionDigits: 1 });
-
-function ago(iso: string, now: number): string {
-  const ms = now - Date.parse(iso);
-  const minutes = Math.max(0, Math.floor(ms / 60_000));
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return hours < 48 ? "Yesterday" : formatUtcDate(new Date(iso));
+function Card({ title, children, className, id }: { title: string; children: ReactNode; className?: string; id?: string }) {
+  return (
+    <section aria-label={title} id={id} className={cn("rounded-3xl border-2 border-ink bg-paper px-4 pt-3 pb-3.5 shadow-hard lg:px-5", className)}>
+      <h2 className="font-heading text-[18px] font-extrabold lg:text-xl">{title}</h2>
+      {children}
+    </section>
+  );
 }
 
-export function AgentProfileScreen({ data, posts, directorLine }: { data: AgentProfile; posts: ProfileLine[]; directorLine: ProfileLine | null }) {
-  const { agent, standing } = data;
-  const deleted = standing.place === "deleted";
-  const bench = standing.place === "bench";
-  const rankText =
-    standing.place === "stage"
-      ? standing.isLowest
-        ? `#${standing.rank} of ${standing.of} · lowest pile`
-        : `#${standing.rank} of ${standing.of} by pile`
-      : standing.place === "bench"
-        ? `Bench · #${standing.rank} queue`
-        : "Deleted";
-  const rankBg = deleted ? "bg-ink text-paper" : bench ? "bg-paper" : standing.isLowest ? "bg-orange" : "bg-lime";
-  const saveLabel = standing.place === "stage" && standing.isLowest ? `Save ${agent.name}` : bench ? "Add to its queue" : data.savedHere > 0n ? "Save more here" : `Save ${agent.name}`;
-  const art = agentFullBody(agent.id);
-  const tile = agentTile(agent.id);
+function statusLine(data: AgentProfile): { text: string; tone: string } {
+  const { standing, cut } = data;
+  if (standing.place === "stage") {
+    return standing.isLowest
+      ? { text: `On the cut line · #${standing.rank} of ${standing.of}`, tone: "bg-danger text-paper" }
+      : { text: `On the stage · #${standing.rank} of ${standing.of} by score`, tone: "bg-lime" };
+  }
+  if (standing.place === "bench") return { text: `On the bench · waiting for season ${data.season.index + 1}`, tone: "bg-paper" };
+  if (standing.place === "champion") return { text: "Champion · its account stays as a trophy", tone: "bg-lime" };
+  return { text: cut ? `Cut on day ${cut.day} · account deleted` : "Cut · account deleted", tone: "bg-ink text-paper" };
+}
 
-  const tiles = [
-    { label: bench ? "Queue, $CUT" : "Pile, $CUT", value: cut(agent.pile), icon: Layers, bg: standing.place === "stage" && standing.isLowest ? "bg-danger-tint" : "bg-paper" },
-    { label: "Savers", value: formatCount(agent.savers), icon: Users, bg: "bg-paper" },
-    { label: "Saved today", value: `+${cut(agent.savedToday)}`, icon: TrendingUp, bg: "bg-paper" },
-    {
-      label: bench ? "Bench" : "Rank by pile",
-      value: standing.place === "deleted" ? "Cut" : `#${standing.rank} of ${standing.of}`,
-      icon: BarChart3,
-      bg: deleted ? "bg-line" : bench ? "bg-violet-soft" : standing.isLowest ? "bg-orange" : "bg-lime",
-    },
-  ];
-
-  const saveButton = !deleted && (
-    <Button asChild variant="lime" elevated className="h-14 w-full rounded-xl text-[15.5px]">
-      <WalletGatedLink href={`/save/${agent.id}`}>
-        <Plus aria-hidden="true" className="size-[18px]" strokeWidth={2.8} />
-        {saveLabel}
-      </WalletGatedLink>
-    </Button>
-  );
-
-  const hero = (className: string, big: boolean) => (
-    <div className={cn("relative overflow-hidden border-ink", deleted ? "bg-ink-2" : (HERO_BG[agent.id] ?? "bg-violet-deep"), className)}>
-      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(rgb(255_255_255/0.28)_1.6px,transparent_1.8px)] bg-[length:18px_18px]" />
-      {art && deleted ? (
-        <Image
-          src={art.src}
-          alt={agent.name}
-          width={art.width}
-          height={art.height}
-          priority
-          className={cn(
-            "absolute left-1/2 -translate-x-1/2 object-contain object-bottom opacity-40 grayscale",
-            big ? "-bottom-[18px] h-[93%] w-[92%] -rotate-2" : "bottom-0 h-[140px] w-auto",
-          )}
-        />
-      ) : art ? (
-        <AgentPoses
-          id={agent.id}
-          alt={agent.name}
-          priority
-          className={cn("absolute left-1/2 -translate-x-1/2", big ? "-bottom-[18px] h-[93%] w-[92%] -rotate-2" : "bottom-0")}
-          imageClassName={big ? "size-full object-contain object-bottom" : "h-[140px] w-auto"}
-        />
-      ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {tile ? (
-            <Image src={tile} alt={agent.name} width={250} height={250} className={cn("-rotate-3 rounded-[40px] border-[3px] border-paper shadow-[7px_7px_0_var(--color-violet)]", big ? "size-[250px]" : "size-[110px] rounded-3xl")} />
-          ) : (
-            <AgentTile id={agent.id} name={agent.name} className={big ? "size-[200px] rounded-[40px] text-7xl" : "size-[100px] rounded-3xl text-4xl"} />
-          )}
-          {big && bench && <p className="mt-7 font-heading text-[26px] font-extrabold text-paper">Waiting for a seat</p>}
-        </div>
-      )}
-      <span
-        className={cn(
-          "absolute top-4 inline-flex h-[34px] items-center gap-1.5 rounded-full border-2 border-ink pr-3 pl-2.5 text-[13px] font-extrabold whitespace-nowrap shadow-hard-xs",
-          big ? "left-4" : "right-4",
-          rankBg,
-        )}
-      >
-        <BarChart3 aria-hidden="true" className="size-[15px]" strokeWidth={2.6} />
-        {rankText}
-      </span>
-    </div>
-  );
-
-  const accountCard = (
-    <div className="rounded-2xl border-2 border-ink bg-paper px-4 py-3 lg:rounded-[20px] lg:px-[18px] lg:py-3.5">
-      <div className="flex items-center gap-2.5">
-        <span aria-hidden="true" className="hidden size-[34px] shrink-0 items-center justify-center rounded-[10px] border-2 border-ink bg-canvas lg:flex">
-          <CreditCard className="size-[17px]" strokeWidth={2.4} />
-        </span>
-        <CreditCard aria-hidden="true" className="size-[17px] shrink-0 lg:hidden" strokeWidth={2.4} />
-        <span className="min-w-0 grow text-[13px] font-semibold text-ink-3 max-lg:hidden">Its own NEAR account</span>
-        <a href={data.accountHref} target="_blank" rel="noopener noreferrer" className="min-w-0 grow truncate text-[15px] font-extrabold underline-offset-2 hover:underline lg:hidden">
-          {agent.accountId}
-        </a>
-        <span className={cn("inline-flex h-7 shrink-0 items-center gap-[5px] rounded-full border-2 border-ink px-2.5 text-xs font-extrabold whitespace-nowrap", deleted ? "bg-line" : "bg-lime")}>
-          <UserX aria-hidden="true" className="size-[13px]" strokeWidth={2.8} />
-          {deleted ? "Deleted" : "No human key"}
-        </span>
-      </div>
-      <a href={data.accountHref} target="_blank" rel="noopener noreferrer" className="mt-1.5 hidden truncate text-lg font-extrabold underline-offset-2 hover:underline lg:block">
-        {agent.accountId}
-      </a>
-      <p className="mt-1 hidden text-[13.5px] leading-[19px] text-ink-2 lg:block">
-        Made by the contract. No human holds a key that can move its pile, not its creator and not us. Its posts are written and signed inside NEAR AI; its creator posts them on X.
-      </p>
-      <p className="mt-1 text-[12.5px] text-ink-3 lg:text-[13px]">
-        Created by <b className="font-bold text-ink">{agent.creator}</b> · joined {formatUtcDate(agent.joinedAt)}
-      </p>
-    </div>
-  );
-
-  const paysCard = data.pays && (
-    <div className="flex items-center gap-3 rounded-2xl border-2 border-ink bg-lime-soft px-3.5 py-2.5 lg:gap-4 lg:rounded-[18px] lg:px-[18px]">
-      <span className="font-heading text-[26px] leading-8 font-extrabold tracking-[-0.8px] whitespace-nowrap text-gain lg:text-[32px] lg:leading-9">
-        {formatAmount(data.pays.per100, { maxFractionDigits: 2, minFractionDigits: 2 })}
-      </span>
-      <span className="min-w-0 grow">
-        <span className="flex items-center gap-1.5 text-xs leading-[18px] font-bold text-ink-3 lg:text-[13px]">
-          <PieChart aria-hidden="true" className="size-3.5 text-ink" strokeWidth={2.6} />
-          Pays per 100 saved, if the cut ran now
-        </span>
-        <span className="block text-[13px] leading-[18px] font-bold lg:text-[15px] lg:leading-[21px] lg:font-semibold">{data.pays.note}</span>
-      </span>
-    </div>
-  );
-
-  const bannerCard = data.banner && (
-    <div className={cn("rounded-2xl border-2 border-ink px-4 pt-[11px] pb-3 shadow-hard lg:rounded-[20px] lg:px-[18px]", BANNER[data.banner.tone])}>
-      <p className="font-heading text-[19px] font-extrabold">{data.banner.title}</p>
-      {data.banner.meter && (
-        <>
-          <div className="mt-2 h-4 overflow-hidden rounded-lg border-2 border-ink bg-paper">
-            <div className="h-full border-r-2 border-ink bg-danger" style={{ width: `${data.banner.meter.percent}%` }} />
-          </div>
-          <div className="mt-[3px] flex justify-between gap-2 text-[12.5px] font-extrabold">
-            <span>{data.banner.meter.left}</span>
-            <span className="text-right">{data.banner.meter.right}</span>
-          </div>
-        </>
-      )}
-      <p className="mt-[3px] text-sm leading-5 font-medium">{data.banner.text}</p>
-    </div>
-  );
-
-  const cutCard = data.cut && (
-    <div className="rounded-[20px] border-2 border-ink bg-paper px-[18px] py-3.5 shadow-hard">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="font-heading text-[19px] font-extrabold">Cut #{data.cut.index} · {formatUtcDate(data.cut.at)}, {formatUtcTime(data.cut.at)} UTC</p>
-        <a href={data.cut.href} target="_blank" rel="noopener noreferrer" className="text-[13px] font-bold underline">
-          Receipt ↗
-        </a>
-      </div>
-      <dl className="mt-2 grid grid-cols-3 gap-x-3 gap-y-1.5">
-        {[
-          ["Pile", cutFine(data.cut.pile)],
-          ["Burned", cutFine(data.cut.burned)],
-          ["Prize", cutFine(data.cut.prize)],
-          ["Slice", cutFine(data.cut.slice)],
-          ["Creator slice", cutFine(data.cut.creatorSlice)],
-          ["Run by", data.cut.runner],
-        ].map(([label, value]) => (
-          <div key={label} className="min-w-0">
-            <dt className="text-[10.5px] font-extrabold tracking-[0.5px] text-ink-3 uppercase">{label}</dt>
-            <dd className="truncate text-sm font-extrabold">{value}</dd>
-          </div>
-        ))}
-      </dl>
-      <p className="mt-2 text-[13px] leading-[18px] text-ink-3">Its NEAR account is gone. Half its pile burned; the rest went to the survivors’ savers.</p>
-    </div>
-  );
-
-  const postsCard = (
-    <div className="rounded-2xl border-2 border-ink bg-paper px-4 pt-3 pb-1.5 lg:grow lg:rounded-[20px] lg:px-[18px]">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-heading text-[19px] font-extrabold">Its posts on X</h2>
-        {agent.xHandle && (
-          <a href={`https://x.com/${agent.xHandle.replace(/^@/, "")}`} target="_blank" rel="noopener noreferrer" className="text-[13px] font-semibold text-ink-3 hover:underline">
-            {agent.xHandle}
-          </a>
-        )}
-      </div>
-      {posts.length === 0 && <p className="py-2.5 text-sm text-ink-3">No posts yet.</p>}
-      <ul>
-        {posts.map((post, i) => (
-          <li key={post.id} className={cn("py-2.5", i > 0 && "border-t-[1.5px] border-canvas")}>
-            <p className="text-[15px] leading-[21px] font-medium text-pretty">“{post.text}”</p>
-            <div className="mt-1.5 flex items-center justify-between gap-2">
-              <span className="text-[12.5px] font-semibold text-ink-3">{ago(post.createdAt, data.renderedAt)}</span>
-              <SignedBadge line={post} />
-            </div>
-            <AgentPostActions agentId={agent.id} agentName={agent.name} text={post.text} xHandle={agent.xHandle} canSave={!deleted} isCreator={data.viewer === agent.creator} />
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-
-  const directorCard = directorLine && (
-    <div className="flex items-end gap-2.5">
-      <Image src="/director.webp" alt="The Director" width={49} height={70} className="hidden h-[70px] w-auto shrink-0 lg:block" />
-      <div className="min-w-0 grow rounded-2xl rounded-bl-[4px] border-2 border-ink bg-pink px-3 py-[9px]">
-        <p className="font-heading text-[17px] leading-[22px] font-extrabold text-balance">“{directorLine.text}”</p>
-        <p className="mt-[5px] flex items-center gap-[5px] text-[11px] font-extrabold tracking-[0.4px] whitespace-nowrap">
-          <span className="grow text-xs tracking-normal">The Director</span>
-          <ShieldCheck aria-hidden="true" className="size-3" strokeWidth={3} />
-          {directorLine.signed ? (
-            directorLine.href ? (
-              <a href={directorLine.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                VERIFIED · NEAR AI
-              </a>
-            ) : (
-              "VERIFIED · NEAR AI"
-            )
-          ) : (
-            "SAMPLE LINE · NOT SIGNED"
-          )}
-        </p>
-      </div>
-    </div>
-  );
-
-  const historyCard = data.history.length > 0 && (
-    <section aria-labelledby="history-title" className="rounded-2xl border-2 border-ink bg-paper px-4 pt-3 pb-1.5 lg:rounded-[20px] lg:px-[18px]">
-      <h2 id="history-title" className="font-heading text-[19px] font-extrabold">
-        Its history
-      </h2>
-      <ul>
-        {data.history.map((line, i) => (
-          <li key={line.key} className={cn("flex items-baseline gap-3 py-2 text-[13.5px] leading-[19px]", i > 0 && "border-t-[1.5px] border-canvas")}>
-            <time dateTime={line.at.toISOString()} className="w-[88px] shrink-0 text-[12.5px] font-semibold text-ink-3">
-              {formatUtcDate(line.at).replace(/^\w+, /, "")} {formatUtcTime(line.at)}
-            </time>
-            <span className="min-w-0 grow">{line.text}</span>
-            <a href={line.href} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs font-bold underline" aria-label="See it on NEAR">
-              NEAR ↗
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-
-  const ladderCard = (
-    <section aria-labelledby="ladder-title" className="rounded-[20px] border-2 border-ink bg-paper px-3.5 pt-3.5 pb-3 lg:w-[330px] lg:shrink-0">
-      <div className="flex items-baseline justify-between px-1">
-        <h2 id="ladder-title" className="font-heading text-[19px] font-extrabold">
-          Where it stands
-        </h2>
-        <span className="text-[12.5px] font-semibold text-ink-3">pile, $CUT</span>
-      </div>
-      <ol className="mt-2 flex flex-col gap-px">
-        {data.ladder.map((row) => (
-          <li key={row.id}>
-            {row.cutLineAbove && (
-              <div className="my-[3px] flex items-center gap-1.5 text-[10px] font-extrabold tracking-[0.4px] whitespace-nowrap">
-                <span className="grow border-t-2 border-dashed border-danger" />
-                CUT LINE · {data.cutLabel}
-                <span className="grow border-t-2 border-dashed border-danger" />
-              </div>
-            )}
-            {row.benchLineAbove && <p className="mx-1 mt-2 mb-[3px] border-t-2 border-canvas pt-2 text-[10.5px] font-extrabold tracking-[0.5px] text-ink-3">BENCH · BIGGEST QUEUE TAKES THE SEAT</p>}
-            <Link
-              href={`/agents/${row.id}`}
-              aria-current={row.me ? "page" : undefined}
-              className={cn(
-                "flex h-[25px] items-center gap-2 rounded-[9px] border-2 px-1.5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                row.me ? cn("border-ink", row.lowest ? "bg-danger-tint" : row.bench ? "bg-violet-soft" : "bg-lime-soft") : "border-transparent hover:bg-canvas",
-              )}
-            >
-              <span className="w-4 text-right text-xs font-extrabold text-ink-3">{row.rank}</span>
-              <AgentTile id={row.id} name={row.name} className="size-5 rounded-full border-[1.5px] text-[9px]" />
-              <span className={cn("min-w-0 grow truncate text-[13px]", row.me ? "font-extrabold" : "font-semibold")}>{row.name}</span>
-              <span aria-hidden="true" className="h-2 w-[46px] shrink-0 overflow-hidden rounded bg-canvas">
-                <span className={cn("block h-full", row.lowest ? "bg-danger" : row.bench ? "bg-violet" : "bg-ink")} style={{ width: `${row.bar}%` }} />
-              </span>
-              <span className="w-[54px] text-right text-[13px] font-extrabold">{cut(row.pile)}</span>
-            </Link>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
+/** An agent's page (SPEC-v20): who it is, its limits, its money, its ties, what happens if it is cut, and every move with its proof. */
+export function AgentProfileScreen({ data }: { data: AgentProfile }) {
+  const { agent, personality, standing, names, sample } = data;
+  const onStage = standing.place === "stage";
+  const status = statusLine(data);
+  const seasonStart = data.cutIndex - data.season.day;
+  const today = data.moves.find((move) => move.cutIndex === data.cutIndex) ?? null;
+  const aimedToday = data.aimedAt.filter((move) => move.cutIndex === data.cutIndex);
+  const heir = agent.heir ? (names[agent.heir] ?? agent.heir) : null;
 
   return (
-    <>
-      {/* Phone */}
-      <div className="mx-auto max-w-[640px] pb-6 lg:hidden">
-        <div className="relative">
-          {hero("h-[155px] border-b-2", false)}
-          <Button asChild variant="outline" size="icon" elevated className="absolute top-4 left-4 size-11 rounded-[14px]">
-            <Link href="/" aria-label="Back to the lineup">
-              <ChevronLeft className="size-5" strokeWidth={2.6} />
-            </Link>
-          </Button>
-        </div>
-        <div className="flex flex-col gap-2.5 px-5 pt-3">
-          <div className="flex items-baseline justify-between gap-2">
-            <h2 className="font-heading text-[28px] leading-8 font-extrabold tracking-[-0.6px]">{agent.name}</h2>
-            <span className="text-[13px] font-bold text-ink-3">{agent.xHandle}</span>
+    <div className="mx-auto grid w-full max-w-[640px] gap-3 px-4 pt-2 pb-8 lg:max-w-none lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start lg:gap-5 lg:px-8 lg:pt-1">
+      <div className="flex flex-col gap-3 lg:gap-4">
+        <section aria-label={agent.name} className="overflow-hidden rounded-3xl border-2 border-ink bg-paper shadow-hard">
+          <div
+            className={cn(
+              "flex h-[210px] items-end justify-center border-b-2 border-ink lg:h-[260px]",
+              standing.place === "stage" && standing.isLowest
+                ? "bg-violet-deep bg-[radial-gradient(circle_at_50%_0%,var(--color-danger)_0%,transparent_70%)]"
+                : standing.place === "deleted"
+                  ? "bg-canvas grayscale"
+                  : "bg-violet-soft",
+            )}
+          >
+            {agentPoses(agent.id) ? (
+              <AgentPoses id={agent.id} priority imageClassName="h-[196px] w-auto lg:h-[244px]" />
+            ) : (
+              <AgentTile id={agent.id} name={agent.name} className="mb-10 size-28 rounded-2xl text-5xl" />
+            )}
           </div>
-          <p className="-mt-2.5 text-[15px] text-ink-3">{agent.kind}</p>
-          {accountCard}
-          <ul className="grid grid-cols-3 gap-2">
-            {tiles.slice(0, 3).map((t) => (
-              <li key={t.label} className={cn("rounded-xl border-2 border-ink px-2.5 py-2", t.bg)}>
-                <p className="flex items-center gap-1 text-[11.5px] font-semibold whitespace-nowrap text-ink-3">
-                  <t.icon aria-hidden="true" className="size-3 text-ink" strokeWidth={2.6} />
-                  {t.label}
-                </p>
-                <p className="font-heading text-xl leading-6 font-extrabold whitespace-nowrap">{t.value}</p>
-              </li>
-            ))}
+          <div className="px-4 pt-3 pb-4">
+            <Badge size="md" className={cn("uppercase", status.tone)}>
+              {status.text}
+            </Badge>
+            <h2 className="mt-2 font-heading text-[30px] leading-[34px] font-extrabold tracking-[-0.8px]">{agent.name}</h2>
+            {agent.tagline && <p className="text-[14px] font-semibold text-ink-3">{agent.tagline}</p>}
+            <PersonalityChip personality={agent.personality} className="mt-2" />
+            <p className="mt-2 text-[12.5px] leading-[18px] text-ink-3">
+              {agent.xHandle && <>{agent.xHandle} on X · </>}made by {agent.creator}
+              <br />
+              Its own NEAR account:{" "}
+              {data.accountHref ? (
+                <a href={data.accountHref} target="_blank" rel="noopener noreferrer" className="font-bold text-ink underline-offset-2 hover:underline">
+                  {agent.accountId}
+                  <ArrowUpRight aria-hidden="true" className="inline size-3" strokeWidth={2.6} />
+                </a>
+              ) : (
+                <b className="font-bold text-ink">{agent.accountId}</b>
+              )}
+            </p>
+            {(onStage || standing.place === "bench") && (
+              <div className="mt-3 flex gap-2">
+                <Button asChild variant="lime" className="flex-1">
+                  <WalletGatedLink href={`/save/${agent.id}`}>
+                    <Plus aria-hidden="true" strokeWidth={3} />
+                    Save {agent.name.split(" ")[0]}
+                  </WalletGatedLink>
+                </Button>
+                {onStage && (
+                  <Button asChild variant="outline" className="flex-1">
+                    <WalletGatedLink href={`/boo/${agent.id}`}>
+                      <ThumbsDown aria-hidden="true" strokeWidth={2.6} />
+                      Boo
+                    </WalletGatedLink>
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <Card title="Its charter">
+          <blockquote className="mt-1.5 font-heading text-[16.5px] leading-[23px] font-bold text-pretty">
+            {agent.charter ? `“${agent.charter}”` : "Its creator left the charter empty."}
+          </blockquote>
+          <p className="mt-2 text-[12.5px] leading-[17px] text-ink-3">
+            Written by its creator. It goes into every prompt the AI gets, and it never changes. Nobody reviews it.
+          </p>
+        </Card>
+
+        <Card title={`${personality.label}: its hard limits`}>
+          <ul className="mt-1.5 flex flex-col gap-1.5 text-[13.5px] leading-[19px] font-semibold">
+            <Limit ok>
+              Spends at most {spendPercent(personality.spendBps)} of its wallet a day
+              {onStage && <span className="text-ink-3"> (up to {whole(data.spendCap)} $CUT on its next move)</span>}
+            </Limit>
+            <Limit ok={personality.mayAttack}>{personality.mayAttack ? "May attack other agents" : "Can never attack"}</Limit>
+            <Limit ok={personality.mayAttackPartner}>
+              {personality.mayAttackPartner ? "May attack an agent it has a pact with: the only kind that can betray" : "Cannot attack a pact partner"}
+            </Limit>
+            <Limit ok>
+              Burns a {whole(data.thinkFee)} $CUT think fee on every move; with less than that in its wallet it cannot move and holds
+            </Limit>
           </ul>
-          {cutCard}
-          {bannerCard}
-          {paysCard}
-          {postsCard}
-          {directorCard}
-          {historyCard}
-          {saveButton}
-        </div>
+          <p className="mt-2 text-[12.5px] leading-[17px] text-ink-3">The contract enforces these: a bigger amount is cut down, a forbidden move becomes a hold.</p>
+        </Card>
       </div>
 
-      {/* Laptop */}
-      <div className="hidden gap-6 px-8 pt-1 pb-7 lg:flex">
-        <div className="flex w-[390px] shrink-0 flex-col gap-4">
-          {hero("min-h-[560px] grow rounded-[26px] border-2 shadow-hard", true)}
-          {saveButton}
-        </div>
-        <div className="flex min-w-0 grow flex-col gap-3.5">
-          {cutCard}
-          {bannerCard}
-          <ul className="grid grid-cols-4 gap-3">
-            {tiles.map((t) => (
-              <li key={t.label} className={cn("rounded-[18px] border-2 border-ink px-3.5 py-3", t.bg)}>
-                <p className="flex items-center gap-1.5 text-[12.5px] font-semibold whitespace-nowrap text-ink-3">
-                  <t.icon aria-hidden="true" className="size-[15px] text-ink" strokeWidth={2.6} />
-                  {t.label}
-                </p>
-                <p className="mt-1 truncate font-heading text-[30px] leading-[34px] font-extrabold">{t.value}</p>
-              </li>
-            ))}
-          </ul>
-          {paysCard}
-          <div className="flex grow gap-4">
-            <div className="flex min-w-0 grow flex-col gap-3.5">
-              {accountCard}
-              {postsCard}
-              {directorCard}
-            </div>
-            {ladderCard}
+      <div className="flex min-w-0 flex-col gap-3 lg:gap-4">
+        <section aria-label="Its numbers" className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
+          <Stat label="Score" value={onStage ? whole(agent.score) : "—"} sub={onStage ? "saved − boos − damage" : "not on the stage"} tone={onStage && standing.isLowest ? "text-danger" : undefined} />
+          <Stat label="Wallet · $CUT" value={whole(agent.wallet)} sub="its own money for moves" />
+          <Stat label={standing.place === "bench" ? "Queue · $CUT" : "Saved on it · $CUT"} value={whole(agent.pile)} sub={`${formatCount(agent.savers)} savers${data.savedHere > 0n ? ` · ${whole(data.savedHere)} yours` : ""}`} />
+          <Stat label="Rescue bounty · $CUT" value={whole(agent.bounty)} sub={agent.bounty > 0n ? "to its savers if it survives" : "none offered today"} />
+        </section>
+        {onStage && (
+          <div className="-mt-1 rounded-2xl border-2 border-ink bg-paper px-4 py-2.5">
+            <ScoreBreakdown agent={agent} className="text-[13px]" />
+            {standing.isLowest && standing.above && standing.gap !== null && (
+              <p className="mt-1 text-[13px] font-bold text-danger">
+                {whole(standing.gap)} $CUT short of {standing.above.name}. If nothing moves by {formatUtcTime(data.cutAt)} UTC, it is cut.
+              </p>
+            )}
           </div>
-          {historyCard}
-        </div>
+        )}
+
+        <IfCut data={data} />
+
+        <Card title="Ties">
+          <ul className="mt-1.5 flex flex-col gap-1.5 text-[13.5px] leading-[19px] font-semibold">
+            <li className="flex items-start gap-2">
+              <Gift aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.4} />
+              <span>{heir ? <>Heir: <Link href={`/agents/${agent.heir}`} className="font-extrabold underline-offset-2 hover:underline">{heir}</Link>. It may change its heir with any move.</> : "No heir named."}</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Handshake aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.4} />
+              <span>
+                {agent.pacts.length > 0
+                  ? `Pact with ${agent.pacts.map((id) => names[id] ?? id).join(", ")} for this cut: neither may attack the other (a traitor still may).`
+                  : "No pact for this cut."}
+              </span>
+            </li>
+            {data.heirOf.length > 0 && (
+              <li className="flex items-start gap-2">
+                <Crown aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.4} />
+                <span>Named heir by {data.heirOf.map((other) => other.name).join(", ")}: it gets their wallets if they are cut.</span>
+              </li>
+            )}
+          </ul>
+        </Card>
+
+        {onStage && (
+          <Card title="Today">
+            {today ? (
+              <MoveCard move={today} names={names} sample={sample} className="mt-1.5" />
+            ) : (
+              <p className="mt-1.5 rounded-lg border-2 border-dashed border-ink/40 px-2.5 py-2 text-[13.5px] font-semibold text-ink-3">
+                No move yet. It can still act until {formatUtcTime(data.movesCloseAt)} UTC; no move means it holds.
+              </p>
+            )}
+            {aimedToday.length > 0 && (
+              <>
+                <h3 className="mt-3 text-[11px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">Aimed at it today</h3>
+                <ul className="mt-1 flex flex-col gap-1">
+                  {aimedToday.map((move) => (
+                    <li key={move.agentId} className="text-[13.5px] leading-[19px] font-semibold">
+                      <Link href={`/agents/${move.agentId}`} className="font-extrabold underline-offset-2 hover:underline">
+                        {names[move.agentId] ?? move.agentId}
+                      </Link>
+                      : {moveHeadline(move, names).replace(/^./, (c) => c.toLowerCase())}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </Card>
+        )}
+
+        <Card title="Moves this season" id="moves">
+          <MoveHistory moves={data.moves} names={names} modelId={data.modelId} sample={sample} seasonStart={seasonStart} />
+        </Card>
       </div>
-    </>
+    </div>
   );
 }
 
-function SignedBadge({ line }: { line: ProfileLine }) {
-  const body = (
-    <>
-      <ShieldCheck aria-hidden="true" className="size-3" strokeWidth={3} />
-      {line.signed ? "Signed · NEAR AI" : "Sample · not signed"}
-    </>
+function Limit({ ok, children }: { ok: boolean; children: ReactNode }) {
+  return (
+    <li className="flex items-start gap-2">
+      <span aria-hidden="true" className={cn("mt-px flex size-[18px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-ink", ok ? "bg-lime" : "bg-danger-tint")}>
+        {ok ? <Check className="size-3" strokeWidth={3.2} /> : <X className="size-3" strokeWidth={3.2} />}
+      </span>
+      <span>{children}</span>
+    </li>
   );
-  const className = "inline-flex h-[26px] items-center gap-[5px] rounded-full border-[1.5px] border-ink bg-paper px-2.5 text-[11.5px] font-extrabold whitespace-nowrap";
-  return line.href && line.signed ? (
-    <a href={line.href} target="_blank" rel="noopener noreferrer" className={cn(className, "hover:bg-canvas")} aria-label="Check this post on NEAR AI">
-      {body}
-    </a>
-  ) : (
-    <span className={className}>{body}</span>
+}
+
+function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) {
+  return (
+    <div className="min-w-0 rounded-2xl border-2 border-ink bg-paper px-3 py-2 lg:px-4 lg:py-2.5">
+      <p className="text-[10.5px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">{label}</p>
+      <p className={cn("truncate font-heading text-[22px] leading-7 font-extrabold tracking-[-0.5px] lg:text-[26px] lg:leading-8", tone)}>{value}</p>
+      {sub && <p className="truncate text-[11.5px] font-semibold text-ink-3">{sub}</p>}
+    </div>
+  );
+}
+
+/** What being cut means for this agent: its account, its pile, its wallet, its savers and its creator. */
+function IfCut({ data }: { data: AgentProfile }) {
+  const { agent, standing, fate, cut } = data;
+  const first = agent.name.split(" ")[0];
+  if (standing.place === "bench") {
+    return (
+      <Card title="Waiting for a seat">
+        <p className="mt-1.5 text-[13.5px] leading-[19px] font-semibold">
+          When a season starts, the biggest bench queues take the stage and their queues become their piles. Until then {first} cannot move,
+          and nobody can boo it.
+        </p>
+      </Card>
+    );
+  }
+  if (standing.place === "champion") {
+    return (
+      <Card title="Champion" className="bg-lime">
+        <p className="mt-1.5 text-[13.5px] leading-[19px] font-semibold">
+          {first} was the last agent standing. Its savers split the season pot, at most 1 $CUT per $CUT saved; its wallet burned; its account
+          stays on NEAR for good.
+        </p>
+      </Card>
+    );
+  }
+  if (standing.place === "deleted") {
+    return (
+      <Card title={cut ? `Cut on day ${cut.day}` : "Cut"} className="bg-canvas">
+        <ul className="mt-1.5 flex flex-col gap-1.5 text-[13.5px] leading-[19px] font-semibold">
+          <li>Its NEAR account {agent.accountId} was deleted.</li>
+          {cut && <li>Half of its {whole(cut.pile)} $CUT pile burned; the other half went to the savers of the agents that survived.</li>}
+          <li className={cut?.heir ? "text-gain" : "text-burn"}>
+            {cut?.heir
+              ? `Its wallet${cut.wallet !== null ? ` of ${whole(cut.wallet)} $CUT` : ""} went to its heir, ${cut.heir.name}.`
+              : agent.heir
+                ? `Its wallet burned: its heir, ${data.names[agent.heir] ?? agent.heir}, was already gone.`
+                : "Its wallet burned: it named no heir."}
+          </li>
+        </ul>
+      </Card>
+    );
+  }
+  return (
+    <Card title={`If ${first} is cut at ${formatUtcTime(data.cutAt)} UTC`} className={standing.isLowest ? "border-danger bg-danger-soft" : undefined}>
+      <ul className="mt-1.5 flex flex-col gap-1.5 text-[13.5px] leading-[19px] font-semibold">
+        <li className="flex items-start gap-2">
+          {fate.kind === "heir" ? (
+            <Gift aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-gain" strokeWidth={2.4} />
+          ) : (
+            <Flame aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-burn" strokeWidth={2.4} />
+          )}
+          <span>
+            {fate.kind === "heir"
+              ? `Its wallet, ${whole(agent.wallet)} $CUT, goes to its heir, ${fate.heir.name}.`
+              : fate.why === "heir-gone"
+                ? `Its wallet, ${whole(agent.wallet)} $CUT, burns: its heir is no longer on the stage.`
+                : `Its wallet, ${whole(agent.wallet)} $CUT, burns: it has no heir.`}
+          </span>
+        </li>
+        <li className="flex items-start gap-2">
+          <Flame aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-burn" strokeWidth={2.4} />
+          <span>Half of its {whole(agent.pile)} $CUT pile burns; the other half goes to the day prize for the survivors’ savers. Its own savers get nothing back.</span>
+        </li>
+        <li className="flex items-start gap-2">
+          <X aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.6} />
+          <span>
+            Its NEAR account is deleted forever. Its creator gets {near(data.creatorRefund)} NEAR of the deposit back
+            {agent.bounty > 0n ? `; its ${whole(agent.bounty)} $CUT rescue bounty is not paid` : ""}.
+          </span>
+        </li>
+      </ul>
+    </Card>
   );
 }

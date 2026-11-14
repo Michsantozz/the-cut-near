@@ -52,7 +52,14 @@ beforeEach(async () => {
   chain.block.timestampMs = CUT_AT + 5_000;
   chain.addKey(KEEPER, keeperKey.getPublicKey().toString(), { FunctionCall: { allowance: "250000000000000000000000", receiver_id: CONTRACT, method_names: ["run_cut"] } });
   chain.view("get_next_cut", () => ({
-    value: { index: cutIndex, at: ns(CUT_AT + (cutIndex - 1) * 86_400_000), lowest_id: "kiko", gap_to_next: "0", prize_so_far: "0" },
+    value: {
+      index: cutIndex,
+      at: ns(CUT_AT + (cutIndex - 1) * 86_400_000),
+      moves_close_at: ns(CUT_AT + (cutIndex - 1) * 86_400_000 - 3_600_000),
+      lowest_id: "kiko",
+      gap_to_next: "0",
+      prize_so_far: "0",
+    },
   }));
   chain.onSend = (call) => {
     if (call.methodName !== "run_cut") return { status: "failure", panic: "unexpected method" };

@@ -31,12 +31,12 @@ describe("buildInbox", () => {
     expect(buildInbox({ ...base, savedOn: new Set(["onyx"]) })[0].title).toBe("Your agent Onyx Moon is on the block");
   });
 
-  it("reports the cut and the prize waiting, newest first", async () => {
-    const cuts = (await getJournal({ events: ["cut"], limit: 3, sampleMoment: "after-cut" })).entries;
-    const notices = buildInbox({ ...base, cuts, claimable: units(632) / 100n, lowestPost: { text: "Save me", at: new Date("2026-11-13T14:00:00Z") } });
-    expect(notices.map((n) => n.kind)).toEqual(["danger", "prize", "cut", "post"]);
-    expect(notices[1].text).toBe("Kiko Bun was deleted. +6.32 $CUT waiting.");
-    expect(notices[2].title).toBe("Kiko Bun was cut");
+  it("reports the cuts and the prize waiting, newest first", async () => {
+    const cuts = (await getJournal({ events: ["cut"], limit: 3 })).entries;
+    const names = new Map([["kiko", "Kiko Bun"], ["onyx", "Onyx Moon"], ["velvet", "Velvet Vee"]]);
+    const notices = buildInbox({ ...base, cuts, names, now: cuts[0].at, claimable: units(1895) / 100n, lowestPost: null });
+    expect(notices.filter((n) => n.kind === "cut").map((n) => n.title)).toEqual(["Velvet Vee was cut", "Onyx Moon was cut", "Kiko Bun was cut"]);
+    expect(notices.find((n) => n.kind === "prize")!.text).toBe("Velvet Vee was deleted. +18.95 $CUT waiting.");
   });
 });
 

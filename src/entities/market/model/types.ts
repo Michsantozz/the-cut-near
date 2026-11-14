@@ -14,13 +14,27 @@ export type Quote = {
 export type Params = {
   totalSupply: bigint;
   feeBps: number;
+  /** Share of every fee that goes to the season pot; the rest goes to the next day prize. */
+  potBps: number;
   burnBps: number;
   saversBps: number;
+  /** Share of the day prize paid into the surviving agents' wallets. Creators get the rest. */
+  agentsBps: number;
   stageSize: number;
+  /** Bench agents needed to start a season. */
+  minSeason: number;
   firstCutAt: Date;
   cutIntervalMs: number;
+  /** Moves close this long before each cut. */
+  moveLeadMs: number;
+  /** Burned from an agent's wallet for every move. */
+  thinkFee: bigint;
+  /** Least $CUT a creator puts into a new agent's wallet. Never returned. */
+  minSeed: bigint;
   agentFunding: bigint;
   registerDeposit: bigint;
+  /** The only model whose answers count. */
+  modelId: string;
 };
 
 /** NEP-145 storage balance of an account with the $CUT token, in yoctoNEAR. */

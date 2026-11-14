@@ -26,14 +26,14 @@ describe("holdings", () => {
     const stage = await getStage();
     const summary = summarizeSaves(
       [
-        { accountId: "mika.near", agentId: "kiko", amount: units(50), lockedForCut: 1 },
+        { accountId: "mika.near", agentId: "yuna", amount: units(50), lockedForCut: 1 },
         { accountId: "mika.near", agentId: "melody", amount: units(400), lockedForCut: 1 },
         { accountId: "mika.near", agentId: "gone", amount: units(1), lockedForCut: 1 },
         { accountId: "mika.near", agentId: "pixie", amount: 0n, lockedForCut: 1 },
       ],
       stage,
     );
-    expect(summary.items.map((item) => item.agentName)).toEqual(["Melody-9", "Kiko Bun", "gone"]);
+    expect(summary.items.map((item) => item.agentName)).toEqual(["Melody-9", "Yuna Star", "gone"]);
     expect(summary.total).toBe(units(451));
   });
 

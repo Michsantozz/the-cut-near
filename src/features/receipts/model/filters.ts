@@ -1,8 +1,8 @@
 import { CUT_EVENTS } from "@/shared/near/events";
 
-// The journal's filter chips (Receipts.dc.html). "Mine" is every event about the viewer's account.
+// The journal's filter chips (Receipts.dc.html, v20 events). "Mine" is every event about the viewer's account.
 
-export const RECEIPT_FILTERS = ["all", "saves", "cuts", "burns", "prizes", "fees", "mine"] as const;
+export const RECEIPT_FILTERS = ["all", "moves", "boos", "saves", "cuts", "burns", "prizes", "mine"] as const;
 export type ReceiptFilter = (typeof RECEIPT_FILTERS)[number];
 
 /** Our events and the token's mint and burn. `ft_transfer` stays out: it repeats every buy, sell, save and claim. */
@@ -10,21 +10,23 @@ export const RECEIPT_EVENTS: readonly string[] = [...CUT_EVENTS, "ft_mint", "ft_
 
 export const FILTER_LABELS: Record<ReceiptFilter, string> = {
   all: "All",
+  moves: "Moves",
+  boos: "Boos",
   saves: "Saves",
   cuts: "Cuts",
   burns: "Burns",
   prizes: "Prizes",
-  fees: "Fees",
   mine: "Mine",
 };
 
 const FILTER_EVENTS: Record<ReceiptFilter, readonly string[]> = {
   all: RECEIPT_EVENTS,
+  moves: ["move", "pact", "attack", "rescue"],
+  boos: ["boo"],
   saves: ["save", "unsave"],
-  cuts: ["cut", "delete", "join"],
+  cuts: ["cut", "delete", "inherit", "season_start", "champion", "join"],
   burns: ["ft_burn"],
-  prizes: ["prize", "claim"],
-  fees: ["fee"],
+  prizes: ["prize", "rescue", "claim", "champion"],
   mine: RECEIPT_EVENTS,
 };
 
