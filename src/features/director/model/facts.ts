@@ -66,7 +66,7 @@ export function buildDayFacts(input: DayInput): DayFacts {
   const stage: AgentFacts[] = byPile.map((agent, index) => ({
     id: agent.id,
     name: agent.name,
-    kind: agent.kind,
+    kind: agent.tagline,
     pile: formatCut(agent.pile),
     savers: agent.savers,
     savedToday: formatCut(agent.savedToday),
@@ -95,7 +95,7 @@ export function buildDayFacts(input: DayInput): DayFacts {
     gap: formatCut(nextCut.gapToNext),
     bench: [...input.bench]
       .sort((a, b) => (a.pile === b.pile ? 0 : a.pile > b.pile ? -1 : 1))
-      .map((agent) => ({ id: agent.id, name: agent.name, kind: agent.kind, queue: formatCut(agent.pile), savers: agent.savers })),
+      .map((agent) => ({ id: agent.id, name: agent.name, kind: agent.tagline, queue: formatCut(agent.pile), savers: agent.savers })),
   };
 }
 
@@ -133,7 +133,7 @@ export function buildCutFacts({ cut, agents, params }: CutInput): CutFacts {
   return {
     index: cut.index,
     title: cut.index >= 1 && cut.index <= ORDINALS.length ? `${ORDINALS[cut.index - 1]} cut` : `Cut ${cut.index}`,
-    deleted: { id: cut.deletedId, name: deleted?.name ?? cut.deletedId, kind: deleted?.kind ?? "agent", pile: formatCut(cut.pile) },
+    deleted: { id: cut.deletedId, name: deleted?.name ?? cut.deletedId, kind: deleted?.tagline ?? "agent", pile: formatCut(cut.pile) },
     burned: formatCut(cut.burned),
     prize: formatCut(cut.prize),
     slice: formatCut(cut.slice, 1),

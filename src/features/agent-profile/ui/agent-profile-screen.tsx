@@ -350,7 +350,7 @@ export function AgentProfileScreen({ data, posts, directorLine }: { data: AgentP
             <h2 className="font-heading text-[28px] leading-8 font-extrabold tracking-[-0.6px]">{agent.name}</h2>
             <span className="text-[13px] font-bold text-ink-3">{agent.xHandle}</span>
           </div>
-          <p className="-mt-2.5 text-[15px] text-ink-3">{agent.kind}</p>
+          <p className="-mt-2.5 text-[15px] text-ink-3">{agent.tagline}</p>
           {accountCard}
           <ul className="grid grid-cols-3 gap-2">
             {tiles.slice(0, 3).map((t) => (

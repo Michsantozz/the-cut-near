@@ -79,7 +79,7 @@ function BoardRow({
 }) {
   const { agent, isLowest, paysPer100 } = entry;
   const phoneSub = shortBy ? `${cut(shortBy.gap)} short of ${shortBy.name}` : `${formatCount(agent.savers)} savers · +${cut(agent.savedToday)} today`;
-  const laptopSub = shortBy ? `On the block · ${cut(shortBy.gap)} short` : agent.kind;
+  const laptopSub = shortBy ? `On the block · ${cut(shortBy.gap)} short` : agent.tagline;
 
   return (
     <div data-lowest={isLowest || undefined}>

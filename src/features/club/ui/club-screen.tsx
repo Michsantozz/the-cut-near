@@ -179,7 +179,7 @@ function SaveCard({ save, cutAt }: { save: ClubSave; cutAt: Date }) {
                 {cut(save.amount)} $CUT on {save.agent.name}
               </h2>
               <p className="text-[13px] font-bold">
-                {save.agent.kind} · {formatCount(save.agent.savers)} savers
+                {save.agent.tagline} · {formatCount(save.agent.savers)} savers
               </p>
             </div>
           </div>

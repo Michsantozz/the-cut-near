@@ -101,7 +101,7 @@ export function BenchCard({ bench, className }: { bench: Agent[]; className?: st
             </Link>
           </h2>
           <p className="text-[12.5px] text-ink-3">
-            {first.kind} · queue {cut(first.pile)} · {formatCount(first.savers)} savers
+            {first.tagline} · queue {cut(first.pile)} · {formatCount(first.savers)} savers
           </p>
         </div>
       </div>

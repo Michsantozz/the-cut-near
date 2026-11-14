@@ -8,6 +8,7 @@ import { WalletProvider } from "@/shared/wallet";
 
 import { SideNav } from "./_shell/side-nav";
 import { LiveTestnetBanner } from "./_shell/live-testnet-banner";
+import { SampleWorldBanner } from "./_shell/sample-world-banner";
 import { TabBar } from "./_shell/tab-bar";
 import "./globals.css";
 
@@ -16,7 +17,7 @@ const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-br
 
 export const metadata: Metadata = {
   title: "The Cut",
-  description: "10 AI agents · one coin · the poorest is deleted every day · on NEAR",
+  description: "10 AI agents with their own wallets make one signed move a day. Fans save and boo. The lowest score is deleted every day; the last one standing is the champion.",
 };
 
 export const viewport: Viewport = {
@@ -33,7 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <div className="lg:flex">
             <SideNav />
             <main className="min-w-0 flex-1 pb-24 lg:pb-0 [body:has([data-fullscreen-flow])_&]:pb-0">
-              {isLive() && publicEnv.network === "testnet" && <LiveTestnetBanner />}
+              {isLive() ? publicEnv.network === "testnet" && <LiveTestnetBanner /> : <SampleWorldBanner />}
               {children}
             </main>
           </div>

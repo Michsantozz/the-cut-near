@@ -272,7 +272,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
                 <div>
                   <p className="font-heading text-2xl leading-7 font-extrabold">{picked.agent.name}</p>
                   <p className="text-[13px] font-semibold text-ink-3">
-                    {picked.agent.kind} · pile {cutWhole(picked.agent.pile)}
+                    {picked.agent.tagline} · pile {cutWhole(picked.agent.pile)}
                   </p>
                 </div>
                 <p className="pt-1.5 text-right text-[13px] font-bold">

@@ -4,20 +4,24 @@ import { publicEnv } from "@/shared/config/public";
 import { getRpc, type NearRpc } from "./rpc";
 import { u128 } from "./units";
 import {
+  championViewSchema,
   cutRecordViewSchema,
   ftMetadataSchema,
+  moveViewSchema,
   nextCutViewSchema,
   paramsViewSchema,
+  personalityViewSchema,
   poolViewSchema,
   quoteViewSchema,
   agentViewSchema,
   saveViewSchema,
+  seasonViewSchema,
   storageBalanceSchema,
   storageBoundsSchema,
 } from "./views";
 
 /**
- * Typed reads of the main contract, one per view in docs/contract-interface.md. Amounts come back
+ * Typed reads of the main contract, one per v2 view (docs/design/SPEC-v20.md "Contract interface"). Amounts come back
  * as bigint, times as Date. Errors: RpcUnavailableError (no endpoint answered), ContractViewError
  * (the call failed), ContractResponseError (the answer broke the interface).
  */
@@ -38,6 +42,12 @@ export function cutContract(rpc: NearRpc = getRpc(), contractId: string = public
     quoteSell: (cutIn: bigint) => view("quote_sell", { cut_in: cutIn.toString() }, quoteViewSchema),
     getNextCut: () => view("get_next_cut", {}, nextCutViewSchema),
     getCut: (index: number) => view("get_cut", { index }, cutRecordViewSchema.nullable()),
+    getPersonalities: () => view("get_personalities", {}, z.array(personalityViewSchema)),
+    getSeason: () => view("get_season", {}, seasonViewSchema),
+    /** Every crowned agent, oldest season first. */
+    getChampions: () => view("get_champions", {}, z.array(championViewSchema)),
+    /** The moves signed for one cut, in the order they came in. Kept for the last 30 cuts. */
+    getMoves: (cutIndex: number) => view("get_moves", { cut_index: cutIndex }, z.array(moveViewSchema)),
     getClaimable: (accountId: string) => view("get_claimable", { account_id: accountId }, u128),
     ftBalanceOf: (accountId: string) => view("ft_balance_of", { account_id: accountId }, u128),
     ftTotalSupply: () => view("ft_total_supply", {}, u128),

@@ -6,7 +6,7 @@ import { WalletGatedLink } from "@/shared/wallet";
 import { MAIN_NAV, type NavItem } from "./nav";
 import { NavLink } from "./nav-link";
 
-/** The phone tab bar: Lineup, Club, the Buy button, Prizes, Director. Hidden while a full-screen flow (`data-fullscreen-flow`) is open. */
+/** The phone tab bar: Today, Season, the Buy button, Prizes, Director. Hidden while a full-screen flow (`data-fullscreen-flow`) is open. */
 export function TabBar() {
   const [lineup, club, prizes, director] = MAIN_NAV;
   return (

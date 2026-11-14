@@ -1,16 +1,24 @@
 import { units, NEAR_DECIMALS } from "@/shared/lib/amount";
 import type { Params, Pool, PricePoint, PriceRange, StorageBalance } from "../model/types";
 
+/** SPEC-v20 "Parameters", testnet daily. */
 export const SAMPLE_PARAMS: Params = {
   totalSupply: units(10_000_000),
   feeBps: 100,
+  potBps: 5_000,
   burnBps: 5_000,
-  saversBps: 9_500,
+  saversBps: 9_000,
+  agentsBps: 500,
   stageSize: 10,
-  firstCutAt: new Date("2026-11-13T18:00:00Z"),
+  minSeason: 3,
+  firstCutAt: new Date("2026-11-11T18:00:00Z"),
   cutIntervalMs: 86_400_000,
-  agentFunding: units(5, NEAR_DECIMALS) / 10n,
-  registerDeposit: units(5, NEAR_DECIMALS),
+  moveLeadMs: 3_600_000,
+  thinkFee: units(10),
+  minSeed: units(1_000),
+  agentFunding: units(3, NEAR_DECIMALS) / 10n,
+  registerDeposit: units(1, NEAR_DECIMALS),
+  modelId: "z-ai/glm-5.3-flash",
 };
 
 /** $CUT at $1.84 with 1 NEAR = $2.50: 0.736 NEAR per $CUT. */
@@ -23,8 +31,8 @@ export const SAMPLE_POOL: Pool = {
 /** The design's NEAR price: 1 NEAR = $2.50 (SPEC-v18 §5). */
 export const SAMPLE_USD_CENTS_PER_NEAR = 250n;
 
-/** No cut has run on the sample day: the whole supply is still there. */
-export const SAMPLE_TOTAL_SUPPLY = units(10_000_000);
+/** Minted 10,000,000 minus every sample burn so far (cut piles, boos, attacks, think fees, a heirless wallet). */
+export const SAMPLE_TOTAL_SUPPLY = units(9_967_354);
 
 export const SAMPLE_HOLDERS = 2_140;
 

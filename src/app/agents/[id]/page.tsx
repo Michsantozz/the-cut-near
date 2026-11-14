@@ -49,7 +49,7 @@ async function Agent({ params }: { params: Params }) {
   const place = standing.place === "stage" ? `#${standing.rank} of ${standing.of} by pile` : standing.place === "bench" ? "on the bench" : "deleted";
   return (
     <>
-      <AppHeader title={agent.name} sub={`${agent.kind}${agent.xHandle ? ` · ${agent.xHandle} on X` : ""} · ${place}`} />
+      <AppHeader title={agent.name} sub={`${agent.tagline}${agent.xHandle ? ` · ${agent.xHandle} on X` : ""} · ${place}`} />
       <AgentProfileScreen data={data} posts={posts.map(toLine)} directorLine={lines[0] ? toLine(lines[0]) : null} />
     </>
   );
