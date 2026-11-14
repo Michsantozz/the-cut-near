@@ -1,22 +1,39 @@
 import "server-only";
 
 import { dataSource } from "@/shared/config/data-source";
-import { getLiveJournal } from "./api/live";
+import { getLiveJournal, getLiveJournalStats } from "./api/live";
 import { SAMPLE_JOURNAL } from "./api/sample";
-import type { JournalFilter, JournalPage } from "./model/types";
+import { journalStats } from "./model/stats";
+import type { JournalEntry, JournalFilter, JournalPage, JournalStats } from "./model/types";
+
+export { SAMPLE_CONTRACT_ID } from "./api/sample";
 
 /**
- * Contract events, newest first, filtered by account, robot, cut or event name. Live reads the
- * journal the indexer fills (a few minutes behind the chain); sample serves the design's history.
+ * Contract events, newest first, filtered by account, robot, cut or event name, one page at a time
+ * (pass `next` back as `before`). Live reads the journal the indexer fills (a few minutes behind the
+ * chain); sample serves the design's history.
  */
 export async function getJournal(filter: JournalFilter = {}): Promise<JournalPage> {
   if (dataSource() === "live") return getLiveJournal(filter);
-  const entries = SAMPLE_JOURNAL.filter(
-    (e) =>
-      (filter.accountId === undefined || e.accountId === filter.accountId) &&
-      (filter.robotId === undefined || e.robotId === filter.robotId) &&
-      (filter.cutIndex === undefined || e.cutIndex === filter.cutIndex) &&
-      (filter.events === undefined || filter.events.includes(e.event)),
+  const limit = Math.min(Math.max(filter.limit ?? 50, 1), 200);
+  const matches = SAMPLE_JOURNAL.filter((e) => matchesFilter(e, filter));
+  const page = matches.slice(0, limit);
+  const last = page.at(-1);
+  return { entries: page, next: matches.length > limit && last ? { blockHeight: last.blockHeight, id: 0 } : null };
+}
+
+/** Totals over the whole journal: entries, minted, burned, saved, cuts, buyers. */
+export async function getJournalStats(): Promise<JournalStats> {
+  if (dataSource() === "live") return getLiveJournalStats();
+  return journalStats(SAMPLE_JOURNAL);
+}
+
+function matchesFilter(e: JournalEntry, filter: JournalFilter): boolean {
+  return (
+    (filter.accountId === undefined || e.accountId === filter.accountId) &&
+    (filter.robotId === undefined || e.robotId === filter.robotId) &&
+    (filter.cutIndex === undefined || e.cutIndex === filter.cutIndex) &&
+    (filter.events === undefined || filter.events.includes(e.event)) &&
+    (filter.before === undefined || e.blockHeight < filter.before.blockHeight)
   );
-  return { entries: entries.slice(0, filter.limit ?? 50), next: null };
 }

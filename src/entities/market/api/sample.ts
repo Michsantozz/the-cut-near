@@ -19,3 +19,9 @@ export const SAMPLE_POOL: Pool = {
   cutReserve: units(1_000_000),
   feeBps: 100,
 };
+
+/** 1 NEAR = $2.50 (SPEC-v18 §5). */
+export const SAMPLE_USD_CENTS_PER_NEAR = 250n;
+
+/** After cut #1 burned 11,800 (SPEC-v19 §2). */
+export const SAMPLE_TOTAL_SUPPLY = units(9_988_200);

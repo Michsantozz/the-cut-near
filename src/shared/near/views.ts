@@ -121,3 +121,7 @@ export const ftMetadataSchema = z
   })
   .transform((m) => ({ spec: m.spec, name: m.name, symbol: m.symbol, icon: m.icon ?? null, decimals: m.decimals }));
 export type FtMetadataView = z.output<typeof ftMetadataSchema>;
+
+/** NEP-145 `storage_balance_of`. */
+export const storageBalanceSchema = z.object({ total: u128, available: u128 });
+export type StorageBalanceView = z.output<typeof storageBalanceSchema>;
