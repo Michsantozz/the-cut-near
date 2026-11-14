@@ -67,3 +67,12 @@ export function saveProblem(amount: bigint | null, free: bigint, hasSave: boolea
 
 /** NEAR attached to a save when the account's storage balance runs thin (see `storageTopUp`). */
 export const SAVE_STORAGE = { enough: units(3, NEAR_DECIMALS) / 1000n, topUp: units(5, NEAR_DECIMALS) / 1000n };
+
+/**
+ * Adding to a save moves its lock to the next cut (the contract's `save` sets `locked_for` again), so on an unlocked
+ * save the new $CUT relocks all of it. The whole save after the add when that happens, else null.
+ */
+export function relockedTotal(held: { amount: bigint; unlocked: boolean } | null, amount: bigint | null): bigint | null {
+  if (!held?.unlocked || amount === null || amount <= 0n) return null;
+  return held.amount + amount;
+}

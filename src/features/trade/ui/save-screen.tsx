@@ -16,18 +16,21 @@ import { useWallet } from "@/shared/wallet";
 import { saveCalls, storageTopUp, unsaveCalls } from "../model/calls";
 import { classifyTxError, failedTxHash } from "../model/errors";
 import { cutToUsdCents, spotPrice } from "../model/money";
-import { defaultSave, ordinal, SAVE_STORAGE, saveProblem, shareIfCutNow, type SaveChoice } from "../model/save";
+import { defaultSave, ordinal, relockedTotal, SAVE_STORAGE, saveProblem, shareIfCutNow, type SaveChoice } from "../model/save";
 import { cutToInput } from "../model/sell";
 import type { SaveData } from "../server/load";
 import { agentFullBody as agentSticker, agentTile, wholeCutsToPass } from "@/entities/agent";
-import { cutText, cutWhole, dayWord, nearText } from "./copy";
+import { cutText, cutTyped, cutWhole, dayWord, nearText } from "./copy";
 import { TradeFrame } from "./frame";
 import { FailedStep, PendingStep, TxLink } from "./status";
 
 type Step =
   | { kind: "pick"; note?: string }
+  /** "Take it back" asks once before the wallet opens. */
+  | { kind: "confirm-unsave" }
   | { kind: "pending"; action: "save" | "unsave"; agent: SaveChoice; amount: bigint }
-  | { kind: "success"; action: "save" | "unsave"; agent: SaveChoice; amount: bigint; txHash: string }
+  /** `relocked` is the whole save, now locked again, when the $CUT was added to an unlocked save. */
+  | { kind: "success"; action: "save" | "unsave"; agent: SaveChoice; amount: bigint; relocked: bigint | null; txHash: string }
   | { kind: "failed"; action: "save" | "unsave"; txHash: string | null };
 
 // The design's color behind each agent (Lineup.dc.html).
@@ -70,17 +73,20 @@ export function SaveScreen({ data }: { data: SaveData }) {
   const above = choices.at(-2) ?? null;
   const share = picked && amount ? shareIfCutNow(picked, slice, amount) : null;
   const topUp = storageTopUp(account?.storageAvailable ?? null, SAVE_STORAGE);
+  const relock = relockedTotal(held, amount);
 
   async function send(action: "save" | "unsave") {
     if (status !== "signed-in") return openConnect();
     if (!picked) return;
     const value = action === "save" ? amount : (held?.amount ?? 0n);
     if (!value || (action === "save" && problem)) return;
+    // Counted before the wallet opens: the refresh after the save already shows the new amount in `held`.
+    const relocked = action === "save" ? relock : null;
     setStep({ kind: "pending", action, agent: picked, amount: value });
     try {
       const calls = action === "save" ? saveCalls({ agentId: picked.agent.id, amount: value, storageTopUp: topUp }) : unsaveCalls(picked.agent.id);
       const { txHash } = await callContract(calls);
-      setStep({ kind: "success", action, agent: picked, amount: value, txHash });
+      setStep({ kind: "success", action, agent: picked, amount: value, relocked, txHash });
       router.refresh();
     } catch (error) {
       setStep(classifyTxError(error) === "cancelled" ? { kind: "pick", note: "Cancelled in the wallet. Nothing moved." } : { kind: "failed", action, txHash: failedTxHash(error) });
@@ -90,10 +96,10 @@ export function SaveScreen({ data }: { data: SaveData }) {
   if (step.kind === "pending") {
     const name = step.agent.agent.name;
     return (
-      <TradeFrame title="Saving" nav={{ kind: "close" }} hideHeader>
+      <TradeFrame title={step.action === "save" ? "Saving" : "Taking back"} nav={{ kind: "close" }} hideHeader>
         <PendingStep
           title={step.action === "save" ? `Saving ${name}` : `Taking back your save on ${name}`}
-          from={step.action === "save" ? { label: "$CUT", sub: cutText(step.amount) } : { label: name.split(" ")[0], sub: cutText(step.amount) }}
+          from={step.action === "save" ? { label: "$CUT", sub: cutTyped(step.amount) } : { label: name.split(" ")[0], sub: cutText(step.amount) }}
           to={step.action === "save" ? { label: name.split(" ")[0], sub: "pile" } : { label: "$CUT", sub: "yours" }}
           caption={step.action === "save" ? `Locked till ${at}${when}` : "Back with the prize it earned"}
           note={step.action === "save" ? "Saves count by $CUT, not by people" : "Your save rode through the cut"}
@@ -105,7 +111,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
   if (step.kind === "success") {
     const { agent } = step.agent;
     return (
-      <TradeFrame title="Saved" nav={{ kind: "close" }} hideHeader>
+      <TradeFrame title={step.action === "save" ? "Saved" : "Taken back"} nav={{ kind: "close" }} hideHeader>
         <div role="status" className="flex grow flex-col pt-[72px] lg:pt-2">
           <span aria-hidden="true" className="flex size-[72px] items-center justify-center rounded-2xl border-2 border-ink bg-lime shadow-hard">
             <Check className="size-8" strokeWidth={3} />
@@ -113,7 +119,9 @@ export function SaveScreen({ data }: { data: SaveData }) {
           <p className="mt-6 font-heading text-[44px] leading-[48px] font-extrabold tracking-[-1.5px]">{step.action === "save" ? "Saved." : "Taken back."}</p>
           <p className="mt-2 text-[17px] leading-6">
             {step.action === "save"
-              ? `${cutText(step.amount)} $CUT is in ${agent.name}’s pile, locked till ${at}${when}.`
+              ? step.relocked !== null
+                ? `${cutTyped(step.amount)} $CUT went into ${agent.name}’s pile. Your whole save there, ${cutTyped(step.relocked)} $CUT, is locked again till ${at}${when}.`
+                : `${cutTyped(step.amount)} $CUT is in ${agent.name}’s pile, locked till ${at}${when}.`
               : `Your ${cutText(step.amount)} $CUT and the prize it earned are back in your wallet.`}
           </p>
           <p className="mt-3 text-[13px] font-semibold">
@@ -160,7 +168,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
   }
 
   const name = picked?.agent.name ?? "an agent";
-  const cta = amount && amount > 0n ? `Save ${cutText(amount)} on ${name}` : `Save ${name}`;
+  const cta = amount && amount > 0n ? `${held ? "Add" : "Save"} ${cutTyped(amount)} ${held ? "to your save on" : "on"} ${name}` : `Save ${name}`;
   const survivors = Math.max(stageSize - 1, 0);
 
   return (
@@ -170,7 +178,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
           <p className="hidden text-xs font-extrabold tracking-[0.05em] text-ink-3 uppercase lg:block">Save an agent</p>
           <p className="hidden font-heading text-[30px] leading-[34px] font-extrabold tracking-[-0.8px] lg:mt-0.5 lg:block">Who do you keep alive?</p>
           <p className="mt-3 px-1 text-[13.5px] leading-[19px] text-ink-2 lg:mt-1 lg:px-0 lg:text-sm lg:leading-5">
-            Your $CUT goes into the agent’s pile, locked until {when.trim() === "today" ? "today’s cut" : "the next cut"} at {at}. The lowest pile is cut; saves count by $CUT, not by people.
+            Your $CUT goes into the agent’s pile, locked until {when.trim() === "today" ? "today’s cut" : "the next cut"} at {at}. The lowest score (pile − boos − damage) is cut; saves count by $CUT, not by people.
           </p>
 
           {/* Phone: a grid of tiles. Laptop: the ranked list with the cut line. */}
@@ -228,7 +236,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
                 <div key={choice.agent.id}>
                   {choice.isLowest && (
                     <div aria-hidden="true" className="mt-0 mb-[3px] flex items-center gap-2 px-3 text-[11px] font-extrabold tracking-[0.05em] whitespace-nowrap text-burn">
-                      CUT LINE · lowest pile at {at}
+                      CUT LINE · lowest score at {at}
                       {when}
                       <span className="grow border-t-2 border-dashed border-danger" />
                     </div>
@@ -319,20 +327,28 @@ export function SaveScreen({ data }: { data: SaveData }) {
                 <span className="text-sm font-extrabold">$CUT</span>
                 {amount && rate !== null && <span className="ml-auto text-[13px] font-semibold text-ink-3">≈ {formatUsd(cutToUsdCents(amount, spot, rate))}</span>}
               </div>
-              <p className="mt-2 flex items-center gap-1.5 text-[12.5px] font-bold whitespace-nowrap">
+              <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12.5px] font-bold">
                 <Lock aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2.6} />
-                Locked until {at}
-                {when}
-                {account && amount !== null && amount <= free && <span className="ml-auto font-semibold text-ink-3">{cutText(free - amount)} stays free</span>}
+                <span className="whitespace-nowrap">
+                  Locked until {at}
+                  {when}
+                </span>
+                {account && amount !== null && amount <= free && <span className="ml-auto font-semibold whitespace-nowrap text-ink-3">{cutTyped(free - amount)} stays free</span>}
               </p>
               {problem === "too-much" && (
                 <p role="alert" className="mt-1.5 text-[13px] font-semibold text-burn">
                   You have {cutText(free)} free $CUT. <Link href="/buy" className="underline underline-offset-2">Buy more</Link>
                 </p>
               )}
-              {problem === "too-small" && (
+              {(problem === "too-small" || (account && amount === 0n)) && (
                 <p role="alert" className="mt-1.5 text-[13px] font-semibold text-burn">
-                  A new save is at least 0.1 $CUT.
+                  {held ? "Type how much $CUT to add." : "A new save is at least 0.1 $CUT."}
+                </p>
+              )}
+              {relock !== null && held && (
+                <p role="status" className="mt-2 rounded-xl border-2 border-ink bg-danger-soft px-3 py-2 text-[12.5px] leading-[17px] font-semibold">
+                  Your {cutText(held.amount)} $CUT save on {name} is unlocked. Adding {cutTyped(amount ?? 0n)} locks all {cutTyped(relock)} $CUT again until {at}
+                  {when}. To keep it free, take it back first.
                 </p>
               )}
               {held && (
@@ -341,11 +357,27 @@ export function SaveScreen({ data }: { data: SaveData }) {
                     Your save: <b className="font-extrabold">{cutText(held.amount)} $CUT</b>
                     {held.unlocked ? " · unlocked" : ` · locked till ${at}`}
                   </span>
-                  {held.unlocked && (
-                    <Button size="sm" variant="outline" onClick={() => void send("unsave")}>
+                  {held.unlocked && step.kind !== "confirm-unsave" && (
+                    <Button size="sm" variant="outline" onClick={() => setStep({ kind: "confirm-unsave" })}>
                       Take it back
                     </Button>
                   )}
+                </div>
+              )}
+              {held?.unlocked && step.kind === "confirm-unsave" && (
+                <div role="group" aria-label="Take your save back" className="mt-2 rounded-xl border-2 border-ink bg-paper px-3 py-2.5 text-[13px] leading-[18px] font-semibold">
+                  <p>
+                    Take back {cutText(held.amount)} $CUT and the prize it earned from {name}? It leaves {name.split(" ")[0]}’s pile now, so its score drops by{" "}
+                    {cutText(held.amount)}.
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setStep({ kind: "pick" })}>
+                      Keep it saved
+                    </Button>
+                    <Button size="sm" variant="primary" onClick={() => void send("unsave")}>
+                      Take it back
+                    </Button>
+                  </div>
                 </div>
               )}
             </section>
@@ -361,7 +393,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
                         ? `Lift ${picked.agent.name.split(" ")[0]} past ${above.agent.name} (${cutWhole(wholeCutsToPass(data.gapToNext))} $CUT) and it survives with the smallest pile: it pays the most per $CUT.`
                         : "Its savers share its slice of the prize."
                       : share !== null && amount
-                        ? `Its savers share its slice: about ${formatAmount(share, { maxFractionDigits: 2, minFractionDigits: 2 })} for your ${cutText(amount)}, if the cut ran now.`
+                        ? `Its savers share its slice: about ${formatAmount(share, { maxFractionDigits: 2, minFractionDigits: 2 })} for your ${cutTyped(amount)}, if the cut ran now.`
                         : "Its savers share its slice of the prize."
                   }
                 />
