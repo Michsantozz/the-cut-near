@@ -3,26 +3,33 @@ import { Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { WalletGatedLink } from "@/shared/wallet";
 
-import { MAIN_NAV, type NavItem } from "./nav";
+import { NavGroups } from "./nav-groups";
+import { PhoneMenu } from "./phone-menu";
+import { TAB_NAV, type NavItem } from "./nav";
 import { NavLink } from "./nav-link";
 
-/** The phone tab bar: Today, Season, the Buy button, Prizes, Director. Hidden while a full-screen flow (`data-fullscreen-flow`) is open. */
+/**
+ * The phone tab bar: Today, Season, the Buy button, Proof (the judge desk) and the menu with every place grouped by intent.
+ * Hidden while a full-screen flow (`data-fullscreen-flow`) is open.
+ */
 export function TabBar() {
-  const [lineup, club, prizes, director] = MAIN_NAV;
+  const [today, season, proof] = TAB_NAV;
   return (
     <nav
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-40 flex h-[82px] items-center justify-around border-t-2 border-ink bg-paper px-2 pb-2 lg:hidden [body:has([data-fullscreen-flow])_&]:hidden"
     >
-      <Tab item={lineup} />
-      <Tab item={club} />
+      <Tab item={today} />
+      <Tab item={season} />
       <Button asChild variant="primary" elevated className="-mt-[30px] size-14 rounded-full p-0">
         <WalletGatedLink href="/buy" aria-label="Buy $CUT">
           <Plus aria-hidden="true" className="size-[26px]" strokeWidth={3} />
         </WalletGatedLink>
       </Button>
-      <Tab item={prizes} />
-      <Tab item={director} />
+      <Tab item={proof} />
+      <PhoneMenu>
+        <NavGroups />
+      </PhoneMenu>
     </nav>
   );
 }
