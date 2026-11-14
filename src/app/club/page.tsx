@@ -28,7 +28,7 @@ export default function ClubPage() {
 
 async function ClubContent() {
   const club = await loadClub(await getViewerAccountId());
-  const sub = [`Day ${club.day}`, club.members !== null ? `${formatCount(club.members)} members` : null].filter(Boolean).join(" · ");
+  const sub = [club.day !== null ? `Day ${club.day}` : null, club.members !== null ? `${formatCount(club.members)} members` : null].filter(Boolean).join(" · ");
   return (
     <>
       <AppHeader title="Club" sub={sub} />

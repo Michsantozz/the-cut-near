@@ -23,8 +23,8 @@ const tick = (at: Date, range: PriceRange) => (range === "day" ? formatUtcTime(a
 
 /** The laptop header's line: "Day 2 · trading since Thu, Nov 12, 15:01 UTC". */
 export function valueSubtitle(data: ValueData): string {
-  const day = `Day ${data.cutIndex + 1}`;
-  return data.launchAt ? `${day} · trading since ${formatUtcDate(data.launchAt)}, ${formatUtcTime(data.launchAt)} UTC` : day;
+  const since = data.launchAt ? `trading since ${formatUtcDate(data.launchAt)}, ${formatUtcTime(data.launchAt)} UTC` : null;
+  return [data.seasonDay !== null ? `Day ${data.seasonDay}` : null, since].filter(Boolean).join(" · ");
 }
 
 /** "$CUT price" (Value.dc.html / DeskValue.dc.html): the price since launch and where all the $CUT are. No gains, no returns. */

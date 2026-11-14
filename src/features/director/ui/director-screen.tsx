@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { Check, ChevronRight, Clock, Flame, Gift, Lightbulb, Receipt, Share2, Shield, Target, Trash2, X } from "lucide-react";
+import { Check, ChevronRight, Clock, Flame, Gift, Lightbulb, Receipt, Share2, Shield, Trash2, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -100,7 +100,6 @@ function ScheduledView({ screen }: { screen: Screen }) {
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-6">
         <div className="flex flex-col gap-3 lg:gap-[18px]">
           {lowest && <OnTheBlock screen={screen} lowest={lowest} next={next} />}
-          <GuessCard closesAt={formatUtcTime(new Date(screen.cutAt.getTime() - 3_600_000))} />
         </div>
         <aside aria-label="How the cut works" className="flex flex-col gap-3 lg:gap-3.5">
           <HowTheCutWorks />
@@ -191,27 +190,6 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
         </>
       )}
     </section>
-  );
-}
-
-function GuessCard({ closesAt }: { closesAt: string }) {
-  return (
-    <Link
-      href="/club"
-      className="flex h-[58px] items-center gap-3 rounded-[20px] border-2 border-ink bg-pink pr-2.5 pl-3 shadow-hard outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:h-[72px] lg:gap-3.5 lg:pr-3 lg:pl-3.5"
-    >
-      <span className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] border-2 border-ink bg-paper lg:size-11 lg:rounded-[13px]">
-        <Target aria-hidden="true" className="size-[18px] lg:size-[22px]" strokeWidth={2.6} />
-      </span>
-      <span className="min-w-0 grow">
-        <span className="block font-heading text-[17px] leading-5 font-extrabold lg:text-xl lg:leading-6">Guess who gets cut</span>
-        <span className="block text-xs font-semibold lg:text-[13.5px]">
-          +2<span className="hidden lg:inline"> club points</span> if right · <span className="hidden lg:inline">guesses close at</span>
-          <span className="lg:hidden">closes</span> {closesAt} UTC
-        </span>
-      </span>
-      <span className="flex h-9 shrink-0 items-center rounded-[11px] bg-ink px-4 text-sm font-extrabold text-paper lg:h-11 lg:rounded-[13px] lg:px-6 lg:text-[15px]">Guess</span>
-    </Link>
   );
 }
 
