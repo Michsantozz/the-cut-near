@@ -28,5 +28,8 @@ export function cutEvery(intervalMs: number): string {
   return minutes === 1 ? "every minute" : `every ${minutes} minutes`;
 }
 
-/** The striped band on every screen on testnet. */
-export const TESTNET_BAND = "Testnet · nothing here is real money · a cut runs every 2 minutes here";
+/** The striped band on every screen on testnet, with the contract's cut interval once it is known. */
+export function testnetBand(intervalMs?: number): string {
+  const base = "Testnet · nothing here is real money";
+  return intervalMs ? `${base} · a cut runs ${cutEvery(intervalMs)} here` : base;
+}

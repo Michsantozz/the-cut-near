@@ -77,6 +77,8 @@ export type BuyData = Market & {
 };
 
 export async function loadBuy(accountId: string | null): Promise<BuyData> {
+  // Live robots and prices read the clock: reach request time before any of them.
+  await connection();
   const [market, storageMin, stage, account] = await Promise.all([
     loadMarket(),
     getStorageMin(),
@@ -108,6 +110,8 @@ export type SellData = Market & {
 };
 
 export async function loadSell(accountId: string | null): Promise<SellData> {
+  // Live robots and prices read the clock: reach request time before any of them.
+  await connection();
   const market = await loadMarket();
   if (!accountId) return { ...market, initial: null, account: null };
   const [free, saves, stage, bench] = await Promise.all([getBalance(accountId), getSaves(accountId), getStage(), getBench()]);
@@ -127,6 +131,8 @@ export type ValueData = Market & {
 };
 
 export async function loadValue(accountId: string | null, range: PriceRange): Promise<ValueData> {
+  // Live robots and prices read the clock: reach request time before any of them.
+  await connection();
   const market = await loadMarket();
   const [prices, all, params, current, stage, holders, account] = await Promise.all([
     getPriceHistory(range),
@@ -159,6 +165,8 @@ export type SaveData = Market & {
 };
 
 export async function loadSave(accountId: string | null, robotId: string): Promise<SaveData> {
+  // Live robots and prices read the clock: reach request time before any of them.
+  await connection();
   const market = await loadMarket();
   const [stage, bench, params, account] = await Promise.all([
     getStage(),

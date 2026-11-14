@@ -44,12 +44,19 @@ export function CutBoard({ lineup }: { lineup: Lineup }) {
       paysLabel="Pays per 100 saved"
       paysNote="if the cut ran now"
       note={
+        board.entries.length === 0 ? (
+          <p className="rounded-[13px] bg-lime-soft px-3 py-2.5 text-[12px] leading-[17px] lg:mt-2.5 lg:rounded-lg lg:px-3.5 lg:py-3 lg:text-[13.5px] lg:leading-[19px]">
+            <b className="font-extrabold">The stage is empty until the first cut, at {formatUtcTime(cutAt)} UTC.</b> Then the biggest bench queues
+            take the seats, and their queues become their piles. Save on a bench robot to give it one.
+          </p>
+        ) : (
         <p className="flex items-start gap-[7px] rounded-[13px] bg-lime-soft px-[9px] pt-1.5 pb-[7px] text-[11px] leading-[14.5px] lg:mt-2.5 lg:items-center lg:gap-2.5 lg:rounded-lg lg:px-3.5 lg:py-2 lg:text-[13.5px] lg:leading-[19px]">
           <ChartPie aria-hidden="true" className="mt-px size-3.5 shrink-0 lg:mt-0 lg:size-[17px]" strokeWidth={2.6} />
           <span>
             <b className="font-extrabold">{SLICE_RULE.bold}</b> {SLICE_RULE.rest}
           </span>
         </p>
+        )
       }
     />
   );

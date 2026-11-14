@@ -13,7 +13,9 @@ import { CountdownPill } from "./countdown";
 
 /** First open: the whole idea in one card, the robots standing on top of it, and a way in. */
 export function VisitorHero({ lineup }: { lineup: Lineup }) {
-  const robots = lineup.board.entries.map((entry) => entry.robot);
+  // Before the first cut seats anyone, the bench robots waiting for a seat stand on the card.
+  const stage = lineup.board.entries.map((entry) => entry.robot);
+  const robots = stage.length > 0 ? stage : lineup.bench.slice(0, 10);
   const time = formatUtcTime(lineup.cutAt);
 
   return (

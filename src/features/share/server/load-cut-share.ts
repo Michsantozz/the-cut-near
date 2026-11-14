@@ -1,5 +1,7 @@
 import "server-only";
 
+import { connection } from "next/server";
+
 import { isDeletingCut } from "@/entities/cut";
 import { getCut } from "@/entities/cut/server";
 import { getRobot } from "@/entities/robot/server";
@@ -16,6 +18,8 @@ export type CutShare = {
 /** The facts a cut's share card shows, or null when that cut has not run. */
 export async function loadCutShare(index: number): Promise<CutShare | null> {
   if (!Number.isSafeInteger(index) || index < 1) return null;
+  // Live robots read the clock: reach request time first.
+  await connection();
   const cut = await getCut(index);
   // A cut that only seated bench robots has nothing to share.
   if (!cut || !isDeletingCut(cut)) return null;

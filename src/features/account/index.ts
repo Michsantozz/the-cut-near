@@ -1,4 +1,4 @@
-export { cutEvery, risks, TESTNET_BAND, TOUR, type TourStep } from "./model/copy";
+export { cutEvery, risks, testnetBand, TOUR, type TourStep } from "./model/copy";
 export { RisksDialog } from "./ui/risks-dialog";
 export { SettingsScreen } from "./ui/settings-screen";
 export { TestModeScreen } from "./ui/test-mode-screen";
