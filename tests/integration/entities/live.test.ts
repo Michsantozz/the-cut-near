@@ -9,6 +9,7 @@ import type { NewJournalRow } from "@/shared/near/db/schema";
 import { createTestDb, DB_SETUP_TIMEOUT_MS, type TestDb } from "../helpers/db";
 import { FakeChain } from "../../msw/near-rpc";
 import { server } from "../../msw/server";
+import { CUT, agentView, nextCutView, ns, paramsView } from "../../fixtures/v2-views";
 
 const db = vi.hoisted(() => ({ current: null as TestDb | null, broken: false }));
 vi.mock("@/shared/db/client", () => ({
@@ -19,20 +20,7 @@ vi.mock("@/shared/db/client", () => ({
 }));
 
 const RPC = "https://rpc.entities.test";
-const CUT = 10n ** 18n;
-const ns = (iso: string) => (BigInt(Date.parse(iso)) * 1_000_000n).toString();
-const agent = (id: string, pile: bigint, status = "stage") => ({
-  id,
-  account_id: `${id}.thecut.testnet`,
-  name: id,
-  kind: "AI agent",
-  x_handle: `@${id}`,
-  creator: `${id}-studio.testnet`,
-  status,
-  pile: pile.toString(),
-  savers: 2,
-  joined_at: ns("2026-11-12T15:01:00Z"),
-});
+const agent = (id: string, pile: bigint, status = "stage") => agentView(id, pile, status);
 
 const save = (n: number, agentId: string, amount: bigint, at: Date): NewJournalRow => ({
   receiptId: `R${n}`,
@@ -69,10 +57,10 @@ beforeEach(async () => {
     .view("get_bench", { value: [agent("chartwise", 88_400n * CUT, "bench")] })
     .view("get_agent", (args) => ({ value: args.id === "kiko" ? agent("kiko", 23_600n * CUT) : null }))
     .view("get_saves", { value: [{ agent_id: "melody", amount: (400n * CUT).toString(), since_cut: 1 }] })
-    .view("get_next_cut", { value: { index: 1, at: ns("2026-11-13T18:00:00Z"), lowest_id: "kiko", gap_to_next: "1", prize_so_far: "2" } })
+    .view("get_next_cut", { value: nextCutView({ index: 1, at: ns("2026-11-13T18:00:00Z"), lowest_id: "kiko", gap_to_next: "1", prize_so_far: "2" }) })
     .view("get_cut", { value: null })
     .view("get_pool", { value: { near_reserve: "1", cut_reserve: "2", fee_bps: 100 } })
-    .view("get_params", { value: { total_supply: "10", fee_bps: 100, burn_bps: 5000, savers_bps: 9500, stage_size: 10, first_cut_at: ns("2026-11-13T18:00:00Z"), cut_interval: "120000000000", agent_funding: "5", register_deposit: "50", pool_cut_reserve: "1", pool_near_reserve: "1" } });
+    .view("get_params", { value: paramsView({ total_supply: "10", cut_interval: "120000000000", agent_funding: "5", register_deposit: "50", pool_cut_reserve: "1", pool_near_reserve: "1" }) });
   server.use(chain.handler(RPC));
 });
 afterEach(() => {
@@ -106,7 +94,16 @@ describe("entity getters with DATA_SOURCE=live", () => {
   });
 
   it("read cuts, saves, params and pool from the contract", async () => {
-    expect(await getNextCut()).toEqual({ index: 1, at: new Date("2026-11-13T18:00:00Z"), lowestId: "kiko", gapToNext: 1n, prizeSoFar: 2n });
+    expect(await getNextCut()).toEqual({
+      index: 1,
+      at: new Date("2026-11-13T18:00:00Z"),
+      movesCloseAt: new Date("2026-11-13T17:00:00Z"),
+      lowestId: "kiko",
+      gapToNext: 1n,
+      prizeSoFar: 2n,
+      agentSliceSoFar: null,
+      due: null,
+    });
     expect(await getCut(1)).toBeNull();
     expect(await getSaves("mika.testnet")).toEqual([{ accountId: "mika.testnet", agentId: "melody", amount: 400n * CUT, lockedForCut: 1 }]);
     const params = await getParams();

@@ -152,9 +152,9 @@ describe("runDirectorMoment", () => {
     expect(report.lines.map((l) => `${l.kind}:${l.subjectId}`)).toEqual(["scheduled:yuna", "scheduled:gremlin", ...posters.map((id) => `agent-post:${id}`)]);
     expect(report.lines.every((l) => l.proofStatus === "verified")).toBe(true);
     expect(cloud.calls.attestation).toBe(1);
-    // mika.near saved 400 on Melody-9 that morning: Melody's post is asked to thank that account.
+    // The sample journal's newest save on Melody-9 is melody-fans.sample's 3,400: her post is asked to thank that account.
     const melody = cloud.requests.find((r) => r.body?.includes("You are Melody-9"));
-    expect(melody?.body).toContain("Your newest saver: mika.near saved 400 $CUT on you.");
+    expect(melody?.body).toContain("Your newest saver: melody-fans.sample saved 3,400 $CUT on you.");
   });
 
   it("skips lines the moment already has for the same cut, so a repeated cron costs nothing", async () => {
