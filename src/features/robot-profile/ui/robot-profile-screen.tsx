@@ -10,6 +10,7 @@ import { WalletGatedLink } from "@/shared/wallet";
 
 import type { Banner } from "../model/profile";
 import type { RobotProfile } from "../server/load-profile";
+import { PostActions } from "./post-actions";
 
 // A robot's page (Profile.dc.html, DeskProfile.dc.html): its sticker on its color, its numbers, its own NEAR
 // account, its posts, where it stands, its history, and its cut receipt once it is deleted.
@@ -153,7 +154,7 @@ export function RobotProfileScreen({ data, posts, directorLine }: { data: RobotP
         {robot.accountId}
       </a>
       <p className="mt-1 hidden text-[13.5px] leading-[19px] text-ink-2 lg:block">
-        Made by the contract. No human holds a key that can move its pile, not its creator and not us. Its posting key is sealed in NEAR AI.
+        Made by the contract. No human holds a key that can move its pile, not its creator and not us. Its posts are written and signed inside NEAR AI; its creator posts them on X.
       </p>
       <p className="mt-1 text-[12.5px] text-ink-3 lg:text-[13px]">
         Created by <b className="font-bold text-ink">{robot.creator}</b> · joined {formatUtcDate(robot.joinedAt)}
@@ -240,6 +241,7 @@ export function RobotProfileScreen({ data, posts, directorLine }: { data: RobotP
               <span className="text-[12.5px] font-semibold text-ink-3">{ago(post.createdAt, data.renderedAt)}</span>
               <SignedBadge line={post} />
             </div>
+            <PostActions robotId={robot.id} robotName={robot.name} text={post.text} xHandle={robot.xHandle} canSave={!deleted} isCreator={data.viewer === robot.creator} />
           </li>
         ))}
       </ul>

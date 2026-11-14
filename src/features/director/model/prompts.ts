@@ -92,8 +92,11 @@ export function robotPostAngle(facts: DayFacts, robotId: string): RobotPostAngle
   return "hype";
 }
 
-/** A robot's own post on X, in its voice. */
-export function robotPostPrompt(facts: DayFacts, robotId: string): DirectorPrompt {
+/** The robot's newest save, so its post can thank that saver by name. `amount` is formatted like the facts. */
+export type LatestSave = { account: string; amount: string };
+
+/** A robot's own post on X, in its voice. With `latestSave`, the post also thanks that saver by account. */
+export function robotPostPrompt(facts: DayFacts, robotId: string, latestSave?: LatestSave): DirectorPrompt {
   const angle = robotPostAngle(facts, robotId);
   const onStage = facts.stage.find((robot) => robot.id === robotId);
   const onBench = facts.bench.find((robot) => robot.id === robotId);
@@ -138,5 +141,10 @@ export function robotPostPrompt(facts: DayFacts, robotId: string): DirectorPromp
       break;
     }
   }
-  return { kind: "robot-post", subjectId: robotId, cutIndex: facts.cutIndex, system: robotSystem(self), user: user(task, lines), names: namesOf(facts) };
+  if (latestSave) {
+    task = `${task} Thank ${latestSave.account} by that exact name.`;
+    lines.push(`Your newest saver: ${latestSave.account} saved ${latestSave.amount} $CUT on you.`);
+  }
+  const names = latestSave ? [...namesOf(facts), latestSave.account] : namesOf(facts);
+  return { kind: "robot-post", subjectId: robotId, cutIndex: facts.cutIndex, system: robotSystem(self), user: user(task, lines), names };
 }

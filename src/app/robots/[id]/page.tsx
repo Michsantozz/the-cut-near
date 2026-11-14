@@ -42,7 +42,7 @@ async function Robot({ params }: { params: Params }) {
   const data = await loadRobotProfile(decodeURIComponent(id), await getViewerAccountId());
   if (!data) notFound();
   const [posts, lines] = await Promise.all([
-    getDirectorLines({ kinds: ["robot-post"], subjectId: data.robot.id, limit: 2 }),
+    getDirectorLines({ kinds: ["robot-post"], subjectId: data.robot.id, limit: 3 }),
     getDirectorLines({ kinds: ["scheduled", "final-hour", "after-cut-roast"], subjectId: data.robot.id, limit: 1 }),
   ]);
   const { robot, standing } = data;

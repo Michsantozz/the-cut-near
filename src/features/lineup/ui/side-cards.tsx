@@ -13,9 +13,13 @@ import { DIRECTOR_ART, RobotPoses, RobotTile, type Robot } from "@/entities/robo
 import { cut, rescueLine, shortName } from "./copy";
 import { TimeLeft } from "./countdown";
 
-/** Who the cut takes if nothing moves, how far it is from safety, and why rescuing it pays. */
-export function OnTheBlockCard({ lineup, className }: { lineup: Lineup; className?: string }) {
+/** The newest post of the robot on the block, with its proof badge. The app adds it to the lineup. */
+export type BlockPost = { text: string; badge: string };
+
+/** Who the cut takes if nothing moves, its own plea, how far it is from safety, and why rescuing it pays. */
+export function OnTheBlockCard({ lineup, className }: { lineup: Lineup & { blockPost?: BlockPost | null }; className?: string }) {
   const { lowest, next, gap } = lineup.board;
+  const post = lineup.blockPost;
   if (!lowest) return null;
   const when = relativeUtcDay(new Date(lineup.renderedAt), lineup.cutAt);
   const by = `${formatUtcTime(lineup.cutAt)} UTC${when ? ` ${when}` : ""}`;
@@ -39,6 +43,14 @@ export function OnTheBlockCard({ lineup, className }: { lineup: Lineup; classNam
         <h2 id="block-title" className="mt-0.5 font-heading text-[22px] leading-[26px] font-extrabold">
           {lowest.name} · {cut(lowest.pile)} $CUT
         </h2>
+        {post && (
+          <figure className="mt-2 rounded-lg bg-violet-deep px-[11px] py-2">
+            <blockquote className="text-[13.5px] leading-[19px] font-semibold text-pretty">“{post.text}”</blockquote>
+            <figcaption className="mt-1 text-[10.5px] font-extrabold tracking-[0.05em] text-violet-soft uppercase">
+              {lowest.name} · {post.badge}
+            </figcaption>
+          </figure>
+        )}
         {next && gap !== null && (
           <>
             <p className="mt-1 text-[13px] leading-[18px] font-semibold text-pretty text-violet-soft">

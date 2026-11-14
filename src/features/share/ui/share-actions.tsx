@@ -1,29 +1,19 @@
 "use client";
 
 import { Pencil, Send, X } from "lucide-react";
-import { useId, useState, useSyncExternalStore } from "react";
+import { useId, useState } from "react";
 
 import { Button } from "@/shared/ui/button";
 import { CopyButton } from "@/shared/ui/copy-button";
 import { Textarea } from "@/shared/ui/textarea";
+import { useAbsoluteUrl } from "@/shared/ui/use-absolute-url";
 
 import { POST_LIMIT, postLength, telegramShareUrl, xIntentUrl } from "../model/post";
-
-const noop = () => () => {};
-
-/** The page's own URL in the browser; the server renders the path until it hydrates. */
-function useShareUrl(path: string): string {
-  return useSyncExternalStore(
-    noop,
-    () => new URL(path, window.location.origin).toString(),
-    () => path,
-  );
-}
 
 /** "Your post": an editable post with X's count, then Post on X, Telegram and Copy link. Nothing is posted for you. */
 export function ShareActions({ path, defaultPost }: { path: string; defaultPost: string }) {
   const [post, setPost] = useState(defaultPost);
-  const url = useShareUrl(path);
+  const url = useAbsoluteUrl(path);
   const id = useId();
   const length = postLength(post, true);
   const tooLong = length > POST_LIMIT;

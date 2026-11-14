@@ -3,17 +3,20 @@ import { getCut, getNextCut } from "@/entities/cut/server";
 import { getParams } from "@/entities/market/server";
 import { getBench, getStage } from "@/entities/robot/server";
 import { isDeletingCut, type DeletingCut } from "@/entities/cut";
+import { getJournal } from "@/entities/journal/server";
 import { nearAiClientFromEnv, readAiEnv } from "@/shared/ai";
 import { createHardwareVerifier } from "@/shared/ai/verify/server";
 import { buildCutFacts, buildDayFacts } from "../model/facts";
-import { afterCutReceiptPrompt, afterCutRoastPrompt, finalHourPrompt, robotPostPrompt, scheduledPrompt, type DirectorPrompt } from "../model/prompts";
+import { formatCut } from "../model/format";
+import { afterCutReceiptPrompt, afterCutRoastPrompt, finalHourPrompt, robotPostPrompt, scheduledPrompt, type DirectorPrompt, type LatestSave } from "../model/prompts";
 import { DirectorSession, type DirectorDeps } from "./generate";
 import { defaultDirectorStore } from "./runtime";
 
 /**
  * When the Director speaks:
- * - `scheduled`: before the cut: the board lines for the two lowest piles, plus robot posts on X
- *   (the lowest begs, the next up pitches its slice, the top pile thanks, the bench leader waits).
+ * - `scheduled`: before the cut: the board lines for the two lowest piles, plus a post on X from every
+ *   robot on the stage and the bench leader (the lowest begs, the next up pitches its slice, the top
+ *   pile thanks, the bench leader waits, the rest hype), each thanking its newest saver of the day.
  * - `final-hour`: at 17:00 UTC.
  * - `after-cut`: right after the cut: the roast and the receipt post.
  */
@@ -62,8 +65,20 @@ export async function momentPrompts(moment: DirectorMoment, options: { now?: Dat
   }
   const facts = buildDayFacts({ stage, bench, nextCut, params, now: options.now ?? new Date() });
   if (moment === "final-hour") return [finalHourPrompt(facts)];
-  const posters = [facts.lowest.id, facts.nextUp.id, facts.top.id, ...(facts.bench[0] ? [facts.bench[0].id] : [])];
-  return [scheduledPrompt(facts, "lowest"), scheduledPrompt(facts, "next-up"), ...posters.map((id) => robotPostPrompt(facts, id))];
+  const posters = [...facts.stage.map((robot) => robot.id), ...(facts.bench[0] ? [facts.bench[0].id] : [])];
+  const now = options.now ?? new Date();
+  const saves = await Promise.all(posters.map((id) => latestSave(id, now)));
+  return [scheduledPrompt(facts, "lowest"), scheduledPrompt(facts, "next-up"), ...posters.map((id, i) => robotPostPrompt(facts, id, saves[i]))];
+}
+
+const SAVE_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/** The robot's newest save of the last 24 hours, for its post to thank. */
+async function latestSave(robotId: string, now: Date): Promise<LatestSave | undefined> {
+  const { entries } = await getJournal({ robotId, events: ["save"], limit: 1 });
+  const save = entries[0];
+  if (!save?.accountId || !save.amount || now.getTime() - save.at.getTime() > SAVE_WINDOW_MS) return undefined;
+  return { account: save.accountId, amount: formatCut(save.amount) };
 }
 
 const promptKey = (line: { kind: string; subjectId: string | null; cutIndex: number | null }) => `${line.kind}|${line.subjectId ?? ""}|${line.cutIndex ?? ""}`;

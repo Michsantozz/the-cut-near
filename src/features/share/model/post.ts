@@ -29,10 +29,7 @@ export function postLength(text: string, withLink: boolean): number {
   return [...text].length + (withLink ? LINK_WEIGHT + 1 : 0);
 }
 
-/** The X "post" intent with the text and the link. */
-export function xIntentUrl(text: string, url: string): string {
-  return `https://x.com/intent/post?${new URLSearchParams({ text, url })}`;
-}
+export { xIntentUrl } from "@/shared/lib/x-intent";
 
 /** Telegram's share link with the link and the text. */
 export function telegramShareUrl(text: string, url: string): string {

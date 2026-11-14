@@ -26,14 +26,24 @@ export default function LineupPage() {
 
 async function Lineup() {
   const lineup = await loadLineup(await getViewerAccountId());
-  // The Director card reads `directorLine`: the Director is its own feature, so the route composes them.
-  const withDirector = { ...lineup, directorLine: await latestBlockLine(lineup.board.lowest?.id) };
+  // The Director card reads `directorLine` and the on-the-block card `blockPost`: the Director is its own
+  // feature, so the route composes them.
+  const lowestId = lineup.board.lowest?.id;
+  const [directorLine, blockPost] = await Promise.all([latestBlockLine(lowestId), latestBlockPost(lowestId)]);
+  const withDirector = { ...lineup, directorLine, blockPost };
   return (
     <>
       <AppHeader title="The lineup" sub={lineupSubtitle(lineup)} />
       <LineupScreen lineup={withDirector} />
     </>
   );
+}
+
+/** The newest post of the robot on the block, in its own voice. */
+async function latestBlockPost(lowestId: string | undefined) {
+  if (!lowestId) return null;
+  const [post] = await getDirectorLines({ kinds: ["robot-post"], subjectId: lowestId, limit: 1 });
+  return post ? { text: post.text, badge: proofBadge(post.proof.status).label } : null;
 }
 
 /** The Director's newest line about the robot on the block (the Final hour line, else the day's line), with its proof. */
