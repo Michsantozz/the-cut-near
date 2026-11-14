@@ -13,3 +13,8 @@ export async function getParams(): Promise<Params> {
 export async function getPool(): Promise<Pool> {
   return dataSource() === "live" ? cutContract().getPool() : SAMPLE_POOL;
 }
+
+/** $CUT in existence now: minted once at launch, minus every burn. */
+export async function getTotalSupply(): Promise<bigint> {
+  return dataSource() === "live" ? cutContract().ftTotalSupply() : SAMPLE_PARAMS.totalSupply;
+}

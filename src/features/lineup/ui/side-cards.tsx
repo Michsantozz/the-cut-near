@@ -113,18 +113,27 @@ export function BenchCard({ bench, className }: { bench: Robot[]; className?: st
   );
 }
 
-/** The Director's one-liner. A sample line until the Director's signed lines are wired in. */
-export function DirectorCard({ lineup, className }: { lineup: Lineup; className?: string }) {
-  const { lowest, gap } = lineup.board;
-  if (!lowest || gap === null) return null;
-  const line = `${lowest.name} needs ${cut(gap)} $CUT by ${formatUtcTime(lineup.cutAt)}. The math does not do favors.`;
+/** The Director's latest line about the robot on the block, with its proof badge. The app adds it to the lineup. */
+export type DirectorCardLine = { text: string; badge: string; proofUrl: string };
+
+/** The Director's one-liner and what its proof says. Hidden until the Director said something about this cut. */
+export function DirectorCard({ lineup, className }: { lineup: Lineup & { directorLine?: DirectorCardLine | null }; className?: string }) {
+  const line = lineup.directorLine;
+  if (!line) return null;
 
   return (
     <figure className={cn("flex items-end gap-1.5", className)}>
       <Image src={DIRECTOR_ART.src} alt="The Director" width={DIRECTOR_ART.width} height={DIRECTOR_ART.height} className="block h-[78px] w-auto shrink-0" />
       <div className="grow rounded-[18px_18px_18px_4px] border-2 border-ink bg-pink px-3.5 py-2.5">
-        <blockquote className="font-heading text-[17px] leading-[21px] font-extrabold text-balance">“{line}”</blockquote>
-        <p className="mt-1 text-[11px] font-extrabold tracking-[0.036em] uppercase">Sample line · not signed yet</p>
+        <blockquote className="font-heading text-[17px] leading-[21px] font-extrabold text-balance">“{line.text}”</blockquote>
+        <a
+          href={line.proofUrl}
+          target="_blank"
+          rel="noopener"
+          className="mt-1 inline-block text-[11px] font-extrabold tracking-[0.036em] uppercase outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {line.badge}
+        </a>
       </div>
     </figure>
   );

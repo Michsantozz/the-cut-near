@@ -1,4 +1,6 @@
-import { Actions, type Action } from "near-connect-hooks";
+// Type-only: near-connect-hooks' entry creates a React context at import time, which breaks Server Components
+// that reach this module through `@/shared/wallet` (the root layout does). The action shape is plain data.
+import type { Action } from "near-connect-hooks";
 
 /** One change method on the cut contract (`docs/contract-interface.md`). Amounts are yocto / 18-decimal strings. */
 export type ContractCall = {
@@ -16,5 +18,5 @@ export const ONE_YOCTO = "1";
 
 export function toActions(calls: readonly ContractCall[]): Action[] {
   if (calls.length === 0) throw new Error("A transaction needs at least one call");
-  return calls.map(({ method, args = {}, deposit = "0", gas = DEFAULT_GAS }) => Actions.functionCall(method, args, gas, deposit));
+  return calls.map(({ method, args = {}, deposit = "0", gas = DEFAULT_GAS }) => ({ type: "FunctionCall", params: { methodName: method, args, gas, deposit } }));
 }
