@@ -44,6 +44,8 @@ export type Club = {
   stage: Agent[];
   /** This week's perks from creators (sample day only until perks have a table). */
   perks: Perk[];
+  /** Whether perks, club points and the savers' ranking exist: only on the sample day, so live mode never promises them. */
+  extras: boolean;
   member: ClubMember | null;
 };
 
@@ -78,6 +80,7 @@ export async function loadClub(accountId: string | null): Promise<Club> {
     members: sample ? SAMPLE_CLUB.members : null,
     stage: ranked,
     perks: sample ? SAMPLE_CLUB.perks : [],
+    extras: sample,
     member: accountId
       ? {
           accountId,

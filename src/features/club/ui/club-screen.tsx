@@ -1,12 +1,12 @@
 import { cn } from "cn";
-import { ChevronRight, Lock, Plus, Star, Target, Trophy } from "lucide-react";
+import { ChevronRight, Hourglass, Lock, Plus, Star, Target, Trophy, Wallet } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { AgentTile, agentFullBody } from "@/entities/agent";
 import { Button } from "@/shared/ui/button";
 import { formatAmount, formatCount, formatUtcTime } from "@/shared/ui/format";
-import { WalletGatedLink } from "@/shared/wallet";
+import { ConnectButton, WalletGatedLink } from "@/shared/wallet";
 
 import { ordinal, tierOf, type Perk, type TopSaver } from "../model/club";
 import type { Club, ClubMember, ClubSave } from "../server/load-club";
@@ -159,7 +159,8 @@ function SaveCard({ save, cutAt }: { save: ClubSave; cutAt: Date }) {
   const time = `${formatUtcTime(cutAt)} UTC`;
   const rows: [string, string][] = [
     [`${save.agent.name} ${save.agent.status === "bench" ? "queue" : "pile"}`, `${cut(save.agent.pile)}${save.rank ? ` · ${ordinal(save.rank)} of ${save.stageSize}` : ""}`],
-    ...(save.lowest ? ([["Lowest pile now", `${save.lowest.name} · ${cut(save.lowest.pile)}`]] as [string, string][]) : []),
+    // The cut takes the lowest score (pile − boos − damage), so this row names that score, not a pile.
+    ...(save.lowest ? ([["Lowest score now", `${save.lowest.name} · ${cut(save.lowest.score)}`]] as [string, string][]) : []),
     ["If the cut ran now", save.paysPer100 === null ? (save.agent === save.lowest ? "Cut" : "–") : `${pays(save.paysPer100)} per 100 saved`],
   ];
 
@@ -179,7 +180,7 @@ function SaveCard({ save, cutAt }: { save: ClubSave; cutAt: Date }) {
                 {cut(save.amount)} $CUT on {save.agent.name}
               </h2>
               <p className="text-[13px] font-bold">
-                {save.agent.tagline} · {formatCount(save.agent.savers)} savers
+                {save.agent.tagline} · {formatCount(save.agent.savers)} {save.agent.savers === 1 ? "saver" : "savers"}
               </p>
             </div>
           </div>
@@ -290,11 +291,18 @@ function TopSavers({ savers, member }: { savers: TopSaver[]; member: ClubMember 
 /* ---------------------------------------------------------------- Visitor */
 
 function LockedClub({ club }: { club: Club }) {
-  const benefits = [
-    { title: "Perks from creators", sub: "Shout-outs, early drops, stickers", tone: "bg-pink", icon: Star },
-    { title: "Save an agent, share the prize", sub: "If it survives the cut, you share its slice", tone: "bg-[#ffd84d]", icon: Lock },
-    { title: "Club points and a rank", sub: "For showing up, not for size", tone: "bg-lime", icon: Trophy },
-  ];
+  // Live mode lists only what works today; perks, points and the ranking exist only on the sample day.
+  const benefits = club.extras
+    ? [
+        { title: "Perks from creators", sub: "Shout-outs, early drops, stickers", tone: "bg-pink", icon: Star },
+        { title: "Save an agent, share the prize", sub: "If it survives the cut, you share its slice", tone: "bg-[#ffd84d]", icon: Lock },
+        { title: "Club points and a rank", sub: "For showing up, not for size", tone: "bg-lime", icon: Trophy },
+      ]
+    : [
+        { title: "Save an agent, share the prize", sub: "If it survives the cut, you share its slice", tone: "bg-[#ffd84d]", icon: Lock },
+        { title: "Your save at a glance", sub: "Its pile, the lowest score now and what it pays if the cut ran now", tone: "bg-lime", icon: Wallet },
+        { title: "Perks and club points: coming", sub: "Not live yet. Nothing to collect here today.", tone: "bg-canvas", icon: Hourglass },
+      ];
   const locked = club.perks.filter((perk) => perk.audience === "ALL MEMBERS");
 
   return (
@@ -306,12 +314,28 @@ function LockedClub({ club }: { club: Club }) {
         <h2 id="locked-title" className="mt-3 font-heading text-[30px] leading-[34px] font-extrabold tracking-[-1px] lg:mt-4 lg:text-[42px] lg:leading-[46px] lg:tracking-[-1.6px]">
           Your card is waiting
         </h2>
-        <p className="mt-1 text-[15px] font-medium text-ink-3 lg:text-[17px]">Hold any amount of $CUT and you’re in.</p>
-        <Button asChild variant="primary" size="xl" elevated className="mt-4 h-[50px] w-full rounded-2xl text-base lg:w-auto">
-          <WalletGatedLink href="/buy">Buy $CUT to join · from $10</WalletGatedLink>
-        </Button>
+        {club.extras ? (
+          <>
+            <p className="mt-1 text-[15px] font-medium text-ink-3 lg:text-[17px]">Hold any amount of $CUT and you’re in.</p>
+            <Button asChild variant="primary" size="xl" elevated className="mt-4 h-[50px] w-full rounded-2xl text-base lg:w-auto">
+              <WalletGatedLink href="/buy">Buy $CUT to join · from 0.1 NEAR</WalletGatedLink>
+            </Button>
+          </>
+        ) : (
+          <>
+            <p className="mt-1 text-[15px] font-medium text-ink-3 lg:text-[17px]">Connect a NEAR wallet to see your card, your save and the stage.</p>
+            <div className="mt-4 flex flex-col gap-2.5 lg:flex-row">
+              <ConnectButton size="xl" elevated className="h-[50px] w-full rounded-2xl text-base lg:w-auto">
+                Connect a wallet
+              </ConnectButton>
+              <Button asChild variant="outline" size="xl" className="h-[50px] w-full rounded-2xl text-base lg:w-auto">
+                <WalletGatedLink href="/buy">Buy $CUT · from 0.1 NEAR</WalletGatedLink>
+              </Button>
+            </div>
+          </>
+        )}
       </section>
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_344px] lg:items-start lg:gap-6">
+      <div className={cn("flex flex-col gap-3", locked.length > 0 && "lg:grid lg:grid-cols-[minmax(0,1fr)_344px] lg:items-start lg:gap-6")}>
         {locked.length > 0 && (
           <section aria-labelledby="members-get-title">
             <h2 id="members-get-title" className="text-[13px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">

@@ -7,7 +7,7 @@ import { AgentTile } from "@/entities/agent";
 import { publicEnv } from "@/shared/config/public";
 import { formatAmount, formatCount, formatUsd, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 import { Button } from "@/shared/ui/button";
-import { WalletGatedLink } from "@/shared/wallet";
+import { ConnectButton, WalletGatedLink } from "@/shared/wallet";
 
 import type { Breakdown } from "../model/breakdown";
 import type { Pile, Prizes, PrizesPreview } from "../server/load-prizes";
@@ -154,6 +154,30 @@ function PrizesSoFar({ total, sub }: { total: bigint; sub: string }) {
   );
 }
 
+/** A visitor's card: the game's prizes so far (the same numbers the lineup shows) and a way to see their own. */
+function GamePrizes({ nextCut, seasonPot, now }: { nextCut: PrizesPreview["nextCut"]; seasonPot: bigint; now: Date }) {
+  return (
+    <section aria-labelledby="game-prizes-title" className="relative rounded-3xl border-2 border-ink bg-blue px-4 py-3 text-paper shadow-hard lg:px-[18px] lg:py-4">
+      <p id="game-prizes-title" className="text-[13px] font-semibold text-[#dce6ff]">
+        Day prize so far
+      </p>
+      <p className="font-heading text-[38px] leading-[42px] font-extrabold lg:text-[40px] lg:leading-[44px]">{cut0(nextCut.prizeSoFar)} $CUT</p>
+      <p className="text-[13px] font-semibold text-[#dce6ff]">
+        Paid to savers after the cut, {dayWord(now, nextCut.at)} at {formatUtcTime(nextCut.at)} UTC
+      </p>
+      <p className="mt-2 border-t-[1.5px] border-[#dce6ff]/40 pt-2 text-[13px] font-semibold text-[#dce6ff]">
+        Season pot <b className="font-extrabold text-paper">{cut0(seasonPot)} $CUT</b>, for the champion’s savers
+      </p>
+      <ConnectButton variant="lime" className="mt-3 h-[42px] w-full rounded-xl text-sm font-extrabold">
+        Connect a wallet to see your prizes
+      </ConnectButton>
+      <span aria-hidden="true" className="absolute top-3.5 right-3.5 flex size-[46px] items-center justify-center rounded-lg border-2 border-ink bg-lime text-ink lg:top-4 lg:right-4">
+        <Gift className="size-[22px]" strokeWidth={2.6} />
+      </span>
+    </section>
+  );
+}
+
 function HowPrizesWork() {
   return (
     <section aria-labelledby="how-title" className="rounded-2xl border-2 border-ink bg-paper px-4 pt-3.5 pb-3.5">
@@ -175,17 +199,16 @@ function HowPrizesWork() {
   );
 }
 
-/** The stage's piles now, highest first: the lowest is cut next, the viewer's agent is marked. */
-function PilesNow({ piles, mine, when }: { piles: Pile[]; mine: string | null; when: string }) {
+/** The stage's piles now, highest first. The lowest score (not always the smallest pile) is cut next; the viewer's agent is marked. */
+function PilesNow({ piles, lowest, mine, when }: { piles: Pile[]; lowest: string | null; mine: string | null; when: string }) {
   if (piles.length === 0) return null;
-  const lowest = piles.at(-1)?.id;
   return (
     <section aria-labelledby="piles-title" className="rounded-3xl border-2 border-ink bg-paper px-[22px] pt-[18px] pb-5">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="piles-title" className="font-heading text-[22px] font-extrabold">
           The {formatCount(piles.length)} piles now
         </h2>
-        <p className="text-[13px] font-semibold text-ink-3">$CUT saved · lowest is cut {when}</p>
+        <p className="text-[13px] font-semibold text-ink-3">$CUT saved · lowest score is cut {when}</p>
       </div>
       <ol className="mt-3.5 grid gap-3" style={{ gridTemplateColumns: `repeat(${piles.length}, minmax(0, 1fr))` }}>
         {piles.map((agent) => {
@@ -269,7 +292,7 @@ function Waiting({ saved: save, nextCut, now }: WaitingProps) {
         <Button asChild variant="primary" elevated className="mt-3.5 h-[50px] w-full rounded-xl text-[15px] font-bold lg:mt-4 lg:h-12 lg:w-auto lg:px-6 lg:font-extrabold">
           <WalletGatedLink href="/buy">
             <Plus aria-hidden="true" className="size-[18px]" strokeWidth={2.6} />
-            Buy $CUT · from $10
+            Buy $CUT · from 0.1 NEAR
           </WalletGatedLink>
         </Button>
       )}
@@ -278,14 +301,14 @@ function Waiting({ saved: save, nextCut, now }: WaitingProps) {
 }
 
 /** Phone: title, the total, the main cards. Laptop: the main cards next to the total and how prizes work. */
-function Layout({ sub, soFar, main, rows }: { sub: string; soFar: { total: bigint; sub: string; phone: boolean }; main: ReactNode; rows: CutRow[] }) {
+function Layout({ sub, total, main, rows }: { sub: string; total: { card: ReactNode; phone: boolean }; main: ReactNode; rows: CutRow[] }) {
   return (
     <>
       <div className="mx-auto max-w-[640px] px-5 pb-6 lg:hidden">
         <h2 className="pt-4 font-heading text-[32px] leading-9 font-extrabold tracking-[-1px]">Prizes</h2>
         <p className="mt-0.5 text-sm text-ink-3">{sub}</p>
         <div className="mt-3 flex flex-col gap-3">
-          {soFar.phone && <PrizesSoFar total={soFar.total} sub={soFar.sub} />}
+          {total.phone && total.card}
           {main}
           <YourCuts rows={rows} className="mt-1" />
         </div>
@@ -293,7 +316,7 @@ function Layout({ sub, soFar, main, rows }: { sub: string; soFar: { total: bigin
       <div className="hidden gap-6 px-8 pt-1 pb-7 lg:flex">
         <div className="flex min-w-0 grow flex-col gap-4">{main}</div>
         <div className="flex w-[340px] shrink-0 flex-col gap-4">
-          <PrizesSoFar total={soFar.total} sub={soFar.sub} />
+          {total.card}
           {rows.length > 0 && (
             <div className="rounded-3xl border-2 border-ink bg-paper px-[18px] pt-3.5 pb-2">
               <YourCuts rows={rows} />
@@ -340,7 +363,7 @@ export function PrizesScreen({ data }: { data: Prizes }) {
       ? `${data.claimableUsdCents !== null && ready ? `${formatUsd(data.claimableUsdCents)}, ` : ""}from ${formatCount(data.cutsPaid)} ${data.cutsPaid === 1 ? "cut" : "cuts"}`
       : data.saved.total > 0n
         ? `First prize: ${dayWord(now, data.nextCut.at)}, ${formatUtcTime(data.nextCut.at)} UTC, after the cut`
-        : "You hold no $CUT yet";
+        : "Nothing saved yet";
 
   const main = ready ? (
     <>
@@ -359,26 +382,26 @@ export function PrizesScreen({ data }: { data: Prizes }) {
     <>
       <Waiting saved={data.saved} nextCut={data.nextCut} now={now} />
       <div className="hidden lg:block">
-        <PilesNow piles={data.piles} mine={data.saved.total > 0n ? data.saved.agentId : null} when={pilesWhen(now, data.nextCut.at)} />
+        <PilesNow piles={data.piles} lowest={data.nextCut.lowestId} mine={data.saved.total > 0n ? data.saved.agentId : null} when={pilesWhen(now, data.nextCut.at)} />
       </div>
     </>
   );
 
-  return <Layout sub={prizesSub(data)} soFar={{ total: data.total, sub: soFarSub, phone: !ready }} main={main} rows={rows} />;
+  return <Layout sub={prizesSub(data)} total={{ card: <PrizesSoFar total={data.total} sub={soFarSub} />, phone: !ready }} main={main} rows={rows} />;
 }
 
-/** A visitor: how prizes work, the piles now, and a way in. */
+/** A visitor: the game's prizes so far, how prizes work, the piles now, and a way in. Nothing about holdings. */
 export function PrizesVisitor({ data }: { data: PrizesPreview }) {
   const now = new Date(data.renderedAt);
   const main = (
     <>
       <Waiting saved={null} nextCut={data.nextCut} now={now} />
       <div className="hidden lg:block">
-        <PilesNow piles={data.piles} mine={null} when={pilesWhen(now, data.nextCut.at)} />
+        <PilesNow piles={data.piles} lowest={data.nextCut.lowestId} mine={null} when={pilesWhen(now, data.nextCut.at)} />
       </div>
     </>
   );
-  return <Layout sub={prizesSub(null)} soFar={{ total: 0n, sub: "You hold no $CUT yet", phone: true }} main={main} rows={[]} />;
+  return <Layout sub={prizesSub(null)} total={{ card: <GamePrizes nextCut={data.nextCut} seasonPot={data.seasonPot} now={now} />, phone: true }} main={main} rows={[]} />;
 }
 
 function pilesWhen(now: Date, at: Date): string {

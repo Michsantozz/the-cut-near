@@ -42,6 +42,15 @@ export function shareIfCutNow(choice: Pick<SaveChoice, "agent" | "isLowest">, sl
   return (slice * amount) / (choice.agent.pile + amount);
 }
 
+/**
+ * Widths (percent) of the picker's score bars: each score against the highest one on show, so the bars read in the
+ * same order as the list. Every row keeps a 4% sliver; a score at or below zero gets only the sliver.
+ */
+export function scoreBarWidths(scores: readonly bigint[]): number[] {
+  const top = scores.reduce((max, score) => (score > max ? score : max), 0n);
+  return scores.map((score) => (top > 0n && score > 0n ? Math.max(4, Math.min(100, Number((score * 100n) / top))) : 4));
+}
+
 /** "5th of 10". */
 export function ordinal(rank: number): string {
   const tens = rank % 100;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { relockedTotal, saveProblem } from "@/features/trade/model/save";
+import { relockedTotal, saveProblem, scoreBarWidths } from "@/features/trade/model/save";
 import { units } from "@/shared/lib/amount";
 
 const tenth = units(1) / 10n;
@@ -20,5 +20,21 @@ describe("adding to a save", () => {
     expect(saveProblem(five, units(10), false)).toBe("too-small");
     expect(saveProblem(tenth, units(10), false)).toBeNull();
     expect(saveProblem(0n, units(10), false)).toBe("empty");
+  });
+});
+
+describe("the picker's score bars", () => {
+  it("scales every bar to the highest score, so a lower score never shows a longer bar", () => {
+    expect(scoreBarWidths([units(4_000), units(3_000), units(1_000)])).toEqual([100, 75, 25]);
+  });
+
+  it("uses the highest score even when the list is not sorted", () => {
+    expect(scoreBarWidths([units(1_000), units(2_000)])).toEqual([50, 100]);
+  });
+
+  it("keeps a sliver for tiny, zero and negative scores", () => {
+    expect(scoreBarWidths([units(1_000), units(1), 0n, -units(50)])).toEqual([100, 4, 4, 4]);
+    expect(scoreBarWidths([-units(5), 0n])).toEqual([4, 4]);
+    expect(scoreBarWidths([])).toEqual([]);
   });
 });

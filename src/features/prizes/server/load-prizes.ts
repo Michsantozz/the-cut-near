@@ -8,6 +8,7 @@ import { getParams, getPool, getUsdCentsPerNear } from "@/entities/market/server
 import { rankByPile, type Agent } from "@/entities/agent";
 import { getBench, getStage } from "@/entities/agent/server";
 import { getClaimable, getSaves, isStorageRegistered } from "@/entities/save/server";
+import { getSeason } from "@/entities/season/server";
 import { publicEnv } from "@/shared/config/public";
 import { explorerTxUrl } from "@/shared/near/network";
 
@@ -18,13 +19,17 @@ const ONE_NEAR = 10n ** 24n;
 
 export type PastPrize = { key: string; at: Date; amount: bigint; href: string };
 
-/** An agent's pile on the stage now, highest first; the last one is the lowest. */
+/** An agent's pile on the stage now, highest first. */
 export type Pile = { id: string; name: string; pile: bigint };
 
-/** What anyone sees before saving: the next cut and the piles now. */
+/** What anyone sees before saving: the next cut, the game's prizes so far and the piles now. */
 export type PrizesPreview = {
   renderedAt: number;
-  nextCut: { index: number; at: Date; lowestName: string | null };
+  /** `prizeSoFar` is the day prize built so far for that cut (`get_next_cut`), the number the lineup shows. */
+  /** `lowestId` is the lowest score, the agent the cut takes (null between seasons). */
+  nextCut: { index: number; at: Date; lowestId: string | null; lowestName: string | null; prizeSoFar: bigint };
+  /** $CUT in the season pot now, for the champion's savers. */
+  seasonPot: bigint;
   piles: Pile[];
 };
 
@@ -51,7 +56,7 @@ export type Prizes = PrizesPreview & {
 /** The viewer's prizes: ready to collect, how the last one was made, and past slices. Request-time only. */
 export async function loadPrizes(accountId: string): Promise<Prizes> {
   await connection();
-  const [claimable, saves, registered, cuts, prizes, claims, nextCut, params, pool, usd, stage, bench, registers] = await Promise.all([
+  const [claimable, saves, registered, cuts, prizes, claims, nextCut, params, pool, usd, stage, bench, registers, season] = await Promise.all([
     getClaimable(accountId),
     getSaves(accountId),
     isStorageRegistered(accountId),
@@ -65,6 +70,7 @@ export async function loadPrizes(accountId: string): Promise<Prizes> {
     getStage(),
     getBench(),
     getJournal({ events: ["register"], limit: 200 }),
+    getSeason(),
   ]);
   const names: Record<string, string> = {};
   for (const entry of registers.entries) if (entry.agentId && typeof entry.data.name === "string") names[entry.agentId] = entry.data.name;
@@ -81,7 +87,7 @@ export async function loadPrizes(accountId: string): Promise<Prizes> {
   const priceYocto = pool.cutReserve > 0n ? (pool.nearReserve * ONE_CUT) / pool.cutReserve : 0n;
 
   return {
-    ...preview(nextCut, stage),
+    ...preview(nextCut, stage, season.pot),
     accountId,
     claimable,
     claimableUsdCents: usd === null ? null : ((claimable * priceYocto) / ONE_CUT * usd * 2n + ONE_NEAR) / (2n * ONE_NEAR),
@@ -101,14 +107,21 @@ export async function loadPrizes(accountId: string): Promise<Prizes> {
   };
 }
 
-/** A visitor's prizes page: no account, only the next cut and the piles now. Request-time only. */
+/** A visitor's prizes page: no account, only the next cut, the game's prizes so far and the piles now. Request-time only. */
 export async function loadPrizesPreview(): Promise<PrizesPreview> {
   await connection();
-  const [nextCut, stage] = await Promise.all([getNextCut(), getStage()]);
-  return preview(nextCut, stage);
+  const [nextCut, stage, season] = await Promise.all([getNextCut(), getStage(), getSeason()]);
+  return preview(nextCut, stage, season.pot);
 }
 
-function preview(nextCut: { index: number; at: Date }, stage: readonly Agent[]): PrizesPreview {
+function preview(nextCut: { index: number; at: Date; lowestId: string | null; prizeSoFar: bigint }, stage: readonly Agent[], seasonPot: bigint): PrizesPreview {
   const piles = rankByPile(stage).map((agent) => ({ id: agent.id, name: agent.name, pile: agent.pile }));
-  return { renderedAt: Date.now(), nextCut: { index: nextCut.index, at: nextCut.at, lowestName: piles.at(-1)?.name ?? null }, piles };
+  // The cut takes the lowest score (pile − boos − damage), which need not be the smallest pile.
+  const lowest = stage.find((agent) => agent.id === nextCut.lowestId) ?? null;
+  return {
+    renderedAt: Date.now(),
+    nextCut: { index: nextCut.index, at: nextCut.at, lowestId: lowest?.id ?? null, lowestName: lowest?.name ?? null, prizeSoFar: nextCut.prizeSoFar },
+    seasonPot,
+    piles,
+  };
 }

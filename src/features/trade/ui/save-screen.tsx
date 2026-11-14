@@ -16,7 +16,7 @@ import { useWallet } from "@/shared/wallet";
 import { saveCalls, storageTopUp, unsaveCalls } from "../model/calls";
 import { classifyTxError, failedTxHash } from "../model/errors";
 import { cutToUsdCents, spotPrice } from "../model/money";
-import { defaultSave, ordinal, relockedTotal, SAVE_STORAGE, saveProblem, shareIfCutNow, type SaveChoice } from "../model/save";
+import { defaultSave, ordinal, relockedTotal, SAVE_STORAGE, saveProblem, scoreBarWidths, shareIfCutNow, type SaveChoice } from "../model/save";
 import { cutToInput } from "../model/sell";
 import type { SaveData } from "../server/load";
 import { agentFullBody as agentSticker, agentTile, wholeCutsToPass } from "@/entities/agent";
@@ -55,6 +55,8 @@ export function SaveScreen({ data }: { data: SaveData }) {
   const router = useRouter();
   const now = new Date(useNow(data.renderedAt));
   const { choices, slice, stageSize } = data.picker;
+  // The laptop list is ranked by score (the cut takes the lowest), so its bars show score too.
+  const bars = scoreBarWidths(choices.map((choice) => choice.agent.score));
   const account = data.account;
   const free = account?.free ?? 0n;
   const [pickedId, setPickedId] = useState(data.agentId ?? choices.at(-2)?.agent.id ?? choices[0]?.agent.id ?? null);
@@ -227,12 +229,12 @@ export function SaveScreen({ data }: { data: SaveData }) {
           <section aria-label="Pick an agent" className="hidden lg:mt-4 lg:block">
             <div className="flex h-[26px] items-center gap-3 px-3 text-[11px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">
               <span className="grow">Agent</span>
-              <span className="w-[72px] text-right">Pile</span>
+              <span className="w-[72px] text-right">Score</span>
               <span className="w-[92px] text-right whitespace-nowrap">Pays per 100</span>
               <span className="w-5" />
             </div>
             <div role="radiogroup" aria-label="Agents" className="flex flex-col gap-[3px]">
-              {choices.map((choice) => (
+              {choices.map((choice, index) => (
                 <div key={choice.agent.id}>
                   {choice.isLowest && (
                     <div aria-hidden="true" className="mt-0 mb-[3px] flex items-center gap-2 px-3 text-[11px] font-extrabold tracking-[0.05em] whitespace-nowrap text-burn">
@@ -253,10 +255,10 @@ export function SaveScreen({ data }: { data: SaveData }) {
                     <span aria-hidden="true" className="h-2.5 grow overflow-hidden rounded-[5px] bg-canvas">
                       <span
                         className={cn("block h-full rounded-[5px]", choice.isLowest ? "bg-orange" : choice.agent.id === pickedId ? "bg-ink" : "bg-violet")}
-                        style={{ width: `${barWidth(choice.agent.pile, choices[0]?.agent.pile ?? 0n)}%` }}
+                        style={{ width: `${bars[index] ?? 4}%` }}
                       />
                     </span>
-                    <span className={cn("w-[72px] text-right text-sm font-bold", choice.isLowest && "text-burn")}>{cutWhole(choice.agent.pile)}</span>
+                    <span className={cn("w-[72px] text-right text-sm font-bold", choice.isLowest && "text-burn")}>{cutWhole(choice.agent.score)}</span>
                     <span className={cn("w-[92px] text-right text-sm font-extrabold", choice.isLowest && "text-burn")}>{choice.isLowest ? "Cut" : pays(choice.paysPer100)}</span>
                     <span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-paper in-aria-checked:bg-lime">
                       {choice.agent.id === pickedId && <span className="size-2 rounded-full bg-ink" />}
@@ -429,8 +431,6 @@ export function SaveScreen({ data }: { data: SaveData }) {
     </TradeFrame>
   );
 }
-
-const barWidth = (pile: bigint, top: bigint) => (top > 0n ? Math.max(4, Math.min(100, Number((pile * 100n) / top))) : 4);
 
 function Tile({ id, name, className }: { id: string; name: string; className?: string }) {
   const src = agentTile(id);
