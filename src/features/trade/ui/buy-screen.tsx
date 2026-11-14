@@ -144,11 +144,11 @@ export function BuyScreen({ data }: { data: BuyData }) {
               <span className="mb-1.5 rounded-full bg-canvas px-2.5 py-0.5 text-[12.5px] font-bold text-ink-3">free $CUT</span>
             </div>
             <dl className="mt-2.5 lg:mt-3 lg:border-t-[1.5px] lg:border-canvas">
-              <Row label="Price per $CUT" value={priceText(tradePrice(nearIn, shown.amountOut + shown.fee), rate)} />
-              <Row label={`Fee (1%) · to ${prize}`} value={cutMoney(shown.fee, spot, rate)} />
-              {registration !== null && <Row label="One-time registration" value={`${nearText(registration)} NEAR`} />}
-              <Row label="Network fee" value={rate !== null ? "about $0.01" : "under 0.01 NEAR"} />
-              <Row label="Most the price can move" value={`${SLIPPAGE_BPS / 100}%`} />
+              <Row roomy label="Price per $CUT" value={priceText(tradePrice(nearIn, shown.amountOut + shown.fee), rate)} />
+              <Row roomy label={`Fee (1%) · to ${prize}`} value={cutMoney(shown.fee, spot, rate)} />
+              {registration !== null && <Row roomy label="One-time registration" value={`${nearText(registration)} NEAR`} />}
+              <Row roomy label="Network fee" value={rate !== null ? "about $0.01" : "under 0.01 NEAR"} />
+              <Row roomy label="Most the price can move" value={`${SLIPPAGE_BPS / 100}%`} />
             </dl>
           </section>
 
@@ -200,7 +200,7 @@ export function BuyScreen({ data }: { data: BuyData }) {
   const maxText = max !== null ? nearToBuyInput(max, unit, rate) : null;
   return (
     <TradeFrame title="Buy $CUT" icon={Plus} nav={{ kind: "close" }}>
-      <div className="flex grow flex-col lg:grid lg:grid-cols-2 lg:gap-[30px]">
+      <div className="flex grow flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_384px] lg:gap-[30px]">
         <div className="flex flex-col">
           {/* Phone: the big amount, edited with the keypad below. Laptop: a real field. */}
           <div className="pt-3.5 text-center lg:hidden">
@@ -258,7 +258,7 @@ export function BuyScreen({ data }: { data: BuyData }) {
               <PayWith desk />
             </div>
             {account?.nearBalance != null && (
-              <p className="mt-2 text-sm font-semibold text-ink-3">
+              <p className="mt-2.5 text-[13.5px] font-semibold text-ink-3">
                 Balance {nearText(account.nearBalance)} NEAR{rate !== null ? ` · ${nearMoneyWhole(account.nearBalance, rate)}` : ""}
               </p>
             )}
@@ -266,15 +266,15 @@ export function BuyScreen({ data }: { data: BuyData }) {
         </div>
 
         <div className="order-2 flex grow flex-col lg:order-none">
-          <section aria-label="What you get" className="mt-3.5 rounded-3xl border-2 border-ink bg-paper px-4 pt-3.5 pb-3.5 shadow-hard lg:mt-0 lg:px-5 lg:pt-[22px] lg:pb-5">
+          <section aria-label="What you get" className="mt-[18px] rounded-[20px] border-2 border-ink bg-paper px-3.5 py-3 shadow-hard lg:mt-0 lg:rounded-[22px] lg:px-5 lg:pt-[18px] lg:pb-5">
             <p className="flex items-baseline justify-between gap-2">
-              <span className="text-[15px] font-extrabold lg:text-[17px]">What {getsLabel} gets you</span>
-              <span className="text-xs font-semibold text-ink-3 lg:text-[13px]">after 1% fee</span>
+              <span className="font-heading text-[17px] leading-[21px] font-extrabold lg:text-[19px] lg:leading-6">What {getsLabel} gets you</span>
+              <span className="text-xs font-semibold text-ink-3 lg:text-[12.5px]">after 1% fee</span>
             </p>
-            <p aria-live="polite" className={cn("font-heading text-[26px] leading-9 font-extrabold text-blue lg:mt-1 lg:text-[44px] lg:leading-[52px] lg:tracking-[-1px]", !fresh && "opacity-60")}>
+            <p aria-live="polite" className={cn("mt-1.5 font-heading text-[28px] leading-[34px] font-extrabold text-blue lg:text-[46px] lg:leading-[50px] lg:tracking-[-1.5px]", !fresh && "opacity-60")}>
               {quote ? `${cutText(quote.amountOut)} $CUT` : "—"}
             </p>
-            <div className="mt-2 grid grid-cols-2 gap-2 lg:mt-3 lg:gap-2.5">
+            <div className="mt-2 grid grid-cols-2 gap-2 lg:mt-3.5 lg:gap-2.5">
               <Fact icon={TrendingUp} label="Price" value={priceText(spot, rate)} />
               <Fact icon={Gift} label={`To ${prize}`} value={quote ? cutMoney(quote.fee, spot, rate) : "—"} />
             </div>
@@ -288,7 +288,7 @@ export function BuyScreen({ data }: { data: BuyData }) {
 
           <Keypad onKey={(key) => setText((value) => editAmount(value, key, decimals))} />
 
-          <div className="mt-auto pt-3 lg:pt-6">
+          <div className="pt-3 lg:mt-auto lg:pt-6">
             <Button
               variant="lime"
               size="xl"
@@ -314,8 +314,9 @@ function PayWith({ desk = false }: { desk?: boolean }) {
       <button
         type="button"
         aria-pressed="true"
-        className={cn("h-[34px] flex-1 rounded-full bg-ink text-[13px] font-bold text-paper", desk && "h-11 rounded-xl text-[15px]")}
+        className={cn("h-[34px] flex-1 rounded-full bg-ink text-[13px] font-bold text-paper", desk && "flex h-[42px] items-center justify-center gap-2 rounded-xl text-[14.5px]")}
       >
+        {desk && <CoinMark className="bg-paper text-ink">N</CoinMark>}
         Pay with NEAR
       </button>
       <button
@@ -323,11 +324,21 @@ function PayWith({ desk = false }: { desk?: boolean }) {
         aria-pressed="false"
         disabled
         title="The Cut’s pool takes NEAR"
-        className={cn("h-[34px] flex-1 rounded-full text-[13px] font-bold text-ink-3 disabled:opacity-60", desk && "h-11 rounded-xl text-[15px]")}
+        className={cn("h-[34px] flex-1 rounded-full text-[13px] font-bold text-ink-3 disabled:opacity-60", desk && "flex h-[42px] items-center justify-center gap-2 rounded-xl text-[14.5px]")}
       >
+        {desk && <CoinMark className="bg-blue text-paper">$</CoinMark>}
         USDC
       </button>
     </>
+  );
+}
+
+/** The laptop's round coin letter in front of "Pay with NEAR" and "USDC". */
+function CoinMark({ className, children }: { className: string; children: string }) {
+  return (
+    <span aria-hidden="true" className={cn("flex size-[18px] items-center justify-center rounded-full text-[10px] font-extrabold", className)}>
+      {children}
+    </span>
   );
 }
 
@@ -337,7 +348,7 @@ function Chip({ pressed, onClick, children }: { pressed: boolean; onClick: () =>
       type="button"
       aria-pressed={pressed}
       onClick={onClick}
-      className="h-9 rounded-full border-2 border-ink bg-paper px-4 text-[13.5px] font-bold outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:bg-lime lg:h-[44px] lg:rounded-xl lg:text-[15.5px] lg:font-extrabold"
+      className="h-9 rounded-full border-2 border-ink bg-paper px-4 text-sm font-bold outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:bg-lime lg:h-[44px] lg:rounded-[14px] lg:text-[15px] lg:aria-pressed:font-extrabold"
     >
       {children}
     </button>
@@ -346,12 +357,12 @@ function Chip({ pressed, onClick, children }: { pressed: boolean; onClick: () =>
 
 function Fact({ icon: Icon, label, value }: { icon: typeof Gift; label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-canvas px-3 py-2 lg:px-3.5 lg:py-2.5">
-      <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-3 lg:text-[13px]">
-        <Icon aria-hidden="true" className="size-3.5" strokeWidth={2.4} />
+    <div className="rounded-xl bg-canvas px-2.5 py-2 lg:rounded-[14px] lg:px-3 lg:py-2.5">
+      <p className="flex items-center gap-1 text-xs leading-[15px] font-semibold text-ink-3 lg:gap-[5px] lg:text-[12.5px]">
+        <Icon aria-hidden="true" className="size-3 lg:size-[13px]" strokeWidth={2.6} />
         {label}
       </p>
-      <p className="text-[15px] font-extrabold lg:text-lg">{value}</p>
+      <p className="text-base leading-5 font-extrabold lg:mt-0.5 lg:text-lg lg:leading-[22px]">{value}</p>
     </div>
   );
 }
@@ -361,16 +372,16 @@ const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "backspace"
 /** The phone's number pad. The laptop types into the field. */
 function Keypad({ onKey }: { onKey: (key: string) => void }) {
   return (
-    <div role="group" aria-label="Number pad" className="mt-auto grid grid-cols-3 gap-y-1 pt-6 lg:hidden">
+    <div role="group" aria-label="Number pad" className="mt-auto grid grid-cols-3 gap-0.5 pt-6 lg:hidden">
       {KEYS.map((key) => (
         <button
           key={key}
           type="button"
           onClick={() => onKey(key)}
           aria-label={key === "backspace" ? "Delete" : key === "." ? "Point" : key}
-          className="flex h-11 items-center justify-center rounded-md font-heading text-[22px] font-extrabold outline-none active:bg-line focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="flex h-[42px] items-center justify-center rounded-xl font-heading text-2xl font-bold outline-none active:bg-line focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          {key === "backspace" ? <Delete aria-hidden="true" className="size-[22px]" strokeWidth={2.4} /> : key}
+          {key === "backspace" ? <Delete aria-hidden="true" className="size-[26px]" strokeWidth={2.2} /> : key}
         </button>
       ))}
     </div>
@@ -393,7 +404,7 @@ function BuySuccess({ data, quote, txHash }: { data: BuyData; quote: Quote; txHa
   }
 
   return (
-    <TradeFrame title="Bought" nav={{ kind: "close" }} tone="lime" hideHeader wide>
+    <TradeFrame title="Bought" nav={{ kind: "close" }} tone="lime" hideHeader deskWidth="lg:w-[1080px]">
       <div className="flex grow flex-col pt-6 lg:grid lg:grid-cols-[1fr_1.35fr] lg:gap-8 lg:pt-6">
         <div className="contents lg:flex lg:flex-col">
           <p className="text-[13px] font-extrabold tracking-[0.05em] uppercase">{cutText(quote.amountOut)} $CUT · free in your wallet</p>
