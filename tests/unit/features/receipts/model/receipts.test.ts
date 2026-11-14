@@ -5,17 +5,29 @@ import { getJournal, getJournalStats } from "@/entities/journal/server";
 import { getAgents, getBench, getStage } from "@/entities/agent/server";
 import { runAudit, LAUNCH_PARAMS } from "@/features/receipts/model/audit";
 import { describeGroup, groupEntries, isFoldedBurn, whenText, type DescribeContext } from "@/features/receipts/model/describe";
-import { cursorParam, filterEvents, parseCursor, parseFilter, receiptsHref } from "@/features/receipts/model/filters";
+import { cursorParam, filterEvents, parseCursor, parseFilter, receiptsHref, type Cursor } from "@/features/receipts/model/filters";
 import { percentText, supplyOf } from "@/features/receipts/model/supply";
 import { sampleHoursBeforeCut } from "@/shared/config/sample";
 import { units } from "@/shared/lib/amount";
 
 const NOW = sampleHoursBeforeCut(1);
 
+/** The whole sample journal, newest first, page by page. */
+async function everything() {
+  const entries = [];
+  let before: Cursor | undefined;
+  do {
+    const page = await getJournal({ limit: 200, before });
+    entries.push(...page.entries);
+    before = page.next ?? undefined;
+  } while (before);
+  return entries;
+}
+
 async function context(): Promise<DescribeContext> {
   const names = new Map([...(await getStage()), ...(await getBench())].map((r) => [r.id, r.name] as const));
   for (const agent of await getAgents(["kiko", "onyx", "velvet"])) names.set(agent.id, agent.name);
-  const all = (await getJournal({ limit: 200 })).entries;
+  const all = await everything();
   return {
     names,
     now: NOW,
@@ -26,19 +38,20 @@ async function context(): Promise<DescribeContext> {
 
 async function lines() {
   const ctx = await context();
-  const groups = groupEntries((await getJournal({ limit: 200 })).entries);
+  const groups = groupEntries(await everything());
   return { ctx, groups, lines: groups.map((g) => describeGroup(g, ctx)) };
 }
 
 describe("groupEntries", () => {
   it("reads one event of one transaction as one line, oldest entry first", async () => {
-    const { entries } = await getJournal({ limit: 200 });
+    const entries = await everything();
     const groups = groupEntries(entries);
     const prizes = groups.filter((g) => g.event === "prize").map((g) => g.entries.length);
     expect(prizes).toEqual([7, 8, 9]);
     const register = groups.find((g) => g.event === "register" && g.entries.length > 1)!;
     expect(register.entries).toHaveLength(10);
     expect(register.entries[0].blockHeight).toBeLessThanOrEqual(register.entries.at(-1)!.blockHeight);
+    expect(groups.find((g) => g.event === "season_start")!.entries.map((e) => e.agentId)).toHaveLength(10);
     expect(groups.reduce((sum, g) => sum + g.entries.length, 0)).toBe(entries.length);
   });
 });
@@ -49,7 +62,10 @@ describe("describeGroup", () => {
     const line = describeGroup(groups.find((g) => g.event === "cut")!, ctx);
     expect(line.tag).toBe("cut");
     expect(line.what).toBe("Cut #4: Velvet Vee is cut");
-    expect(line.cut).toMatchObject({ index: 4, agentId: "velvet", pile: units(11_400), burned: units(5_700), prize: units(7_630), survivors: 7, heirName: "Lila Loop", wallet: units(760) });
+    // Burned: Gremlin's 700 attack and half the pile. Score: the pile less the attack.
+    expect(line.cut).toMatchObject({ index: 4, agentId: "velvet", score: units(10_700), pile: units(11_400), burned: units(6_400), prize: units(7_630), survivors: 7, heirName: "Lila Loop", wallet: units(760) });
+    const onyx = describeGroup(groups.find((g) => g.event === "cut" && g.entries[0].cutIndex === 3)!, ctx);
+    expect(onyx.cut).toMatchObject({ heirName: null, wallet: units(2_310), burned: units(1_300 + 4_450 + 2_310) });
     expect(line.cut!.slice).toBe(units(981));
   });
 
@@ -63,8 +79,14 @@ describe("describeGroup", () => {
     expect(what).toContain("Onyx Moon’s wallet burned: 2,310 $CUT");
     expect(what).toContain("Season 1 started: 10 agents took the stage");
     expect(what).toContain("10,000,000 $CUT minted, once");
+    // Cut #2: Pixie survived and paid; Kiko was cut, so her bounty went back to her wallet.
+    expect(all.find((l) => l.what === "Pixie Volt survived and paid its savers 900 $CUT")!.detail).toContain("200 $CUT went back to Kiko Bun’s wallet");
     const yuna = all.find((l) => l.what === "Yuna Star holds its money")!;
-    expect(yuna.detail).toBe("The contract downgraded it: generous agents cannot attack · 10 $CUT think fee burned");
+    expect(yuna.detail).toBe("The contract downgraded it: generous agents cannot attack · names Melody-9 its heir · 10 $CUT think fee burned");
+    const mabel = all.find((l) => l.what === "Mabel Market pays Oracle Toad 47 $CUT for a pact")!;
+    expect(mabel.detail).toMatch(/^The contract cut it down: a miser spends at most 5% of its wallet a day · /);
+    expect(all.find((l) => l.what === "underdog.sample booed Lila Loop: 300 $CUT burned for good")!.detail).toMatch(/^Lila Loop’s boos for cut #5: 2,100 \$CUT off its score/);
+    expect(all.find((l) => l.what.startsWith("mika.near bought 120 $CUT"))!.detail).toMatch(/^1% fee, 1\.2 \$CUT: 0\.6 to the season pot, 0\.6 to /);
     expect(all.find((l) => l.tag === "move")!.label).toBe("MOVE");
   });
 
@@ -73,7 +95,7 @@ describe("describeGroup", () => {
     const folded = groups.filter((g) => isFoldedBurn(g, ctx));
     expect(folded.length).toBe(30 + 7);
     expect(groups.filter((g) => g.event === "ft_burn" && !isFoldedBurn(g, ctx)).map((g) => String(g.entries[0].data.memo))).toEqual(
-      expect.arrayContaining(["cut 4", "attacks", "cut 3: wallet, no living heir"]),
+      expect.arrayContaining(["cut 4", "cut 3", "heirless wallet"]),
     );
   });
 

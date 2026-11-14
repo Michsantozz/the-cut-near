@@ -10,6 +10,7 @@ export type Breakdown = {
   at: Date;
   cutAgentId: string | null;
   pile: bigint;
+  /** The part of the cut pile that burned (`burn_bps`); the cut's own `burned` also counts attacks and wallets. */
   burned: bigint;
   prize: bigint;
   /** Fees since the previous cut that went into the prize. */
@@ -39,14 +40,21 @@ export function shareOf(slice: bigint, saved: bigint, pile: bigint): bigint {
  * The breakdown of the newest cut in which the viewer had a save on a survivor, or null. `cutEvents` and
  * `prizeEvents` come from the journal; `saves` are the viewer's saves now (a save rides from cut to cut).
  */
-export function latestBreakdown(cutEvents: readonly JournalEntry[], prizeEvents: readonly JournalEntry[], saves: readonly Save[], saversBps: number): Breakdown | null {
+export function latestBreakdown(
+  cutEvents: readonly JournalEntry[],
+  prizeEvents: readonly JournalEntry[],
+  saves: readonly Save[],
+  saversBps: number,
+  burnBps = 5_000,
+): Breakdown | null {
   const savedOn = new Map(saves.filter((s) => s.amount > 0n).map((s) => [s.agentId, s]));
   const cuts = [...cutEvents].sort((a, b) => (b.cutIndex ?? 0) - (a.cutIndex ?? 0));
   for (const cut of cuts) {
     const index = cut.cutIndex;
     if (index === null) continue;
     const candidates = prizeEvents
-      .filter((p) => p.cutIndex === index && p.agentId && p.data.burned !== true)
+      // v1 marks an empty pile's burned slice with `burned: true`; v2 pays 0 to an empty pile.
+      .filter((p) => p.cutIndex === index && p.agentId && p.data.burned !== true && big(p.data, "slice") > 0n)
       .map((p) => ({ p, save: savedOn.get(p.agentId!) }))
       // Only a save locked for this cut (or an earlier one) was in the pile when it ran.
       .filter((c): c is { p: JournalEntry; save: Save } => c.save !== undefined && c.save.lockedForCut <= index)
@@ -54,7 +62,7 @@ export function latestBreakdown(cutEvents: readonly JournalEntry[], prizeEvents:
     const best = candidates[0];
     if (!best) continue;
     const pile = big(cut.data, "pile");
-    const burned = big(cut.data, "burned");
+    const burned = (pile * BigInt(burnBps)) / 10_000n;
     const prize = big(cut.data, "prize");
     const slice = big(best.p.data, "slice");
     const agentPile = big(best.p.data, "pile");

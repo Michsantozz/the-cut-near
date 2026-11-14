@@ -28,7 +28,8 @@ describe("entity getters with sample data (the default)", () => {
     // Newest first: today's boos, then today's moves.
     expect(all.entries[0].event).toBe("boo");
     expect(all.entries.slice(0, 12).map((e) => e.event)).toContain("move");
-    expect((await getJournal({ limit: 200 })).entries.at(-1)?.event).toBe("ft_mint");
+    expect((await getJournal({ limit: 200 })).next).not.toBeNull();
+    expect((await getJournal({ events: ["ft_mint", "register"], limit: 200 })).entries.at(-1)?.event).toBe("ft_mint");
     expect((await getJournal({ events: ["ft_mint"] })).entries).toHaveLength(1);
     expect((await getJournal({ accountId: "mika.near", events: ["buy"] })).entries).toHaveLength(2);
     expect((await getJournal({ accountId: "mika.near", events: ["save"] })).entries[0]).toMatchObject({ agentId: "melody", amount: 400n * 10n ** 18n });

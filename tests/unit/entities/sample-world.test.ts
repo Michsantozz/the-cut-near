@@ -49,12 +49,18 @@ describe("the sample world", () => {
       const record = await getCut(entry.cutIndex!);
       expect(record?.deletedId ?? null).toBe(entry.agentId);
       expect(BigInt(String(entry.data.pile))).toBe(record?.pile);
-      expect(BigInt(String(entry.data.burned))).toBe(record?.burned);
       expect(BigInt(String(entry.data.slice))).toBe(record?.slice);
-      expect(entry.data.inherited_by ?? null).toBe(record?.inheritedBy ?? null);
+      // `burned` is every burn of the cut's transaction: attacks, half the pile, a wallet with no living heir.
+      const burns = (await getJournal({ events: ["ft_burn"], limit: 200 })).entries.filter((e) => e.txHash === entry.txHash);
+      expect(BigInt(String(entry.data.burned))).toBe(sum(burns.map((e) => e.amount ?? 0n)));
+      const [inherit] = (await getJournal({ events: ["inherit"], cutIndex: entry.cutIndex! })).entries;
+      expect(inherit ? String(inherit.data.heir) : null).toBe(record?.inheritedBy ?? null);
     }
     const inherits = await getJournal({ events: ["inherit"] });
     expect(inherits.entries.map((e) => `${e.agentId}>${String(e.data.heir)}`)).toEqual(["velvet>lila", "kiko>melody"]);
+    const seated = await getJournal({ events: ["season_start"] });
+    expect(seated.entries).toHaveLength(10);
+    expect(sum(seated.entries.map((e) => e.amount ?? 0n))).toBe(units(147_200));
   });
 
   it("logs today's boos and moves as the stage shows them", async () => {

@@ -364,7 +364,7 @@ function CutReceiptGrid({ cut }: { cut: CutReceipt }) {
         ))}
       </dl>
       <p className="mt-1.5 text-[12.5px] leading-[17px] text-ink-3">
-        {cut.agentName && (
+        {cut.agentName && (cut.heirName || cut.wallet > 0n) && (
           <>
             Its wallet of <b className="font-bold text-ink">{cutText(cut.wallet)} $CUT</b> {cut.heirName ? `went to its heir ${cut.heirName}` : "burned: no living heir"} ·{" "}
           </>

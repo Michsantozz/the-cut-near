@@ -69,7 +69,7 @@ export async function loadPrizes(accountId: string): Promise<Prizes> {
   for (const entry of registers.entries) if (entry.agentId && typeof entry.data.name === "string") names[entry.agentId] = entry.data.name;
   for (const agent of [...stage, ...bench]) names[agent.id] = agent.name;
 
-  const breakdown = latestBreakdown(cuts.entries, prizes.entries, saves, params.saversBps);
+  const breakdown = latestBreakdown(cuts.entries, prizes.entries, saves, params.saversBps, params.burnBps);
   const latestCut = cuts.entries.reduce((max, entry) => Math.max(max, entry.cutIndex ?? 0), 0);
   const alive = new Set([...stage, ...bench].map((agent) => agent.id));
   // A save can be taken back once the cut it was locked for has run, on an agent that is still there.
