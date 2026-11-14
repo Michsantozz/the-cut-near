@@ -1,8 +1,9 @@
 import { units } from "@/shared/lib/amount";
 
+import { scoreShown } from "./score";
 import type { Agent } from "./types";
 
-const ONE_CUT = units(1);
+const TENTH = units(1) / 10n;
 
 /**
  * Score `agent` must add to rank above `other`, in $CUT units. Zero when it already does.
@@ -16,9 +17,22 @@ export function gapToPass(agent: Pick<Agent, "score" | "joinedAt">, other: Pick<
   return winsTie ? diff : diff + 1n;
 }
 
-/** A gap rounded up to whole $CUT, so the number shown is always enough to pass: 191.4 → 192, never 191. */
-export function wholeCutsToPass(gap: bigint): bigint {
-  return ((gap + ONE_CUT - 1n) / ONE_CUT) * ONE_CUT;
+/** A gap rounded up to 0.1 $CUT, so the number shown is always enough to pass: 191.4 + 1 unit → 191.5, never 191.4. */
+export function tenthsToPass(gap: bigint): bigint {
+  return gap <= 0n ? 0n : ((gap + TENTH - 1n) / TENTH) * TENTH;
+}
+
+/**
+ * The gap every screen shows next to the two scores, in 0.1 $CUT steps. It is never less than the real gap
+ * (`tenthsToPass(gapToPass(...))`), and it is also the contract's rule applied to the two scores as shown
+ * (`scoreShown`), so the screen's own arithmetic checks out: Kiko 959.5 and Onyx 1,150.9 → 191.5 to pass.
+ */
+export function gapShown(agent: Pick<Agent, "score" | "joinedAt">, other: Pick<Agent, "score" | "joinedAt">): bigint {
+  const real = tenthsToPass(gapToPass(agent, other));
+  const onScreen = tenthsToPass(
+    gapToPass({ score: scoreShown(agent.score), joinedAt: agent.joinedAt }, { score: scoreShown(other.score), joinedAt: other.joinedAt }),
+  );
+  return real > onScreen ? real : onScreen;
 }
 
 /** Width of a bar as a percent of the top value, never thinner than `min`. */

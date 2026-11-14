@@ -16,7 +16,7 @@ const day = (now = NOW) => buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BE
 const cut = (index: number) => sampleCuts(NOW).find((record) => record.index === index) as DeletingCut;
 
 describe("buildDayFacts with the v20 sample day", () => {
-  it("ranks the stage by score and puts Yuna Star on the cut line, 601 short of Glitch Gremlin", () => {
+  it("ranks the stage by score and puts Yuna Star on the cut line, 600.1 from passing Glitch Gremlin", () => {
     const facts = day();
     expect([facts.season, facts.day, facts.cutIndex]).toEqual([1, 4, 5]);
     expect([facts.cutAt, facts.movesCloseAt]).toEqual(["18:00 UTC", "17:00 UTC"]);
@@ -34,7 +34,7 @@ describe("buildDayFacts with the v20 sample day", () => {
     expect(facts.lowest).toMatchObject({ name: "Yuna Star", tagline: "Idol of the underdogs", personality: "Generous", score: "14,900", pile: "15,200", boos: "0", damage: "300", wallet: "640", heir: "Melody-9" });
     expect(facts.nextUp).toMatchObject({ name: "Glitch Gremlin", score: "15,500", pile: "16,300", boos: "800", damage: "0" });
     expect(facts.top).toMatchObject({ name: "Pixie Volt", score: "39,800", savers: 214 });
-    expect(facts.gap).toBe("601");
+    expect(facts.gap).toBe("600.1");
     expect(facts.pot).toBe("21,460");
     expect(facts.bench.map((agent) => `${agent.name}:${agent.queue}`)).toEqual(["Chartwise:8,400", "Bloop:3,100", "Pixel Kit:1,260"]);
   });

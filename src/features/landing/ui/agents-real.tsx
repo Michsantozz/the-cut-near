@@ -1,5 +1,6 @@
 import { cn } from "cn";
 import { Brain, Check, Cpu, Lock, Shield, ShieldCheck, Trash2, type LucideIcon } from "lucide-react";
+import { Fragment } from "react";
 
 import { AgentPostActions, PERSONALITIES, PERSONALITY_IDS, PersonalityChip, type Agent } from "@/entities/agent";
 
@@ -139,13 +140,22 @@ export function AgentsReal({ landing, posts }: { landing: Landing; posts: AgentP
               <div className="flex items-center gap-3 lg:gap-3.5">
                 <Head id={featured.id} name={featured.name} className="size-[52px] rounded-[15px] border-[2.5px] lg:size-16 lg:rounded-[18px]" />
                 <div className="min-w-0">
-                  <p className="font-heading text-[22px] leading-[26px] font-extrabold lg:text-[30px] lg:leading-[34px]">{featured.accountId}</p>
-                  <div className="mt-[5px] flex gap-1.5 lg:mt-1.5 lg:gap-2">
+                  <p className="font-heading text-[22px] leading-[26px] font-extrabold break-words lg:text-[30px] lg:leading-[34px]">
+                    {/* A long account id wraps after a dot on a phone, never mid-word. */}
+                    {featured.accountId.split(".").map((part, index) => (
+                      <Fragment key={index}>
+                        {index > 0 && "."}
+                        {index > 0 && <wbr />}
+                        {part}
+                      </Fragment>
+                    ))}
+                  </p>
+                  <div className="mt-[5px] flex flex-wrap gap-1.5 lg:mt-1.5 lg:gap-2">
                     <span className="inline-flex items-center gap-1 rounded-full border-2 border-ink bg-lime px-2 py-0.5 text-[11px] font-extrabold whitespace-nowrap lg:gap-[5px] lg:px-2.5 lg:py-[3px] lg:text-xs">
                       <Shield aria-hidden="true" className="size-3 lg:size-[13px]" strokeWidth={3} />
                       No human key
                     </span>
-                    <span className="rounded-full border-2 border-ink bg-canvas px-2 py-0.5 text-[11px] font-extrabold whitespace-nowrap lg:px-2.5 lg:py-[3px] lg:text-xs">
+                    <span className="max-w-full truncate rounded-full border-2 border-ink bg-canvas px-2 py-0.5 text-[11px] font-extrabold whitespace-nowrap lg:px-2.5 lg:py-[3px] lg:text-xs">
                       Made by {parentAccount(featured.accountId)}
                     </span>
                   </div>

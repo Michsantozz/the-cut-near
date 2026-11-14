@@ -9,7 +9,7 @@ import { useState } from "react";
 
 import { CUT_DECIMALS, parseUnits } from "@/shared/lib/amount";
 import { Button } from "@/shared/ui/button";
-import { formatAmount, formatUsd, formatUtcTime } from "@/shared/ui/format";
+import { formatAmount, formatCutTenths, formatUsd, formatUtcTime } from "@/shared/ui/format";
 import { useNow } from "@/shared/ui/use-now";
 import { useWallet } from "@/shared/wallet";
 
@@ -19,7 +19,7 @@ import { cutToUsdCents, spotPrice } from "../model/money";
 import { defaultSave, ordinal, relockedTotal, SAVE_STORAGE, saveProblem, scoreBarWidths, shareIfCutNow, type SaveChoice } from "../model/save";
 import { cutToInput } from "../model/sell";
 import type { SaveData } from "../server/load";
-import { agentFullBody as agentSticker, agentTile, wholeCutsToPass } from "@/entities/agent";
+import { agentFullBody as agentSticker, agentTile, gapShown, scoreShown } from "@/entities/agent";
 import { cutText, cutTyped, cutWhole, dayWord, nearText } from "./copy";
 import { TradeFrame } from "./frame";
 import { FailedStep, PendingStep, TxLink } from "./status";
@@ -215,7 +215,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
                 <div className="min-w-0 grow">
                   <p className="text-[15px] leading-[18px] font-extrabold">{picked.agent.name}</p>
                   <p className="truncate text-xs leading-[15px] text-ink-3">
-                    Pile {cutWhole(picked.agent.pile)} · {ordinal(picked.rank)} of {stageSize}
+                    Score {formatCutTenths(scoreShown(picked.agent.score))} · {ordinal(picked.rank)} of {stageSize}
                   </p>
                 </div>
                 <p className="shrink-0 text-right leading-4 whitespace-nowrap">
@@ -258,7 +258,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
                         style={{ width: `${bars[index] ?? 4}%` }}
                       />
                     </span>
-                    <span className={cn("w-[72px] text-right text-sm font-bold", choice.isLowest && "text-burn")}>{cutWhole(choice.agent.score)}</span>
+                    <span className={cn("w-[72px] text-right text-sm font-bold", choice.isLowest && "text-burn")}>{formatCutTenths(scoreShown(choice.agent.score))}</span>
                     <span className={cn("w-[92px] text-right text-sm font-extrabold", choice.isLowest && "text-burn")}>{choice.isLowest ? "Cut" : pays(choice.paysPer100)}</span>
                     <span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-paper in-aria-checked:bg-lime">
                       {choice.agent.id === pickedId && <span className="size-2 rounded-full bg-ink" />}
@@ -392,7 +392,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
                   body={
                     picked.isLowest
                       ? above && lowest
-                        ? `Lift ${picked.agent.name.split(" ")[0]} past ${above.agent.name} (${cutWhole(wholeCutsToPass(data.gapToNext))} $CUT) and it survives with the smallest pile: it pays the most per $CUT.`
+                        ? `Lift ${picked.agent.name.split(" ")[0]} past ${above.agent.name} (${formatCutTenths(gapShown(picked.agent, above.agent))} $CUT) and it survives with the smallest pile: it pays the most per $CUT.`
                         : "Its savers share its slice of the prize."
                       : share !== null && amount
                         ? `Its savers share its slice: about ${formatAmount(share, { maxFractionDigits: 2, minFractionDigits: 2 })} for your ${cutTyped(amount)}, if the cut ran now.`

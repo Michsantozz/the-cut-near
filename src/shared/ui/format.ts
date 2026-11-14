@@ -11,9 +11,10 @@ export type AmountFormat = {
   minFractionDigits?: number;
   /**
    * "half-up" (default) or "down": toward zero, for limits the contract enforces, so "up to 592.5"
-   * never reads as a higher "593".
+   * never reads as a higher "593". "floor" rounds toward minus infinity, so a score, even a negative one,
+   * never reads higher than it is; "ceil" toward plus infinity, so a gap never reads smaller than it is.
    */
-  rounding?: "half-up" | "down";
+  rounding?: "half-up" | "down" | "floor" | "ceil";
 };
 
 const groupThousands = (digits: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -27,8 +28,11 @@ export function formatAmount(value: bigint, format: AmountFormat = {}): string {
   const abs = negative ? -value : value;
   const unit = 10n ** BigInt(decimals);
   const keep = 10n ** BigInt(maxFractionDigits);
-  // Half up: add half a unit before the integer division. Down: plain integer division.
-  const scaled = rounding === "down" ? (abs * keep) / unit : (abs * keep * 2n + unit) / (unit * 2n);
+  // On the absolute value: half up adds half a unit before the integer division, down is a plain integer division,
+  // up adds a whole unit less one. Floor and ceil turn into down or up depending on the sign.
+  const mode = rounding === "floor" ? (negative ? "up" : "down") : rounding === "ceil" ? (negative ? "down" : "up") : rounding;
+  const scaled =
+    mode === "down" ? (abs * keep) / unit : mode === "up" ? (abs * keep + unit - 1n) / unit : (abs * keep * 2n + unit) / (unit * 2n);
 
   const whole = groupThousands((scaled / keep).toString());
   const fraction = (scaled % keep).toString().padStart(maxFractionDigits, "0");
@@ -37,6 +41,14 @@ export function formatAmount(value: bigint, format: AmountFormat = {}): string {
 
   const text = trimmed ? `${whole}.${trimmed}` : whole;
   return negative && scaled !== 0n ? `-${text}` : text;
+}
+
+/**
+ * $CUT in the score math (scores, piles, boos, damage, gaps): one decimal at most, whole numbers stay clean.
+ * Rounded down by default, so a score never reads higher than it is: 959.59 → "959.5", 41,200 → "41,200".
+ */
+export function formatCutTenths(value: bigint, rounding: "floor" | "ceil" = "floor"): string {
+  return formatAmount(value, { maxFractionDigits: 1, rounding });
 }
 
 /**

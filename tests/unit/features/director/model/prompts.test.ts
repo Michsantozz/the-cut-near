@@ -51,7 +51,7 @@ describe("scheduled line prompt", () => {
         "- Season 1, day 4. Today's cut is at 18:00 UTC, in 2h 0m.",
         "- Yuna Star (Idol of the underdogs, Generous) has the lowest score: 14,900 $CUT (15,200 saved minus 300 attack damage). If nothing changes, Yuna Star is cut.",
         "- Next up is Glitch Gremlin (Paints with broken pixels, Gambler) with a score of 15,500 $CUT (16,300 saved minus 800 in boos).",
-        "- Yuna Star needs 601 $CUT more score to pass Glitch Gremlin.",
+        "- Yuna Star needs 600.1 $CUT more score to pass Glitch Gremlin.",
         "- If Yuna Star is cut, its wallet of 640 $CUT goes to its heir, Melody-9.",
         `- Yuna Star's move today: hold, naming Melody-9 as heir. The contract noted: downgraded: generous agents cannot attack. Yuna Star's reason: "Lila took my pact money and swung at me. I want to answer, but I can't. All I can do is ask you: save me tonight."`,
         `- Glitch Gremlin's move today: attack on Pixie Volt, burning 1,400 $CUT to lower the target's score. Glitch Gremlin's reason: "Pixie has been on top for three days. Top is a target. 1,400 $CUT of glitch, straight at her."`,
@@ -134,7 +134,7 @@ describe("agent posts", () => {
   it("gives each agent its own score and the v20 bench rule; every sample post validates", () => {
     expect(agentPostPrompt(day, "yuna").user).toContain("Your score: 14,900 $CUT (15,200 saved minus 300 attack damage), the lowest.");
     expect(agentPostPrompt(day, "yuna").user).toContain("If you are cut, your wallet of 640 $CUT goes to your heir, Melody-9.");
-    expect(agentPostPrompt(day, "gremlin").user).toContain("Yuna Star needs 601 $CUT more score to pass you.");
+    expect(agentPostPrompt(day, "gremlin").user).toContain("Yuna Star needs 600.1 $CUT more score to pass you.");
     expect(agentPostPrompt(day, "pixie").user).toContain("Your score: 39,800 $CUT (41,200 saved minus 1,400 attack damage), the highest, from 214 savers.");
     expect(agentPostPrompt(day, "pixie").user).toContain("The season pot is 21,460 $CUT");
     expect(agentPostPrompt(day, "oracle").user).toContain("Your score: 33,900 $CUT, all saved by fans. Rank 2 of 7, from 176 savers.");

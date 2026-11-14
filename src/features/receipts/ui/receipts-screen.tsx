@@ -2,9 +2,9 @@ import { cn } from "cn";
 import { Check, ChevronDown, Clock, Scissors, TrendingUp, TriangleAlert, Trophy, Wallet, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
-import { wholeCutsToPass } from "@/entities/agent";
+import { scoreShown, tenthsToPass } from "@/entities/agent";
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
-import { formatAmount, formatCount, formatDuration, formatSignificant, formatUsd, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
+import { formatAmount, formatCount, formatCutTenths, formatDuration, formatSignificant, formatUsd, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 import { ConnectButton } from "@/shared/wallet";
 
 import { cutText, whenText, type CutReceipt, type ReceiptTag } from "../model/describe";
@@ -161,7 +161,7 @@ function StatCards({ data, now }: { data: Receipts; now: Date }) {
     {
       label: "ON THE CUT LINE",
       value: stats.lowest?.name ?? "Nobody",
-      sub: stats.lowest ? `Score ${cutWhole(stats.lowest.score)}${stats.gap > 0n ? ` · ${cutWhole(wholeCutsToPass(stats.gap))} short` : ""}` : "No season on the stage",
+      sub: stats.lowest ? `Score ${formatCutTenths(scoreShown(stats.lowest.score))}${stats.gap > 0n ? ` · ${formatCutTenths(tenthsToPass(stats.gap))} to pass` : ""}` : "No season on the stage",
       icon: TriangleAlert,
       bg: "bg-[#ffc2e8]",
     },
@@ -452,7 +452,7 @@ function PendingRow({ pending, renderedAt, now }: { pending: NonNullable<Receipt
       <div className="mt-1.5 min-w-0 lg:mt-0 lg:grow">
         <p className="text-[14.5px] leading-5 font-bold">{pending.index === 1 ? "First cut" : `Cut #${pending.index}`}: the lowest score is cut</p>
         <p className="mt-px text-[13px] leading-[18px] text-ink-3 lg:mt-0 lg:text-[14.5px] lg:leading-5">
-          {pending.lowest ? `Right now ${pending.lowest.name}, score ${cutWhole(pending.lowest.score)}. ` : ""}Pacts pay, attacks burn, half its pile burns, the rest
+          {pending.lowest ? `Right now ${pending.lowest.name}, score ${formatCutTenths(scoreShown(pending.lowest.score))}. ` : ""}Pacts pay, attacks burn, half its pile burns, the rest
           plus the day’s fees goes to the survivors.
         </p>
       </div>

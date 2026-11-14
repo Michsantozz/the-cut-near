@@ -2,11 +2,11 @@ import { cn } from "cn";
 import { ArrowRight, Crown, Gift, HandCoins, LockOpen, TriangleAlert, Zap, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 
-import { DIRECTOR_ART, agentColor, agentFullBody } from "@/entities/agent";
+import { DIRECTOR_ART, agentColor, agentFullBody, pileShown, scoreParts } from "@/entities/agent";
 import { formatUsd, formatUtcDate, formatUtcTime } from "@/shared/ui/format";
 
 import type { Landing } from "../server/load-landing";
-import { capitalize, cut, cut2, cutDay, cutFine, Head, near, percent, SectionRule, shortName } from "./parts";
+import { capitalize, cut, cut2, cutDay, cutFine, cutTenths, Head, near, percent, pile, SectionRule, shortName } from "./parts";
 
 /** The Director's newest line for the landing: after the last cut if there is one, else about the agent on the block. */
 export type DirectorQuote = { text: string; badge: string; afterCut: boolean };
@@ -21,20 +21,27 @@ function Chain({ landing, cadence }: Pick<Props, "landing" | "cadence">) {
   if (!lowest) return null;
   const art = agentFullBody(lowest.id);
   const time = formatUtcTime(landing.cutAt);
+  const parts = scoreParts(lowest);
+  // The burn and the prize in the same 0.1 steps, picked so they add up on screen: burn + other half = pile shown,
+  // other half + fees = prize shown. Prize and fees are rounded down like every amount here.
+  const prize = pileShown(landing.prize);
+  const fees = pileShown(landing.fees);
+  const otherHalf = prize - fees;
+  const burned = parts.pile - otherHalf;
   const steps = [
     {
       label: "1 · LOWEST SCORE",
-      value: cut(lowest.score),
-      text: `${cut(lowest.pile)} saved − ${cut(lowest.boos)} booed − ${cut(lowest.damage)} attack damage, at ${time}:00. ${lowest.accountId} is deleted for good.`,
+      value: cutTenths(parts.score),
+      text: `${cutTenths(parts.pile)} saved − ${cutTenths(parts.boos)} booed − ${cutTenths(parts.damage)} attack damage, at ${time}:00. ${lowest.accountId} is deleted for good.`,
       style: { background: agentColor(lowest.id).bg },
       tone: "text-ink",
       art,
     },
-    { label: `2 · ${burnPart(params.burnBps)} ITS PILE BURNS`, value: cut(landing.burn), text: `Gone forever. Supply drops from ${cut(landing.supply)} to ${cut(landing.supplyAfter)}.`, tone: "bg-danger text-paper" },
+    { label: `2 · ${burnPart(params.burnBps)} ITS PILE BURNS`, value: cutTenths(burned), text: `Gone forever. Supply drops from ${cut(landing.supply)} to ${cut(landing.supplyAfter)}.`, tone: "bg-danger text-paper" },
     {
       label: "3 · THE DAY PRIZE",
-      value: cut(landing.prize),
-      text: `The other ${cut(lowest.pile - landing.burn)} of the pile plus ${cut(landing.fees)} from the day’s trade fees${cadence === "every day" ? " so far" : ""}.`,
+      value: cutTenths(prize),
+      text: `The other ${cutTenths(otherHalf)} of the pile plus ${cutTenths(fees)} from the day’s trade fees${cadence === "every day" ? " so far" : ""}.`,
       tone: "bg-lime text-ink",
     },
     {
@@ -48,7 +55,7 @@ function Chain({ landing, cadence }: Pick<Props, "landing" | "cadence">) {
           {
             label: "5 · A 400 SAVE",
             value: `+${cut2(example.save.part)}`,
-            text: `$CUT${example.usdCents !== null ? `, worth ${formatUsd(example.usdCents)}` : ""}: 400 saved of ${example.save.agent.name}’s ${cut(example.save.agent.pile)}.`,
+            text: `$CUT${example.usdCents !== null ? `, worth ${formatUsd(example.usdCents)}` : ""}: 400 saved of ${example.save.agent.name}’s ${pile(example.save.agent.pile)}.`,
             tone: "bg-paper text-ink",
           },
         ]
@@ -132,10 +139,10 @@ function WherePrizeGoes({ landing }: { landing: Landing }) {
       </p>
       {example && (
         <p className="mt-3 rounded-lg bg-ink p-3 text-[15px] leading-[22px] font-bold lg:mt-4 lg:rounded-xl lg:px-4 lg:text-[17px] lg:leading-[25px]">
-          400 on {example.save.agent.name}: 400 of {cut(example.save.agent.pile)} × {cutFine(landing.slice)} = <span className="text-lime">{cut2(example.save.part)} $CUT</span>
+          400 on {example.save.agent.name}: 400 of {pile(example.save.agent.pile)} × {cutFine(landing.slice)} = <span className="text-lime">{cut2(example.save.part)} $CUT</span>
           {example.alt && (
             <span className="mt-1 block text-[13px] leading-[18px] font-semibold text-[#b9becb] lg:mt-0 lg:text-[15px] lg:leading-[22px]">
-              Same 400 on {example.alt.agent.name}: 400 of {cut(example.alt.agent.pile)} × {cutFine(landing.slice)} ={" "}
+              Same 400 on {example.alt.agent.name}: 400 of {pile(example.alt.agent.pile)} × {cutFine(landing.slice)} ={" "}
               <b className="font-extrabold text-paper">{cut2(example.alt.part)} $CUT</b>
             </span>
           )}
@@ -183,7 +190,7 @@ function After({ landing, now }: { landing: Landing; now: Date }) {
     },
     ...(lowest
       ? [
-          { title: `${shortName(lowest.name)}’s savers lose their save.`, text: `That is the risk. Their ${cut(lowest.pile)} is split between the burn and the day prize.`, color: "text-danger", icon: TriangleAlert },
+          { title: `${shortName(lowest.name)}’s savers lose their save.`, text: `That is the risk. Their ${pile(lowest.pile)} is split between the burn and the day prize.`, color: "text-danger", icon: TriangleAlert },
           {
             title: heir ? `Its wallet goes to ${shortName(heir.name)}.` : "Its wallet burns.",
             text: heir

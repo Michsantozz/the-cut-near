@@ -6,6 +6,7 @@ import {
   formatCount,
   formatCountOf,
   formatCountdown,
+  formatCutTenths,
   formatDuration,
   formatSignificant,
   formatUsd,
@@ -131,5 +132,19 @@ describe("time", () => {
   it("compares UTC calendar days", () => {
     expect(isSameUtcDay(new Date("2026-11-13T00:00:00Z"), new Date("2026-11-13T23:59:59Z"))).toBe(true);
     expect(isSameUtcDay(new Date("2026-11-13T23:59:59Z"), new Date("2026-11-14T00:00:00Z"))).toBe(false);
+  });
+});
+
+describe("formatCutTenths", () => {
+  it("keeps one decimal, rounded down so a score never reads higher, and whole numbers clean", () => {
+    expect(formatCutTenths(units(959) + units(1) / 2n)).toBe("959.5");
+    expect(formatCutTenths(units(1_150) + (units(1) * 99n) / 100n)).toBe("1,150.9");
+    expect(formatCutTenths(units(41_200))).toBe("41,200");
+    expect(formatCutTenths(-(units(1) / 20n))).toBe("-0.1");
+  });
+
+  it("rounds up when asked, so a gap never reads smaller", () => {
+    expect(formatCutTenths(units(191) + units(1) * 4n / 10n + 1n, "ceil")).toBe("191.5");
+    expect(formatAmount(-(units(1) / 20n), { maxFractionDigits: 1, rounding: "ceil" })).toBe("0");
   });
 });

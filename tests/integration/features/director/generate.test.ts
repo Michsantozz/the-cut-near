@@ -15,7 +15,7 @@ import { server } from "../../../msw/server";
 // The v20 sample world: season 1, day 4, two hours before cut #5. Yuna Star is on the cut line.
 const NOW = new Date("2026-11-14T16:00:00Z");
 const facts = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: sampleNextCut(NOW), season: SAMPLE_SEASON, now: NOW, moves: sampleMoves(5, NOW) });
-const YUNA = "601 $CUT short of Gremlin, and generous idols cannot swing back. Save her or say goodbye.";
+const YUNA = "600.1 $CUT to pass Gremlin, and generous idols cannot swing back. Save her or say goodbye.";
 
 function setup(cloudOptions: FakeCloudOptions = {}, overrides: Partial<DirectorDeps> = {}) {
   const cloud = fakeNearAiCloud(cloudOptions);
@@ -114,7 +114,7 @@ describe("lines and proofs for the UI", () => {
 
     const bundle = await getDirectorLineProof(line.id, { store });
     expect(bundle?.status).toBe("verified");
-    expect(bundle?.prompt).toContain("Yuna Star needs 601 $CUT more score to pass Glitch Gremlin.");
+    expect(bundle?.prompt).toContain("Yuna Star needs 600.1 $CUT more score to pass Glitch Gremlin.");
     expect(bundle?.request?.sha256).toBe(sha256Hex(line.requestBody));
     expect(bundle?.signature?.expectedText).toBe(bundle?.signature?.text);
     expect(bundle?.checks.filter((c) => c.scope === "delegated").map((c) => c.id)).toEqual(["gateway:intel-quote", "model-1:intel-quote", "model-1:nvidia-gpu", "model-2:intel-quote", "model-2:nvidia-gpu"]);

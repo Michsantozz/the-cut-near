@@ -4,12 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
-import { agentColor, agentFullBody } from "@/entities/agent";
+import { agentColor, agentFullBody, gapShown } from "@/entities/agent";
 import { formatUtcTime } from "@/shared/ui/format";
 
 import { cadence as cadenceOf } from "../model/landing";
 import type { Landing } from "../server/load-landing";
-import { cut, kilo, Wordmark, WORDMARK } from "./parts";
+import { cutTenths, kilo, score, Wordmark, WORDMARK } from "./parts";
 import { StageScene } from "./stage-scene";
 
 /** The scrolling yellow band under the top bar. Two copies of the line, so the loop has no seam. */
@@ -69,10 +69,10 @@ function OnTheBlock({ landing, className }: { landing: Landing; className?: stri
       </span>
       <p className="mt-1 font-heading text-[22px] leading-6 font-extrabold lg:mt-2 lg:text-[28px] lg:leading-[30px]">{lowest.name}</p>
       <p className="text-[12.5px] font-semibold text-ink-3 lg:mt-1 lg:text-[13.5px] lg:leading-[19px] lg:text-ink-2">
-        Score {cut(lowest.score)}
+        Score {score(lowest.score)}
         {next && (
           <span className="block leading-4 font-bold text-[#d2261e] lg:leading-[19px] lg:font-extrabold lg:text-burn">
-            {cut(landing.gap)} short of {next.name}
+            {cutTenths(gapShown(lowest, next))} to pass {next.name}
           </span>
         )}
       </p>

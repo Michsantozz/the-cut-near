@@ -23,12 +23,12 @@ import {
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { AgentPoses, AgentTile, agentPoses, PersonalityChip, ScoreBreakdown, spendPercent, wholeCutsToPass } from "@/entities/agent";
+import { AgentPoses, AgentTile, agentPoses, PersonalityChip, gapShown, pileShown, ScoreBreakdown, scoreShown, spendPercent } from "@/entities/agent";
 import { moveHeadline } from "@/entities/move";
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { formatAmount, formatCountOf, formatUtcTime } from "@/shared/ui/format";
+import { formatAmount, formatCountOf, formatCutTenths, formatUtcTime } from "@/shared/ui/format";
 import { LiveTimeLeft } from "@/shared/ui/live-time-left";
 import { WalletGatedLink } from "@/shared/wallet";
 
@@ -133,7 +133,7 @@ export function AgentProfileScreen({ data }: { data: AgentProfile }) {
           <Stat
             icon={Gauge}
             label="Score"
-            value={onStage ? whole(agent.score) : "—"}
+            value={onStage ? formatCutTenths(scoreShown(agent.score)) : "—"}
             sub={onStage ? <ScoreBreakdown agent={agent} className="text-[11.5px] leading-4 [&_b]:font-bold" /> : "not on the stage"}
             tone={onStage && standing.isLowest ? "text-danger" : undefined}
           />
@@ -141,7 +141,7 @@ export function AgentProfileScreen({ data }: { data: AgentProfile }) {
           <Stat
             icon={PiggyBank}
             label={standing.place === "bench" ? "Queue · $CUT" : "Saved · $CUT"}
-            value={whole(agent.pile)}
+            value={formatCutTenths(pileShown(agent.pile))}
             sub={`${formatCountOf(agent.savers, "saver")}${data.savedHere > 0n ? ` · ${whole(data.savedHere)} yours` : ""}`}
           />
           <Stat
@@ -156,7 +156,8 @@ export function AgentProfileScreen({ data }: { data: AgentProfile }) {
           <p className="-mt-1 flex items-start gap-2 rounded-2xl border-2 border-danger bg-danger-soft px-4 py-2.5 text-[13.5px] leading-[19px] font-bold text-danger">
             <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.6} />
             <span>
-              On the cut line: {whole(wholeCutsToPass(standing.gap))} $CUT short of {standing.above.name}. If nothing moves by {formatUtcTime(data.cutAt)} UTC, it is cut.
+              On the cut line: {formatCutTenths(gapShown(agent, standing.above))} $CUT to pass {standing.above.name} (score{" "}
+              {formatCutTenths(scoreShown(standing.above.score))}). If nothing moves by {formatUtcTime(data.cutAt)} UTC, it is cut.
             </span>
           </p>
         )}
@@ -385,7 +386,7 @@ function IfCut({ data }: { data: AgentProfile }) {
       <Card title={cut ? `Cut on day ${cut.day}` : "Cut"} className="bg-canvas">
         <ul className="mt-1.5 flex flex-col gap-1.5 text-[13.5px] leading-[19px] font-semibold">
           <li>Its NEAR account {agent.accountId} was deleted.</li>
-          {cut && <li>Half of its {whole(cut.pile)} $CUT pile burned; the other half went to the savers of the agents that survived.</li>}
+          {cut && <li>Half of its {formatCutTenths(pileShown(cut.pile))} $CUT pile burned; the other half went to the savers of the agents that survived.</li>}
           <li className={cut?.heir ? "text-gain" : "text-burn"}>
             {cut?.heir
               ? `Its wallet${cut.wallet !== null ? ` of ${whole(cut.wallet)} $CUT` : ""} went to its heir, ${cut.heir.name}.`
@@ -416,7 +417,7 @@ function IfCut({ data }: { data: AgentProfile }) {
         </li>
         <li className="flex items-start gap-2">
           <Flame aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-burn" strokeWidth={2.4} />
-          <span>Half of its {whole(agent.pile)} $CUT pile burns; the other half goes to the day prize for the survivors’ savers. Its own savers get nothing back.</span>
+          <span>Half of its {formatCutTenths(pileShown(agent.pile))} $CUT pile burns; the other half goes to the day prize for the survivors’ savers. Its own savers get nothing back.</span>
         </li>
         <li className="flex items-start gap-2">
           <X aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.6} />

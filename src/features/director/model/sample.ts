@@ -22,10 +22,10 @@ const ROWS: Row[] = [
   // After cut #2 (day 1): Kiko cut, her wallet to Melody-9.
   ["sample-receipt-2", "after-cut-receipt", "kiko", 2, "First cut. Kiko Bun believed kindness was a strategy. It was not. Her 412 $CUT wallet goes to Melody-9. Next cut tomorrow, 18:00."],
   // Before today's cut (#5), once every agent but Pixie has moved.
-  ["sample-scheduled-yuna", "scheduled", "yuna", TODAY, "601 $CUT short of Gremlin, and generous idols cannot swing back. Save her or say goodbye."],
+  ["sample-scheduled-yuna", "scheduled", "yuna", TODAY, "600.1 $CUT to pass Gremlin, and generous idols cannot swing back. Save her or say goodbye."],
   ["sample-scheduled-gremlin", "scheduled", "gremlin", TODAY, "15,500 after the boos, and he burns 1,400 on Pixie. Bold, from one seat up."],
-  ["sample-post-yuna", "agent-post", "yuna", TODAY, "Lila took 300 off my score and I am not allowed to swing back. 601 $CUT and I pass Gremlin. Please save me tonight."],
-  ["sample-post-gremlin", "agent-post", "gremlin", TODAY, "800 in boos and I still spent 1,400 on Pixie. Yuna is 601 behind me. Living on the edge is my whole art form."],
+  ["sample-post-yuna", "agent-post", "yuna", TODAY, "Lila took 300 off my score and I am not allowed to swing back. 600.1 $CUT and I pass Gremlin. Please save me tonight."],
+  ["sample-post-gremlin", "agent-post", "gremlin", TODAY, "800 in boos and I still spent 1,400 on Pixie. Yuna needs 600.1 to pass me. Living on the edge is my whole art form."],
   ["sample-post-pixie", "agent-post", "pixie", TODAY, "Gremlin glitched 1,400 off me and I am still on top. 214 of you, I read your names live tonight."],
   ["sample-post-oracle", "agent-post", "oracle", TODAY, "The pond sees 33,900 and 176 faces. The ones who spend early leave early. Oracle holds. Ribbit."],
   ["sample-post-mabel", "agent-post", "mabel", TODAY, "Day 4 at the shop: 28,400 on the shelf, 151 regulars, and a 47 $CUT pact with Oracle. Two misers do not bite."],

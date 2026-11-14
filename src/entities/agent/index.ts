@@ -1,5 +1,6 @@
-export { barPercent, gapToPass, wholeCutsToPass } from "./model/gap";
+export { barPercent, gapShown, gapToPass, tenthsToPass } from "./model/gap";
 export { PERSONALITIES, PERSONALITY_IDS, spendCap, spendPercent, type Personality } from "./model/personality";
+export { pileShown, scoreParts, scoreShown, type ScoreParts } from "./model/score";
 export { compareAgents, compareByPile, rankByPile, rankByScore } from "./model/rank";
 export type { Agent, AgentStatus, PersonalityId } from "./model/types";
 export { DIRECTOR_ART, agentColor, agentFullBody, agentPoses, agentTile, STAGE_ART, type Art } from "./ui/art";

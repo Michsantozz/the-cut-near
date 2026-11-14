@@ -2,11 +2,11 @@ import { cn } from "cn";
 import { Flame, Gift } from "lucide-react";
 import Link from "next/link";
 
-import { AgentTile } from "@/entities/agent";
+import { AgentTile, pileShown } from "@/entities/agent";
 import { formatCount } from "@/shared/ui/format";
 
 import type { CutThisSeason, Lineup } from "../server/load-lineup";
-import { cut } from "./copy";
+import { cut, cutScore } from "./copy";
 
 /** What happened to a cut agent's wallet, in a fan's words. */
 export function walletFate(entry: Pick<CutThisSeason, "agent" | "wallet" | "heir">, names: Record<string, string>): string {
@@ -74,7 +74,7 @@ export function BenchStrip({ lineup, className }: { lineup: Lineup; className?: 
             >
               <AgentTile id={agent.id} name={agent.name} className="size-7 rounded-full" />
               <span className="text-[13px] font-extrabold">{agent.name}</span>
-              <span className="text-[12px] font-semibold text-ink-3">queue {cut(agent.pile)}</span>
+              <span className="text-[12px] font-semibold text-ink-3">queue {cutScore(pileShown(agent.pile))}</span>
             </Link>
           </li>
         ))}

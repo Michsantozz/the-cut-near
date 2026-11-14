@@ -1,14 +1,23 @@
 import { cn } from "cn";
 import { Scissors } from "lucide-react";
 
-import { AgentTile } from "@/entities/agent";
+import { AgentTile, pileShown, scoreShown } from "@/entities/agent";
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
-import { formatAmount, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
+import { formatAmount, formatCutTenths, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 
 // Small pieces every landing section uses: number formats, the scissors rule on top of each band, the wordmark.
 
-/** Whole $CUT: "182,400". */
+/** Whole $CUT for pots, prizes and supply: "182,400". */
 export const cut = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
+/**
+ * The score math (scores, piles, boos, damage, gaps), the way every screen of the app shows it: one decimal at most,
+ * rounded down, "959.5", "41,200". Pass values from `scoreParts` or `gapShown` so the sums check out.
+ */
+export const cutTenths = (value: bigint) => formatCutTenths(value);
+/** A score as the board shows it: "959.5". */
+export const score = (value: bigint) => formatCutTenths(scoreShown(value));
+/** A pile as the board shows it: "41,200", "959.5". */
+export const pile = (value: bigint) => formatCutTenths(pileShown(value));
 /** One decimal: "1,775.4". */
 export const cutFine = (value: bigint) => formatAmount(value, { maxFractionDigits: 1 });
 /** Two decimals: "6.32", "0.97". */
@@ -19,8 +28,8 @@ export const near = (value: bigint) => formatAmount(value, { decimals: NEAR_DECI
 export const percent = (bps: number) => `${bps / 100}%`;
 /** A share in words where it reads better: 5_000 → "half", else the percent. */
 export const portion = (bps: number) => (bps === 5_000 ? "half" : percent(bps));
-/** Thousands with one decimal: 182,400 → "182.4k". */
-export const kilo = (value: bigint) => `${formatAmount(value / 1_000n, { maxFractionDigits: 1, minFractionDigits: 1 })}k`;
+/** Thousands with one decimal, rounded down so a score never reads higher: 182,400 → "182.4k", 1,150.9 → "1.1k". */
+export const kilo = (value: bigint) => `${formatAmount(value / 1_000n, { maxFractionDigits: 1, minFractionDigits: 1, rounding: "floor" })}k`;
 /** "Kiko Bun" → "Kiko". */
 export const shortName = (name: string) => name.split(" ")[0] ?? name;
 

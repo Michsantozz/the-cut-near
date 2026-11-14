@@ -1,13 +1,13 @@
 import { cn } from "cn";
 import { Scissors } from "lucide-react";
 
-import { PERSONALITIES, type Agent } from "@/entities/agent";
+import { gapShown, PERSONALITIES, scoreParts, type Agent } from "@/entities/agent";
 import type { Move } from "@/entities/move";
-import { formatUtcDate, formatUtcTime } from "@/shared/ui/format";
+import { formatCountOf, formatUtcDate, formatUtcTime } from "@/shared/ui/format";
 
 import { benchRest, type StageRow } from "../model/landing";
 import type { Landing } from "../server/load-landing";
-import { capitalize, cut, cut2, cutDay, Head, inWords, SectionRule, shortName } from "./parts";
+import { capitalize, cut, cut2, cutDay, cutTenths, Head, inWords, pile, score, SectionRule, shortName } from "./parts";
 
 type Props = { landing: Landing; now: Date };
 
@@ -48,8 +48,10 @@ function MoveChip({ move, names, phone }: { move: Move | undefined; names: Map<s
 /** "Gambler", or "Gambler · pile 19,800 − 2,100" when boos or attack damage pull the score under the pile. */
 function personalityLine(agent: Agent): string {
   const label = PERSONALITIES[agent.personality].label;
-  const minus = agent.boos + agent.damage;
-  return minus > 0n ? `${label} · pile ${cut(agent.pile)} − ${cut(minus)}` : label;
+  // The parts as shown, so pile − minus is the score printed next to it.
+  const parts = scoreParts(agent);
+  const minus = parts.boos + parts.damage;
+  return minus > 0n ? `${label} · pile ${cutTenths(parts.pile)} − ${cutTenths(minus)}` : label;
 }
 
 function PaysPill({ row, topPayer, phone }: { row: StageRow; topPayer: boolean; phone: boolean }) {
@@ -77,7 +79,7 @@ function Account({ row }: { row: StageRow }) {
 
 function Row({ row, landing, names }: { row: StageRow; landing: Landing; names: Map<string, string> }) {
   const topPayer = row === landing.topPayer;
-  const sub = row.isLowest && landing.next ? `${cut(landing.gap)} short of ${landing.next.name}` : personalityLine(row.agent);
+  const sub = row.isLowest && landing.next ? `${cutTenths(gapShown(row.agent, landing.next))} to pass ${landing.next.name}` : personalityLine(row.agent);
   const move = landing.moves.find((item) => item.agentId === row.agent.id);
   const bar = <span className={cn("block h-full rounded-[inherit]", row.isLowest ? "bg-danger" : "bg-ink")} style={{ width: `${row.bar}%` }} />;
   return (
@@ -92,8 +94,8 @@ function Row({ row, landing, names }: { row: StageRow; landing: Landing; names: 
             <span className={cn("block text-xs leading-4 whitespace-nowrap", row.isLowest ? `font-extrabold ${DANGER_INK}` : "font-semibold text-ink-3")}>{sub}</span>
           </span>
           <span className="shrink-0 text-right">
-            <span className={cn("block font-heading text-[19px] leading-[21px] font-extrabold", row.isLowest && DANGER_INK)}>{cut(row.agent.score)}</span>
-            <span className="block text-xs leading-4 font-bold text-ink-3">{row.agent.savers} savers</span>
+            <span className={cn("block font-heading text-[19px] leading-[21px] font-extrabold", row.isLowest && DANGER_INK)}>{score(row.agent.score)}</span>
+            <span className="block text-xs leading-4 font-bold text-ink-3">{formatCountOf(row.agent.savers, "saver")}</span>
           </span>
         </div>
         <div className="mt-[7px] ml-7">
@@ -126,7 +128,7 @@ function Row({ row, landing, names }: { row: StageRow; landing: Landing; names: 
         </span>
         <span className="flex min-w-0 items-center gap-3.5">
           <span className={cn("h-3.5 grow overflow-hidden rounded-[7px]", row.isLowest ? "bg-paper" : "bg-canvas")}>{bar}</span>
-          <span className={cn("w-24 shrink-0 text-right font-heading text-[22px] font-extrabold", row.isLowest && DANGER_INK)}>{cut(row.agent.score)}</span>
+          <span className={cn("w-24 shrink-0 text-right font-heading text-[22px] font-extrabold", row.isLowest && DANGER_INK)}>{score(row.agent.score)}</span>
         </span>
         <span className="text-right text-base font-bold">{row.agent.savers}</span>
         <MoveChip move={move} names={names} phone={false} />
@@ -156,7 +158,7 @@ function Bench({ landing }: { landing: Landing }) {
   const top = landing.rows.reduce((most, row) => (row.agent.pile > most ? row.agent.pile : most), first.pile);
   const width = top > 0n ? Math.min(100, Number((first.pile * 100n) / top)) : 0;
   const stripes = <span className="block h-full rounded-[inherit] bg-[repeating-linear-gradient(135deg,var(--color-ink)_0_6px,var(--color-ink-3)_6px_12px)]" style={{ width: `${width}%` }} />;
-  const rest = benchRest(landing.bench, cut);
+  const rest = benchRest(landing.bench, pile);
   return (
     <div className="mt-4 border-t-[3px] border-dashed border-ink pt-3 lg:mt-[22px] lg:pt-4">
       <div className="lg:flex lg:items-baseline lg:gap-3.5">
@@ -177,11 +179,11 @@ function Bench({ landing }: { landing: Landing }) {
               <span className="rounded-full border-[1.5px] border-ink bg-lime px-[7px] py-px text-[10px] font-extrabold">TOP QUEUE</span>
             </span>
             <span className="block text-xs leading-4 font-semibold whitespace-nowrap text-ink-3">
-              {PERSONALITIES[first.personality].label} · {first.savers} savers
+              {PERSONALITIES[first.personality].label} · {formatCountOf(first.savers, "saver")}
             </span>
           </span>
           <span className="shrink-0 text-right">
-            <span className="block font-heading text-[19px] leading-[21px] font-extrabold">{cut(first.pile)}</span>
+            <span className="block font-heading text-[19px] leading-[21px] font-extrabold">{pile(first.pile)}</span>
             <span className="block text-xs leading-4 font-bold text-ink-3">queue</span>
           </span>
         </div>
@@ -205,7 +207,7 @@ function Bench({ landing }: { landing: Landing }) {
         </span>
         <span className="flex min-w-0 items-center gap-3.5">
           <span className="h-3.5 grow overflow-hidden rounded-[7px] bg-canvas">{stripes}</span>
-          <span className="w-24 shrink-0 text-right font-heading text-[22px] font-extrabold">{cut(first.pile)}</span>
+          <span className="w-24 shrink-0 text-right font-heading text-[22px] font-extrabold">{pile(first.pile)}</span>
         </span>
         <span className="text-right text-base font-bold">{first.savers}</span>
         <span className="justify-self-end rounded-full border-2 border-ink bg-lime px-2.5 py-[3px] text-xs font-extrabold whitespace-nowrap">TOP QUEUE</span>

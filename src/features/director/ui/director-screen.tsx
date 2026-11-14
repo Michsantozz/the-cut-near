@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { DIRECTOR_ART, AgentTile, STAGE_ART, wholeCutsToPass, type Agent } from "@/entities/agent";
-import { formatAmount, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
+import { DIRECTOR_ART, AgentTile, gapShown, pileShown, scoreShown, STAGE_ART, type Agent } from "@/entities/agent";
+import { formatAmount, formatCutTenths, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 import { Button } from "@/shared/ui/button";
 
 import { KIND_LABEL } from "../model/screen";
@@ -16,6 +16,8 @@ import { ProofBadge } from "./proof-badge";
 import { RunCutButton } from "./run-cut-button";
 
 const cut = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
+/** Scores, piles and gaps: one decimal, rounded down, so the gap shown checks out against the two scores shown. */
+const score = (value: bigint) => formatCutTenths(scoreShown(value));
 const near = (value: bigint) => formatAmount(value, { decimals: 24, maxFractionDigits: 2 });
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -118,6 +120,7 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
   const lines = rows.map((row) => screen.blockLines[row.agent.id]).filter((line): line is DirectorLineView => line !== null && line !== undefined);
   const percent = next && next.score > 0n ? Math.min(100, Math.max(3, Number(((lowest.score > 0n ? lowest.score : 0n) * 100n) / next.score))) : 100;
   const day = relativeUtcDay(new Date(screen.renderedAt), screen.cutAt);
+  const gap = next ? gapShown(lowest, next) : 0n;
 
   return (
     <section aria-labelledby="block-title" className="rounded-3xl border-2 border-ink bg-paper px-3.5 pt-2.5 pb-3 shadow-hard lg:px-5 lg:pt-4 lg:pb-[18px]">
@@ -147,7 +150,7 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
                     {line && <span className="mt-0.5 block text-[13px] leading-[17px] text-ink-2 lg:hidden">“{line.text}”</span>}
                   </span>
                   <span className="text-right leading-none">
-                    <span className="block font-heading text-[19px] font-extrabold whitespace-nowrap lg:text-[28px]">{cut(agent.score)}</span>
+                    <span className="block font-heading text-[19px] font-extrabold whitespace-nowrap lg:text-[28px]">{score(agent.score)}</span>
                     <span className="mt-1 block text-xs font-bold text-ink-3">score</span>
                   </span>
                 </span>
@@ -162,10 +165,10 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
           <div className="mt-2.5 flex items-baseline justify-between gap-3 lg:mt-4">
             <p className="text-[13px] font-extrabold lg:text-[15px]">
               <span className="lg:hidden">
-                {lowest.name} is {cut(wholeCutsToPass(screen.gap))} short of {next.name}
+                {lowest.name} needs {formatCutTenths(gap)} to pass {next.name}
               </span>
               <span className="hidden lg:inline">
-                {lowest.name} needs {cut(wholeCutsToPass(screen.gap))} $CUT to pass {next.name}
+                {lowest.name} needs {formatCutTenths(gap)} $CUT to pass {next.name}
               </span>
             </p>
             <p className="text-xs font-bold text-ink-3 lg:text-[13px] lg:font-semibold">
@@ -180,11 +183,11 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
           </div>
           <div className="mt-1.5 hidden justify-between text-[12.5px] font-bold lg:flex">
             <span>
-              {lowest.name} · {cut(lowest.score)}
+              {lowest.name} · {score(lowest.score)}
             </span>
-            <span className="text-ink-3">gap {cut(wholeCutsToPass(screen.gap))}</span>
+            <span className="text-ink-3">gap {formatCutTenths(gap)}</span>
             <span>
-              {next.name} · {cut(next.score)}
+              {next.name} · {score(next.score)}
             </span>
           </div>
         </>
@@ -338,7 +341,7 @@ function DoneView({ screen }: { screen: Screen }) {
     ["Burned", `${cut(last.burned)} $CUT · supply ${cut(last.supplyAfter)}`],
     ["Prize paid", `${cut(last.prize)} $CUT · ${last.survivors} equal slices`],
     ["Each slice", `${formatAmount(last.slice, { maxFractionDigits: 1 })} $CUT per survivor`],
-    ...(last.joined ? ([["Joined", `${last.joined.name} · pile ${cut(last.joined.pile)}`]] as [string, ReactNode][]) : []),
+    ...(last.joined ? ([["Joined", `${last.joined.name} · pile ${formatCutTenths(pileShown(last.joined.pile))}`]] as [string, ReactNode][]) : []),
     ["Run by", `${last.runner} · kept ${near(screen.agentFunding)} NEAR`],
     [
       "Receipts",
@@ -414,7 +417,7 @@ function DoneView({ screen }: { screen: Screen }) {
                 <span className="absolute top-1.5 left-1.5 rounded-full border-[1.5px] border-ink bg-lime px-[7px] text-[10.5px] leading-[17px] font-extrabold">NEW</span>
               )}
               <p className="mt-[7px] truncate text-[12.5px] font-bold">{agent.name}</p>
-              <p className="text-[11.5px] font-semibold whitespace-nowrap text-ink-3">{cut(agent.score)}</p>
+              <p className="text-[11.5px] font-semibold whitespace-nowrap text-ink-3">{score(agent.score)}</p>
             </li>
           ))}
         </ul>

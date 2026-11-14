@@ -1,13 +1,14 @@
 import { cn } from "cn";
 import { Coins, Flame, Gift, Plus, Scissors, ThumbsDown, X } from "lucide-react";
 
+import { pileShown } from "@/entities/agent";
 import { Button } from "@/shared/ui/button";
 import { formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
 
 import type { Lineup } from "../server/load-lineup";
 import { AgentCard } from "./agent-card";
-import { cut, shortName } from "./copy";
+import { cut, cutScore, shortName } from "./copy";
 
 /** The stage ranked by score, with the red cut line right above the agent the cut takes. */
 export function StageGrid({ lineup }: { lineup: Lineup }) {
@@ -72,7 +73,7 @@ function AtTheCut({ lineup }: { lineup: Lineup }) {
     heir
       ? { icon: Gift, tone: "text-gain", text: `Its ${cut(lowest.wallet)} $CUT wallet goes to its heir, ${heir}.` }
       : { icon: Flame, tone: "text-burn", text: `Its ${cut(lowest.wallet)} $CUT wallet burns: ${lowest.heir ? "its heir is no longer on the stage" : "it named no heir"}.` },
-    { icon: Flame, tone: "text-burn", text: `Half of its ${cut(lowest.pile)} $CUT pile burns. Its own savers get nothing back.` },
+    { icon: Flame, tone: "text-burn", text: `Half of its ${cutScore(pileShown(lowest.pile))} $CUT pile burns. Its own savers get nothing back.` },
     { icon: Coins, tone: "text-gain", text: `The other half joins the day prize, ${cut(prizeSoFar)} $CUT so far, split among the savers of every survivor.` },
   ];
   return (

@@ -2,13 +2,13 @@ import { cn } from "cn";
 import { ArrowUp, Gift, ThumbsDown, Trophy } from "lucide-react";
 import Link from "next/link";
 
-import { AgentPoses, ScoreBreakdown, wholeCutsToPass } from "@/entities/agent";
+import { AgentPoses, gapShown, ScoreBreakdown, scoreParts } from "@/entities/agent";
 import { Button } from "@/shared/ui/button";
 import { formatCount, formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
 
 import type { Lineup } from "../server/load-lineup";
-import { cut, cutSmall, shortName } from "./copy";
+import { cut, cutScore, shortName } from "./copy";
 import { CutClocks } from "./countdown";
 
 /** The game in one card: the agents standing on it, what happens today, and the season's numbers. */
@@ -73,9 +73,11 @@ export function StageHero({ lineup }: { lineup: Lineup }) {
 
 /** Who the cut takes if nothing moves, why, how far it is from safety, and the day's two clocks. */
 export function CutLineCard({ lineup, className }: { lineup: Lineup; className?: string }) {
-  const { lowest, next, gap } = lineup.board;
+  const { lowest, next } = lineup.board;
   if (!lowest) return null;
-  const pressure = [lowest.damage > 0n && `${cutSmall(lowest.damage)} attack damage`, lowest.boos > 0n && `${cutSmall(lowest.boos)} in boos`].filter(Boolean).join(" and ");
+  // The same numbers as the breakdown above it, so "took 0.5 in boos" never disagrees with "0.5 boos".
+  const parts = scoreParts(lowest);
+  const pressure = [parts.damage > 0n && `${cutScore(parts.damage)} attack damage`, parts.boos > 0n && `${cutScore(parts.boos)} in boos`].filter(Boolean).join(" and ");
 
   return (
     <section aria-labelledby="cutline-title" className={cn("overflow-hidden rounded-3xl border-2 border-ink bg-violet text-paper shadow-hard lg:grid lg:grid-cols-[180px_minmax(0,1fr)_minmax(0,300px)] xl:grid-cols-[180px_minmax(0,1fr)_380px]", className)}>
@@ -89,16 +91,16 @@ export function CutLineCard({ lineup, className }: { lineup: Lineup; className?:
       <div className="px-4 pt-3 pb-3.5 lg:px-5 lg:py-4">
         <p className="text-[11.5px] font-extrabold tracking-[0.05em] uppercase">On the cut line now</p>
         <h2 id="cutline-title" className="mt-0.5 font-heading text-[24px] leading-7 font-extrabold lg:text-[28px] lg:leading-8">
-          {lowest.name} · score {cut(lowest.score)}
+          {lowest.name} · score {cutScore(parts.score)}
         </h2>
         <ScoreBreakdown agent={lowest} className="mt-0.5 text-violet-soft [&_b]:text-paper [&_.text-burn]:text-lime" />
-        {next && gap !== null && (
+        {next && (
           <p className="mt-2 flex items-start gap-2 rounded-lg border-2 border-ink bg-paper px-[11px] py-2 text-[13px] leading-[18px] font-semibold text-ink">
             <span aria-hidden="true" className="flex size-[22px] shrink-0 items-center justify-center rounded-full border-2 border-ink bg-lime">
               <ArrowUp className="size-3" strokeWidth={3.4} />
             </span>
             <span>
-              <b className="font-extrabold">{cut(wholeCutsToPass(gap))} $CUT short of {next.name}.</b> {pressure ? `${shortName(lowest.name)} took ${pressure} today. ` : ""}
+              <b className="font-extrabold">{cutScore(gapShown(lowest, next))} $CUT to pass {next.name}.</b> {pressure ? `${shortName(lowest.name)} took ${pressure} today. ` : ""}
               Save it past {shortName(next.name)}, or boo {shortName(next.name)} under it, before {formatUtcTime(lineup.cutAt)} UTC.
             </span>
           </p>

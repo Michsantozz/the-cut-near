@@ -26,7 +26,7 @@ describe("buildInbox", () => {
   it("warns about the lowest agent and says no cut has run", () => {
     const notices = buildInbox(base);
     expect(notices[0]).toMatchObject({ kind: "danger", title: "Onyx Moon is on the block", at: NOW });
-    expect(notices[0].text).toBe("Lowest score: 61,800, 12,401 $CUT short of Velvet Vee. The cut runs at 18:00 UTC.");
+    expect(notices[0].text).toBe("Lowest score: 61,800, 12,400.1 $CUT to pass Velvet Vee. The cut runs at 18:00 UTC.");
     expect(notices.some((n) => n.key === "no-cut")).toBe(true);
     expect(buildInbox({ ...base, savedOn: new Set(["onyx"]) })[0].title).toBe("Your agent Onyx Moon is on the block");
   });

@@ -1,9 +1,10 @@
 import type { DeletingCut, NextCut } from "@/entities/cut";
 import type { Params } from "@/entities/market";
-import { PERSONALITIES, rankByPile, rankByScore, wholeCutsToPass, type Agent } from "@/entities/agent";
+import { gapShown, PERSONALITIES, rankByPile, rankByScore, scoreParts, type Agent } from "@/entities/agent";
 import type { Move } from "@/entities/move";
 import type { Season } from "@/entities/season";
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
+import { formatCutTenths } from "@/shared/ui/format";
 import { countdownParts, formatCut, formatRatio, utcClock } from "./format";
 
 // What the Director is allowed to know, already formatted the way the design writes numbers (RULES.md).
@@ -93,24 +94,29 @@ export function buildDayFacts(input: DayInput): DayFacts {
   if (!lowestAgent || ranked.length < 2) throw new Error("The Director needs at least two agents on the stage.");
   const nameOf = (id: string | null) => (id ? (ranked.find((agent) => agent.id === id)?.name ?? null) : null);
 
-  const stage: AgentFacts[] = ranked.map((agent, index) => ({
+  // Score math in the same 0.1 $CUT steps the screens show, so a quoted line never disagrees with the board.
+  const stage: AgentFacts[] = ranked.map((agent, index) => {
+    const parts = scoreParts(agent);
+    return {
     id: agent.id,
     name: agent.name,
     tagline: agent.tagline,
     personality: personalityLabel(agent),
-    score: formatCut(agent.score),
-    pile: formatCut(agent.pile),
-    boos: formatCut(agent.boos),
-    damage: formatCut(agent.damage),
+    score: formatCutTenths(parts.score),
+    pile: formatCutTenths(parts.pile),
+    boos: formatCutTenths(parts.boos),
+    damage: formatCutTenths(parts.damage),
     savers: agent.savers,
     savedToday: formatCut(agent.savedToday),
     wallet: formatCut(agent.wallet),
     heir: agent.heir === agent.id ? null : nameOf(agent.heir),
     rank: index + 1,
-  }));
+    };
+  });
   const lowest = stage.find((agent) => agent.id === lowestAgent.id) as AgentFacts;
   const survivors = stage.filter((agent) => agent.id !== lowest.id);
   const nextUp = survivors[survivors.length - 1];
+  const nextUpAgent = ranked.find((agent) => agent.id === nextUp?.id);
   const top = survivors[0];
 
   const left = nextCut.at.getTime() - now.getTime();
@@ -128,7 +134,7 @@ export function buildDayFacts(input: DayInput): DayFacts {
     lowest,
     nextUp,
     top,
-    gap: formatCut(wholeCutsToPass(nextCut.gapToNext)),
+    gap: formatCutTenths(nextUpAgent ? gapShown(lowestAgent, nextUpAgent) : 0n),
     bench: rankByPile(input.bench).map((agent) => ({ id: agent.id, name: agent.name, tagline: agent.tagline, personality: personalityLabel(agent), queue: formatCut(agent.pile), savers: agent.savers })),
     moves: stage.flatMap((agent) => {
       const move = input.moves?.find((m) => m.agentId === agent.id);

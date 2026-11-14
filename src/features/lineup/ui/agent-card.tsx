@@ -2,7 +2,7 @@ import { cn } from "cn";
 import { Gauge, Handshake, Hourglass, Plus, ThumbsDown, Wallet } from "lucide-react";
 import Link from "next/link";
 
-import { AgentPoses, AgentTile, agentPoses, PersonalityChip, ScoreBreakdown, type PersonalityId } from "@/entities/agent";
+import { AgentPoses, AgentTile, agentPoses, PersonalityChip, ScoreBreakdown, scoreShown, type PersonalityId } from "@/entities/agent";
 import { MoveCard } from "@/entities/move";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -10,7 +10,7 @@ import { formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
 
 import type { StageEntry } from "../model/board";
-import { cut, cutFine, shortName } from "./copy";
+import { cut, cutFine, cutScore, shortName } from "./copy";
 
 /** The art box's backdrop, by personality: a light wash of the chip's color. */
 const BACKDROP: Record<PersonalityId, string> = {
@@ -91,7 +91,7 @@ export function AgentCard({
             <Gauge aria-hidden="true" className="size-3 shrink-0" strokeWidth={2.8} />
             Score
           </p>
-          <p className={cn("font-heading text-[28px] leading-8 font-extrabold tracking-[-0.8px]", isLowest && "text-danger")}>{cut(agent.score)}</p>
+          <p className={cn("font-heading text-[28px] leading-8 font-extrabold tracking-[-0.8px]", isLowest && "text-danger")}>{cutScore(scoreShown(agent.score))}</p>
         </div>
         <div className="text-right">
           <p className="flex items-center justify-end gap-1 text-[10.5px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">

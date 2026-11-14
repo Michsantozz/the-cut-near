@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { gapToPass, rankByScore, wholeCutsToPass, type Agent } from "@/entities/agent";
+import { gapShown, gapToPass, rankByScore, tenthsToPass, type Agent } from "@/entities/agent";
 import { getStage } from "@/entities/agent/server";
 import { getNextCut } from "@/entities/cut/server";
 import { getMoves } from "@/entities/move/server";
@@ -53,11 +53,31 @@ describe("the stage board", () => {
     expect(gapToPass(older, newer)).toBe(0n);
   });
 
-  it("shows a gap rounded up to whole $CUT, so the number shown is always enough to pass", () => {
-    expect(wholeCutsToPass(units(191) + units(4) / 10n)).toBe(units(192));
-    expect(wholeCutsToPass(units(600) + 1n)).toBe(units(601));
-    expect(wholeCutsToPass(units(600))).toBe(units(600));
-    expect(wholeCutsToPass(0n)).toBe(0n);
+  it("shows a gap rounded up to 0.1 $CUT, so the number shown is always enough to pass", () => {
+    const tenth = units(1) / 10n;
+    expect(tenthsToPass(units(191) + 4n * tenth + 1n)).toBe(units(191) + 5n * tenth);
+    expect(tenthsToPass(units(600) + 1n)).toBe(units(600) + tenth);
+    expect(tenthsToPass(units(600))).toBe(units(600));
+    expect(tenthsToPass(0n)).toBe(0n);
+  });
+
+  it("shows the gap the two scores on screen need: Kiko 959.5 is 191.5 from passing Onyx 1,150.9, as on chain", () => {
+    const tenth = units(1) / 10n;
+    const kiko = { score: units(959) + 5n * tenth, joinedAt: new Date("2026-11-09T13:00:00Z") };
+    const onyx = { score: units(1_150) + 9n * tenth, joinedAt: new Date("2026-11-09T12:00:00Z") };
+    expect(gapToPass(kiko, onyx)).toBe(units(191) + 4n * tenth + 1n);
+    expect(gapShown(kiko, onyx)).toBe(units(191) + 5n * tenth);
+    // An older agent wins a tie, so the plain difference is enough.
+    expect(gapShown({ ...kiko, joinedAt: new Date("2026-11-09T11:00:00Z") }, onyx)).toBe(units(191) + 4n * tenth);
+  });
+
+  it("never shows a gap the scores on screen contradict, even with digits past the first decimal", () => {
+    const tenth = units(1) / 10n;
+    // 959.59 shows as 959.5 and 1,150.91 as 1,150.9: the real gap rounds up to 191.4, but 959.5 + 191.4 only ties.
+    const low = { score: units(959) + 59n * (tenth / 10n), joinedAt: new Date("2026-11-09T13:00:00Z") };
+    const high = { score: units(1_150) + 91n * (tenth / 10n), joinedAt: new Date("2026-11-09T12:00:00Z") };
+    expect(tenthsToPass(gapToPass(low, high))).toBe(units(191) + 4n * tenth);
+    expect(gapShown(low, high)).toBe(units(191) + 5n * tenth);
   });
 
   it("puts each agent's move next to it", async () => {
