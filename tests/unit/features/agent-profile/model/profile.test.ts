@@ -47,7 +47,7 @@ describe("profile of the sample day", () => {
   });
 
   it("writes its history from the journal", async () => {
-    const { entries } = await getJournal({ agentId: "kiko", limit: 50, sampleMoment: "after-cut" });
+    const { entries } = await getJournal({ agentId: "kiko", limit: 50 });
     const lines = entries.map((e) => historyLine(e, "Kiko Bun")).filter((l) => l !== null);
     expect(lines.length).toBeGreaterThan(0);
     expect(lines.some((l) => l.text.includes("deleted"))).toBe(true);

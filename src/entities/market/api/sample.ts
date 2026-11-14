@@ -32,7 +32,7 @@ export const SAMPLE_POOL: Pool = {
 export const SAMPLE_USD_CENTS_PER_NEAR = 250n;
 
 /** Minted 10,000,000 minus every sample burn so far (cut piles, boos, attacks, think fees, a heirless wallet). */
-export const SAMPLE_TOTAL_SUPPLY = units(9_967_354);
+export const SAMPLE_TOTAL_SUPPLY = units(9_977_090);
 
 export const SAMPLE_HOLDERS = 2_140;
 

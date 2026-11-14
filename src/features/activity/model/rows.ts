@@ -113,7 +113,7 @@ export function activityRow(entry: JournalEntry, ctx: ActivityContext): Activity
         kind: "cut",
         auto: true,
         title: name ? `${name} was cut` : "Nobody was cut",
-        sub: name ? `${time} · ${cutText(big(d, "burned"))} burned · slices of ${cutText(big(d, "slice"))}` : `${time} · the stage was not full`,
+        sub: name ? `${time} · ${cutText(big(d, "burned"))} burned · slices of ${cutText(big(d, "slice"))}` : `${time} · a season started`,
         amount: "Auto",
       };
     }

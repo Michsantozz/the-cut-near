@@ -7,7 +7,7 @@ export type JournalEntry = {
   id: string;
   /** "thecut" for the contract's own events, "nep141" for ft_mint / ft_burn / ft_transfer. */
   standard: string;
-  /** buy, sell, fee, save, unsave, cut, delete, prize, join, register, ft_mint, ft_burn… */
+  /** buy, sell, save, boo, move, pact, attack, rescue, inherit, cut, prize, season_start, register, ft_mint, ft_burn… */
   event: string;
   at: Date;
   txHash: string;
@@ -35,14 +35,7 @@ export type JournalFilter = {
   before?: { blockHeight: number; id: number };
   /** 1..200, default 50. */
   limit?: number;
-  /**
-   * Sample data only, live reads ignore it. The design shows the after-cut screens (Prizes, notifications) a minute
-   * after cut #1 ran and every other screen at 13:48 before it (docs/design/SPEC-v19.md §2). Default "before-cut".
-   */
-  sampleMoment?: SampleMoment;
 };
-
-export type SampleMoment = "before-cut" | "after-cut";
 
 /** Totals over the whole journal, for the Receipts page and its audit. Amounts in the smallest unit. */
 export type JournalStats = {
@@ -55,7 +48,7 @@ export type JournalStats = {
   burned: bigint;
   /** What the journal says is in the piles: saves, minus unsaves, minus the piles that were cut. */
   saved: bigint;
-  /** `cut` events, including cuts where nobody was on the stage to cut. */
+  /** `cut` events, including cuts that cut nobody (a season start). */
   cuts: number;
   /** Accounts with at least one `buy`. */
   buyers: number;
