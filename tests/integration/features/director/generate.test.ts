@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_NEXT_CUT, SAMPLE_NOW } from "@/entities/cut/api/sample";
 import { SAMPLE_PARAMS } from "@/entities/market/api/sample";
-import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/robot/api/sample";
+import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/agent/api/sample";
 import { createNearAiClient } from "@/shared/ai";
 import { sha256Hex } from "@/shared/ai/verify";
 import { units } from "@/shared/lib/amount";
@@ -145,12 +145,12 @@ describe("lines and proofs for the UI", () => {
 describe("runDirectorMoment", () => {
   const plain = ["The bunny needs a miracle or a whale before the cut."];
 
-  it("scheduled: one attestation, the two block lines and a post from every robot on the stage and the bench leader", async () => {
+  it("scheduled: one attestation, the two block lines and a post from every agent on the stage and the bench leader", async () => {
     const { cloud, deps } = setup({ lines: plain });
     const report = await runDirectorMoment("scheduled", { deps, now: SAMPLE_NOW });
     expect(report.failures).toEqual([]);
     const posters = ["kiko", "onyx", "pixie", "lila", "oracle", "mabel", "melody", "yuna", "gremlin", "velvet", "chartwise"];
-    expect(report.lines.map((l) => `${l.kind}:${l.subjectId}`)).toEqual(["scheduled:kiko", "scheduled:onyx", ...posters.map((id) => `robot-post:${id}`)]);
+    expect(report.lines.map((l) => `${l.kind}:${l.subjectId}`)).toEqual(["scheduled:kiko", "scheduled:onyx", ...posters.map((id) => `agent-post:${id}`)]);
     expect(report.lines.every((l) => l.proofStatus === "verified")).toBe(true);
     expect(cloud.calls.attestation).toBe(1);
     // mika.near saved 400 on Melody-9 that morning: Melody's post is asked to thank that account.

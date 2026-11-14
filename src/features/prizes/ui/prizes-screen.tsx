@@ -3,7 +3,7 @@ import { Gift, Hourglass, Plus } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { RobotTile } from "@/entities/robot";
+import { AgentTile } from "@/entities/agent";
 import { publicEnv } from "@/shared/config/public";
 import { formatAmount, formatCount, formatUsd, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 import { Button } from "@/shared/ui/button";
@@ -25,7 +25,7 @@ const STEP_BG = ["bg-orange", "bg-[#ffd84d]", "bg-lime", "bg-sky", "bg-pink"];
 const RULES = [
   "Every $CUT buy or sell adds a 1% fee to the day’s prize.",
   "Every day at 18:00 UTC the lowest pile is cut. Half burns, half joins the prize.",
-  "95% goes to savers in 9 equal slices, one per surviving robot. 5% to their creators.",
+  "95% goes to savers in 9 equal slices, one per surviving agent. 5% to their creators.",
   "Every survivor gets the same slice. Small piles share it among fewer $CUT, so they pay more.",
 ];
 
@@ -37,8 +37,8 @@ function dayWord(now: Date, at: Date, capital = false): string {
 }
 
 function Steps({ b, names, now }: { b: Breakdown; names: Record<string, string>; now: Date }) {
-  const cutName = b.cutRobotId ? (names[b.cutRobotId] ?? b.cutRobotId) : "The lowest robot";
-  const robot = names[b.robotId] ?? b.robotId;
+  const cutName = b.cutAgentId ? (names[b.cutAgentId] ?? b.cutAgentId) : "The lowest agent";
+  const agent = names[b.agentId] ?? b.agentId;
   const steps = [
     { text: `${cutName}’s pile, the lowest`, desk: `${cutName}’s pile, the lowest`, value: cut0(b.pile), sub: "Its NEAR account is deleted" },
     { text: "Half burned", desk: "Half burned", value: cut0(b.burned), sub: "Gone from supply for good" },
@@ -47,12 +47,12 @@ function Steps({ b, names, now }: { b: Breakdown; names: Record<string, string>;
       text: `Slice per survivor: ${b.saversBps / 100}% ÷ ${formatCount(b.survivors)}`,
       desk: "One slice per survivor",
       value: cut1(b.slice),
-      sub: `${b.saversBps / 100}% ÷ ${formatCount(b.survivors)} robots. ${(10_000 - b.saversBps) / 100}% (${cut0((b.prize * BigInt(10_000 - b.saversBps)) / 10_000n)}) to creators`,
+      sub: `${b.saversBps / 100}% ÷ ${formatCount(b.survivors)} agents. ${(10_000 - b.saversBps) / 100}% (${cut0((b.prize * BigInt(10_000 - b.saversBps)) / 10_000n)}) to creators`,
     },
-    { text: `${cut0(b.saved)} of ${robot}’s ${cut0(b.robotPile)}`, desk: `Your ${cut0(b.saved)} of ${cut0(b.robotPile)} saved`, value: `${cut2(b.share)} $CUT`, sub: `${robot}’s savers share its slice` },
+    { text: `${cut0(b.saved)} of ${agent}’s ${cut0(b.agentPile)}`, desk: `Your ${cut0(b.saved)} of ${cut0(b.agentPile)} saved`, value: `${cut2(b.share)} $CUT`, sub: `${agent}’s savers share its slice` },
   ];
   const title = `How your ${cut2(b.share)} was made`;
-  const date = `${formatUtcDate(b.at)}${b.cutRobotId ? ` · ${cutName} was cut` : ""}`;
+  const date = `${formatUtcDate(b.at)}${b.cutAgentId ? ` · ${cutName} was cut` : ""}`;
   return (
     <section aria-labelledby="made-title" className="rounded-3xl border-2 border-ink bg-paper px-4 pt-3.5 pb-3 shadow-hard lg:px-6 lg:pt-5 lg:pb-5">
       <div className="flex items-baseline justify-between gap-2">
@@ -175,7 +175,7 @@ function HowPrizesWork() {
   );
 }
 
-/** The stage's piles now, highest first: the lowest is cut next, the viewer's robot is marked. */
+/** The stage's piles now, highest first: the lowest is cut next, the viewer's agent is marked. */
 function PilesNow({ piles, mine, when }: { piles: Pile[]; mine: string | null; when: string }) {
   if (piles.length === 0) return null;
   const lowest = piles.at(-1)?.id;
@@ -188,15 +188,15 @@ function PilesNow({ piles, mine, when }: { piles: Pile[]; mine: string | null; w
         <p className="text-[13px] font-semibold text-ink-3">$CUT saved · lowest is cut {when}</p>
       </div>
       <ol className="mt-3.5 grid gap-3" style={{ gridTemplateColumns: `repeat(${piles.length}, minmax(0, 1fr))` }}>
-        {piles.map((robot) => {
-          const low = robot.id === lowest;
-          const yours = robot.id === mine;
+        {piles.map((agent) => {
+          const low = agent.id === lowest;
+          const yours = agent.id === mine;
           return (
-            <li key={robot.id} className="relative min-w-0 text-center">
-              <Link href={`/robots/${robot.id}`} className="block rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-                <RobotTile
-                  id={robot.id}
-                  name={robot.name}
+            <li key={agent.id} className="relative min-w-0 text-center">
+              <Link href={`/agents/${agent.id}`} className="block rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+                <AgentTile
+                  id={agent.id}
+                  name={agent.name}
                   className={cn("aspect-square size-auto w-full rounded-xl text-2xl", low && "border-dashed border-danger", yours && "border-3")}
                 />
                 {(low || yours) && (
@@ -209,8 +209,8 @@ function PilesNow({ piles, mine, when }: { piles: Pile[]; mine: string | null; w
                     {low ? "LOWEST" : "YOURS"}
                   </span>
                 )}
-                <span className="mt-[7px] block truncate text-[12.5px] font-bold">{robot.name}</span>
-                <span className="block text-[11.5px] font-semibold whitespace-nowrap text-ink-3">{cut0(robot.pile)}</span>
+                <span className="mt-[7px] block truncate text-[12.5px] font-bold">{agent.name}</span>
+                <span className="block text-[11.5px] font-semibold whitespace-nowrap text-ink-3">{cut0(agent.pile)}</span>
               </Link>
             </li>
           );
@@ -231,15 +231,15 @@ function Waiting({ saved: save, nextCut, now }: WaitingProps) {
     ? [
         `${when} the lowest pile is cut.${nextCut.lowestName ? ` ${nextCut.lowestName} is lowest now.` : ""}`,
         "Half its pile burns. The other half plus the day’s fees is the prize, in 9 equal slices.",
-        `If ${save.robotName} survives, you share its slice with its savers. If it is cut, half your save burns.`,
+        `If ${save.agentName} survives, you share its slice with its savers. If it is cut, half your save burns.`,
       ]
     : [
-        "Save $CUT on a robot. It stays locked until the next cut.",
+        "Save $CUT on an agent. It stays locked until the next cut.",
         `Every day at ${formatUtcTime(at)} UTC the lowest pile is cut: half burns, half plus the day’s 1% fees is the prize.`,
-        "95% goes to savers in 9 equal slices, one per surviving robot; small piles pay more per $CUT. 5% goes to creators.",
+        "95% goes to savers in 9 equal slices, one per surviving agent; small piles pay more per $CUT. 5% goes to creators.",
       ];
   const chip = saved
-    ? `You saved ${cut0(save.total)} on ${save.robotName}`
+    ? `You saved ${cut0(save.total)} on ${save.agentName}`
     : `Paid every day, after the ${formatUtcTime(at)} UTC cut`;
   return (
     <section className="rounded-3xl border-2 border-ink bg-paper px-4 py-3.5 shadow-hard lg:px-[22px] lg:py-5">
@@ -312,8 +312,8 @@ export function prizesSub(data: Prizes | null): string {
 export function PrizesScreen({ data }: { data: Prizes }) {
   const now = new Date(data.renderedAt);
   const b = data.breakdown;
-  const robotName = b ? (data.names[b.robotId] ?? b.robotId) : null;
-  const cutName = b?.cutRobotId ? (data.names[b.cutRobotId] ?? b.cutRobotId) : null;
+  const agentName = b ? (data.names[b.agentId] ?? b.agentId) : null;
+  const cutName = b?.cutAgentId ? (data.names[b.cutAgentId] ?? b.cutAgentId) : null;
   const nextDay = formatUtcDate(data.nextCut.at);
   const ready = data.claimable > 0n;
 
@@ -328,7 +328,7 @@ export function PrizesScreen({ data }: { data: Prizes }) {
       key: "next",
       title: `${dayWord(now, data.nextCut.at, true)} · ${nextDay}`,
       amount: "Next",
-      sub: `Only if ${data.keep?.robotName ?? data.saved.robotName} survives`,
+      sub: `Only if ${data.keep?.agentName ?? data.saved.agentName} survives`,
       badge: "Not yet",
       badgeTone: "next",
     });
@@ -346,8 +346,8 @@ export function PrizesScreen({ data }: { data: Prizes }) {
         amount={cut2(data.claimable)}
         usd={data.claimableUsdCents === null ? null : formatUsd(data.claimableUsdCents)}
         dateLabel={b ? formatUtcDate(b.at) : "now"}
-        why={b && robotName ? `${robotName} survived. This is your share of its slice.` : "Your prizes from the cuts and your creator slices."}
-        keep={data.keep ? { robotId: data.keep.robotId, robotName: data.keep.robotName, amount: cut0(data.keep.amount), nextDay } : null}
+        why={b && agentName ? `${agentName} survived. This is your share of its slice.` : "Your prizes from the cuts and your creator slices."}
+        keep={data.keep ? { agentId: data.keep.agentId, agentName: data.keep.agentName, amount: cut0(data.keep.amount), nextDay } : null}
         registered={data.registered}
         explorerTxBase={EXPLORER_TX[publicEnv.network]}
       />
@@ -357,7 +357,7 @@ export function PrizesScreen({ data }: { data: Prizes }) {
     <>
       <Waiting saved={data.saved} nextCut={data.nextCut} now={now} />
       <div className="hidden lg:block">
-        <PilesNow piles={data.piles} mine={data.saved.total > 0n ? data.saved.robotId : null} when={pilesWhen(now, data.nextCut.at)} />
+        <PilesNow piles={data.piles} mine={data.saved.total > 0n ? data.saved.agentId : null} when={pilesWhen(now, data.nextCut.at)} />
       </div>
     </>
   );

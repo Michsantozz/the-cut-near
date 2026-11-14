@@ -59,11 +59,11 @@ pub struct Fee {
 #[serde(crate = "near_sdk::serde")]
 pub struct Save {
     pub account_id: AccountId,
-    pub robot_id: String,
+    pub agent_id: String,
     pub amount: U128,
-    /// The account's whole save on this robot after this call.
+    /// The account's whole save on this agent after this call.
     pub total: U128,
-    /// The robot's pile (or queue) after this call.
+    /// The agent's pile (or queue) after this call.
     pub pile: U128,
     /// The cut the save is locked for.
     pub cut_index: u64,
@@ -73,7 +73,7 @@ pub struct Save {
 #[serde(crate = "near_sdk::serde")]
 pub struct Unsave {
     pub account_id: AccountId,
-    pub robot_id: String,
+    pub agent_id: String,
     pub amount: U128,
     /// Prize earned by the save, paid together with it.
     pub prize: U128,
@@ -85,8 +85,8 @@ pub struct Unsave {
 pub struct Cut {
     pub cut_index: u64,
     /// `null` when the stage was not full and nobody was cut.
-    pub robot_id: Option<String>,
-    pub robot_account_id: Option<AccountId>,
+    pub agent_id: Option<String>,
+    pub agent_account_id: Option<AccountId>,
     pub pile: U128,
     pub burned: U128,
     pub prize: U128,
@@ -102,9 +102,9 @@ pub struct Cut {
 #[serde(crate = "near_sdk::serde")]
 pub struct Prize {
     pub cut_index: u64,
-    pub robot_id: String,
+    pub agent_id: String,
     pub creator: AccountId,
-    /// The savers' slice this robot received (or burned).
+    /// The savers' slice this agent received (or burned).
     pub slice: U128,
     pub creator_slice: U128,
     pub pile: U128,
@@ -116,7 +116,7 @@ pub struct Prize {
 #[serde(crate = "near_sdk::serde")]
 pub struct Join {
     pub cut_index: u64,
-    pub robot_id: String,
+    pub agent_id: String,
     pub pile: U128,
 }
 
@@ -124,7 +124,7 @@ pub struct Join {
 #[serde(crate = "near_sdk::serde")]
 pub struct Delete {
     pub cut_index: u64,
-    pub robot_id: String,
+    pub agent_id: String,
     pub account_id: AccountId,
     pub beneficiary: AccountId,
 }
@@ -132,7 +132,7 @@ pub struct Delete {
 #[derive(Serialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Register {
-    pub robot_id: String,
+    pub agent_id: String,
     pub account_id: AccountId,
     pub creator: AccountId,
     pub name: String,

@@ -1,7 +1,7 @@
-//! The whole show on a local NEAR node: deploy, register robots (real keyless accounts),
+//! The whole show on a local NEAR node: deploy, register agents (real keyless accounts),
 //! buy, save, time travel to the cut, run it from a third account, and check that the
-//! robot account is gone, the runner received its 0.5 NEAR, prizes can be claimed and
-//! the bench robot took the seat.
+//! agent account is gone, the runner received its 0.5 NEAR, prizes can be claimed and
+//! the bench agent took the seat.
 
 use anyhow::Result;
 use std::collections::{BTreeMap, BTreeSet};
@@ -39,7 +39,7 @@ async fn the_cut_on_a_real_node() -> Result<()> {
     assert_eq!(params["savers_bps"], 9500);
     assert_eq!(params["stage_size"], 3);
     assert_eq!(params["cut_interval"], (120 * SEC).to_string());
-    assert_eq!(params["robot_funding"], (500 * MILLI).to_string());
+    assert_eq!(params["agent_funding"], (500 * MILLI).to_string());
     assert_eq!(params["register_deposit"], (5 * NEAR).to_string());
     assert_eq!(
         params["pool_cut_reserve"],
@@ -60,8 +60,8 @@ async fn the_cut_on_a_real_node() -> Result<()> {
     let bob = w.account("bob", 100).await?;
     let runner = w.account("runner", 10).await?;
     let mut creators = Vec::new();
-    for robot in ["ra", "rb", "rc", "rd"] {
-        creators.push(w.account(&format!("creator-{robot}"), 20).await?);
+    for agent in ["ra", "rb", "rc", "rd"] {
+        creators.push(w.account(&format!("creator-{agent}"), 20).await?);
     }
 
     // Launch: the whole supply sits in the pool.
@@ -72,16 +72,16 @@ async fn the_cut_on_a_real_node() -> Result<()> {
         10_000_000 * ONE_CUT
     );
 
-    // Register four robots: real accounts with the robot contract and no keys.
-    for (robot, creator) in ["ra", "rb", "rc", "rd"].iter().zip(&creators) {
+    // Register four agents: real accounts with the agent contract and no keys.
+    for (agent, creator) in ["ra", "rb", "rc", "rd"].iter().zip(&creators) {
         w.call(
             creator,
-            "register_robot",
-            json!({ "id": robot, "name": format!("Robot {robot}"), "kind": "AI robot", "x_handle": format!("@{robot}") }),
+            "register_agent",
+            json!({ "id": agent, "name": format!("Agent {agent}"), "kind": "AI agent", "x_handle": format!("@{agent}") }),
             NearToken::from_near(5),
         )
         .await?;
-        let account: AccountId = format!("{robot}.thecut.sandbox").parse()?;
+        let account: AccountId = format!("{agent}.thecut.sandbox").parse()?;
         assert!(w.exists(&account).await, "{account} was created");
         assert_eq!(
             w.access_key_count(&account).await?,
@@ -97,7 +97,7 @@ async fn the_cut_on_a_real_node() -> Result<()> {
     let bench = w.view("get_bench", json!({})).await?;
     assert_eq!(bench.as_array().unwrap().len(), 4);
 
-    // A stranger cannot delete a robot account.
+    // A stranger cannot delete an agent account.
     let ra: AccountId = "ra.thecut.sandbox".parse()?;
     let stranger = near_api::Contract(ra.clone())
         .call_function("self_delete", json!({ "beneficiary": alice }))
@@ -151,11 +151,11 @@ async fn the_cut_on_a_real_node() -> Result<()> {
         (&alice, "rc", 10),
         (&bob, "rd", 5),
     ];
-    for (who, robot, whole) in saves {
+    for (who, agent, whole) in saves {
         w.call(
             who,
             "save",
-            json!({ "robot_id": robot, "amount": (whole * ONE_CUT).to_string() }),
+            json!({ "agent_id": agent, "amount": (whole * ONE_CUT).to_string() }),
             NearToken::from_millinear(10),
         )
         .await?;
@@ -214,7 +214,7 @@ async fn the_cut_on_a_real_node() -> Result<()> {
     assert_eq!(cut2["joined_id"], "rd");
     assert_eq!(parse_u128(&cut2["burned"])?, 5 * ONE_CUT);
 
-    // The robot account is gone and the runner kept its 0.5 NEAR (minus gas).
+    // The agent account is gone and the runner kept its 0.5 NEAR (minus gas).
     assert!(!w.exists(&rc).await, "rc.thecut.sandbox was deleted");
     let gained = w.near_balance(&runner).await? as i128 - runner_before as i128;
     assert!(
@@ -223,9 +223,9 @@ async fn the_cut_on_a_real_node() -> Result<()> {
     );
     let refunded = w.near_balance(&creators[2]).await? - creator_before;
     assert_eq!(refunded, 4_500 * MILLI, "the creator got 4.5 NEAR back");
-    let robot = w.view("get_robot", json!({ "id": "rc" })).await?;
-    assert_eq!(robot["status"], "deleted");
-    assert_eq!(robot["delete_state"], "done");
+    let agent = w.view("get_agent", json!({ "id": "rc" })).await?;
+    assert_eq!(agent["status"], "deleted");
+    assert_eq!(agent["delete_state"], "done");
     assert!(logs.iter().any(|l| l.contains(r#""event":"cut""#)));
     assert!(logs.iter().any(|l| l.contains(r#""event":"delete""#)));
     assert!(logs.iter().any(|l| l.contains(r#""event":"ft_burn""#)));
@@ -239,7 +239,7 @@ async fn the_cut_on_a_real_node() -> Result<()> {
         supply
     );
 
-    // The bench robot took the seat.
+    // The bench agent took the seat.
     let stage: Vec<String> = w
         .view("get_stage", json!({}))
         .await?
@@ -284,7 +284,7 @@ async fn the_cut_on_a_real_node() -> Result<()> {
     w.call(
         &bob,
         "save",
-        json!({ "robot_id": "rd", "amount": (45 * ONE_CUT).to_string() }),
+        json!({ "agent_id": "rd", "amount": (45 * ONE_CUT).to_string() }),
         NearToken::from_millinear(10),
     )
     .await?;
@@ -303,7 +303,7 @@ async fn the_cut_on_a_real_node() -> Result<()> {
 
     // Bob takes his save back with its prize, then sells for NEAR.
     let bob_cut = w.cut_balance(&bob).await?;
-    w.call(&bob, "unsave", json!({ "robot_id": "rb" }), zero())
+    w.call(&bob, "unsave", json!({ "agent_id": "rb" }), zero())
         .await?;
     assert!(w.cut_balance(&bob).await? > bob_cut + 50 * ONE_CUT);
     let near_before = w.near_balance(&bob).await?;
@@ -373,7 +373,7 @@ fn check_events(w: &World) {
                 "thecut",
                 fields(&[
                     "account_id",
-                    "robot_id",
+                    "agent_id",
                     "amount",
                     "total",
                     "pile",
@@ -385,7 +385,7 @@ fn check_events(w: &World) {
             "unsave",
             (
                 "thecut",
-                fields(&["account_id", "robot_id", "amount", "prize", "pile"]),
+                fields(&["account_id", "agent_id", "amount", "prize", "pile"]),
             ),
         ),
         (
@@ -394,8 +394,8 @@ fn check_events(w: &World) {
                 "thecut",
                 fields(&[
                     "cut_index",
-                    "robot_id",
-                    "robot_account_id",
+                    "agent_id",
+                    "agent_account_id",
                     "pile",
                     "burned",
                     "prize",
@@ -414,7 +414,7 @@ fn check_events(w: &World) {
                 "thecut",
                 fields(&[
                     "cut_index",
-                    "robot_id",
+                    "agent_id",
                     "creator",
                     "slice",
                     "creator_slice",
@@ -425,13 +425,13 @@ fn check_events(w: &World) {
         ),
         (
             "join",
-            ("thecut", fields(&["cut_index", "robot_id", "pile"])),
+            ("thecut", fields(&["cut_index", "agent_id", "pile"])),
         ),
         (
             "delete",
             (
                 "thecut",
-                fields(&["cut_index", "robot_id", "account_id", "beneficiary"]),
+                fields(&["cut_index", "agent_id", "account_id", "beneficiary"]),
             ),
         ),
         (
@@ -439,7 +439,7 @@ fn check_events(w: &World) {
             (
                 "thecut",
                 fields(&[
-                    "robot_id",
+                    "agent_id",
                     "account_id",
                     "creator",
                     "name",

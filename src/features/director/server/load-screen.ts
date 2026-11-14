@@ -5,8 +5,8 @@ import { connection } from "next/server";
 import { isDeletingCut, type DeletingCut } from "@/entities/cut";
 import { getCut, getNextCut } from "@/entities/cut/server";
 import { getParams, getTotalSupply } from "@/entities/market/server";
-import { rankByPile, type Robot } from "@/entities/robot";
-import { getBench, getStage } from "@/entities/robot/server";
+import { rankByPile, type Agent } from "@/entities/agent";
+import { getBench, getStage } from "@/entities/agent/server";
 import { isSameUtcDay } from "@/shared/ui/format";
 
 import { directorState, linesForFeed, type DirectorState } from "../model/screen";
@@ -33,21 +33,21 @@ export type DirectorScreen = {
   state: DirectorState;
   cutAt: Date;
   cutIndex: number;
-  /** The robot the cut takes if nothing moves, and the one right above it. */
-  lowest: Robot | null;
-  next: Robot | null;
+  /** The agent the cut takes if nothing moves, and the one right above it. */
+  lowest: Agent | null;
+  next: Agent | null;
   gap: bigint;
   fees: bigint;
   /** What the button does if pressed now: half the lowest pile burns, the rest plus fees is the prize. */
   burnIfCut: bigint;
   prizeIfCut: bigint;
-  /** The bench robot that takes the seat. */
-  seatTaker: Robot | null;
-  robotFunding: bigint;
-  stage: Robot[];
+  /** The bench agent that takes the seat. */
+  seatTaker: Agent | null;
+  agentFunding: bigint;
+  stage: Agent[];
   /** The last cut, shown as the receipt on the day it ran. */
   lastCut: DirectorScreenCut | null;
-  /** The Director's line about each robot on the block, and the receipt of the last cut. */
+  /** The Director's line about each agent on the block, and the receipt of the last cut. */
   blockLines: Record<string, DirectorLineView | null>;
   receiptLine: DirectorLineView | null;
   /** Every line the Director signed, newest first, without lines about cuts that did not run yet. */
@@ -69,13 +69,13 @@ export async function loadDirectorScreen(): Promise<DirectorScreen> {
     getDirectorLines({ limit: 40 }),
   ]);
   const ranked = rankByPile(stage);
-  const lowest = ranked.find((robot) => robot.id === nextCut.lowestId) ?? ranked.at(-1) ?? null;
+  const lowest = ranked.find((agent) => agent.id === nextCut.lowestId) ?? ranked.at(-1) ?? null;
   const next = lowest ? (ranked[ranked.indexOf(lowest) - 1] ?? null) : null;
   const benchRanked = rankByPile(bench);
 
   const lastRecord = nextCut.index > 1 ? await getCut(nextCut.index - 1) : null;
-  const robots = [...stage, ...bench];
-  const lastCut = lastRecord && isDeletingCut(lastRecord) && isSameUtcDay(now, lastRecord.at) ? describeCut(lastRecord, robots, supply, params.stageSize) : null;
+  const agents = [...stage, ...bench];
+  const lastCut = lastRecord && isDeletingCut(lastRecord) && isSameUtcDay(now, lastRecord.at) ? describeCut(lastRecord, agents, supply, params.stageSize) : null;
 
   const burnIfCut = lowest ? (lowest.pile * BigInt(params.burnBps)) / BPS : 0n;
   const feed = linesForFeed(lines, nextCut.index);
@@ -93,7 +93,7 @@ export async function loadDirectorScreen(): Promise<DirectorScreen> {
     burnIfCut,
     prizeIfCut: lowest ? lowest.pile - burnIfCut + nextCut.prizeSoFar : 0n,
     seatTaker: benchRanked[0] ?? null,
-    robotFunding: params.robotFunding,
+    agentFunding: params.agentFunding,
     stage: ranked,
     lastCut,
     blockLines: { [lowest?.id ?? ""]: lineAbout(lowest?.id), [next?.id ?? ""]: lineAbout(next?.id) },
@@ -104,16 +104,16 @@ export async function loadDirectorScreen(): Promise<DirectorScreen> {
 
 function describeCut(
   cut: DeletingCut,
-  robots: Robot[],
+  agents: Agent[],
   supplyNow: bigint,
   stageSize: number,
 ): DirectorScreenCut {
-  const name = (id: string) => robots.find((robot) => robot.id === id)?.name ?? id;
-  const joined = cut.joinedId ? robots.find((robot) => robot.id === cut.joinedId) : undefined;
+  const name = (id: string) => agents.find((agent) => agent.id === id)?.name ?? id;
+  const joined = cut.joinedId ? agents.find((agent) => agent.id === cut.joinedId) : undefined;
   return {
     index: cut.index,
     at: cut.at,
-    deleted: { id: cut.deletedId, name: name(cut.deletedId), accountId: robots.find((robot) => robot.id === cut.deletedId)?.accountId ?? cut.deletedId },
+    deleted: { id: cut.deletedId, name: name(cut.deletedId), accountId: agents.find((agent) => agent.id === cut.deletedId)?.accountId ?? cut.deletedId },
     pile: cut.pile,
     burned: cut.burned,
     prize: cut.prize,

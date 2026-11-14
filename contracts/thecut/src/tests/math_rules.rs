@@ -147,14 +147,14 @@ fn split_carries_rounding_dust() {
 }
 
 #[test]
-fn tie_rule_cuts_the_newer_robot() {
-    let robots = [
+fn tie_rule_cuts_the_newer_agent() {
+    let agents = [
         Contender { pile: 50, seq: 1 },
         Contender { pile: 10, seq: 2 },
         Contender { pile: 10, seq: 5 },
         Contender { pile: 10, seq: 3 },
     ];
-    assert_eq!(pick_lowest(&robots), Some(2));
+    assert_eq!(pick_lowest(&agents), Some(2));
     assert_eq!(pick_lowest(&[]), None);
 }
 
@@ -182,7 +182,7 @@ fn gap_to_next_matches_the_rescue_line() {
         seq: 9,
     };
     assert_eq!(gap_to_next(kiko, onyx), cut(38_200) + 1);
-    // An older robot only needs to tie.
+    // An older agent only needs to tie.
     let old = Contender {
         pile: cut(23_600),
         seq: 1,

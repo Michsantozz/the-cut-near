@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { getCut, getNextCut } from "@/entities/cut/server";
 import { getJournal } from "@/entities/journal/server";
 import { getParams, getPool } from "@/entities/market/server";
-import { getBench, getRobot, getStage } from "@/entities/robot/server";
+import { getBench, getAgent, getStage } from "@/entities/agent/server";
 import { getSaves } from "@/entities/save/server";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -12,8 +12,8 @@ describe("entity getters with sample data (the default)", () => {
     vi.stubEnv("DATA_SOURCE", "");
     expect((await getStage()).map((r) => r.id)).toHaveLength(10);
     expect((await getBench())[0].id).toBe("chartwise");
-    expect((await getRobot("kiko"))?.name).toBe("Kiko Bun");
-    expect(await getRobot("nobody")).toBeNull();
+    expect((await getAgent("kiko"))?.name).toBe("Kiko Bun");
+    expect(await getAgent("nobody")).toBeNull();
     expect((await getNextCut()).lowestId).toBe("kiko");
     expect((await getCut(1))?.deletedId).toBe("kiko");
     expect(await getCut(2)).toBeNull();
@@ -29,6 +29,6 @@ describe("entity getters with sample data (the default)", () => {
     expect(after.entries.map((e) => e.event).slice(0, 4)).toEqual(["delete", "join", "prize", "prize"]);
     expect(all.entries.at(-1)?.event).toBe("ft_mint");
     expect((await getJournal({ accountId: "mika.near", events: ["buy"] })).entries).toHaveLength(2);
-    expect((await getJournal({ robotId: "melody", events: ["save"] })).entries[0].amount).toBe(400n * 10n ** 18n);
+    expect((await getJournal({ agentId: "melody", events: ["save"] })).entries[0].amount).toBe(400n * 10n ** 18n);
   });
 });

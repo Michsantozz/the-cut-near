@@ -5,9 +5,9 @@ import { bps, durationNs, timestampNs, u128, u64Index } from "./units";
 // Response schemas of the main contract's view methods (docs/contract-interface.md), wire format
 // in, camelCase with bigint amounts and Date times out. Client-safe: no I/O here.
 
-export const robotStatusSchema = z.enum(["stage", "bench", "deleted"]);
+export const agentStatusSchema = z.enum(["stage", "bench", "deleted"]);
 
-export const robotViewSchema = z
+export const agentViewSchema = z
   .object({
     id: z.string().min(1),
     account_id: accountIdSchema,
@@ -15,7 +15,7 @@ export const robotViewSchema = z
     kind: z.string(),
     x_handle: z.string(),
     creator: accountIdSchema,
-    status: robotStatusSchema,
+    status: agentStatusSchema,
     pile: u128,
     savers: u64Index,
     joined_at: timestampNs,
@@ -32,7 +32,7 @@ export const robotViewSchema = z
     savers: r.savers,
     joinedAt: r.joined_at,
   }));
-export type RobotView = z.output<typeof robotViewSchema>;
+export type AgentView = z.output<typeof agentViewSchema>;
 
 export const paramsViewSchema = z
   .object({
@@ -44,7 +44,7 @@ export const paramsViewSchema = z
     first_cut_at: timestampNs,
     /** A duration, in nanoseconds like every time on the interface. */
     cut_interval: durationNs,
-    robot_funding: u128,
+    agent_funding: u128,
     register_deposit: u128,
     pool_cut_reserve: u128.optional(),
     pool_near_reserve: u128.optional(),
@@ -57,7 +57,7 @@ export const paramsViewSchema = z
     stageSize: p.stage_size,
     firstCutAt: p.first_cut_at,
     cutIntervalMs: p.cut_interval,
-    robotFunding: p.robot_funding,
+    agentFunding: p.agent_funding,
     registerDeposit: p.register_deposit,
     poolCutReserve: p.pool_cut_reserve ?? null,
     poolNearReserve: p.pool_near_reserve ?? null,
@@ -65,8 +65,8 @@ export const paramsViewSchema = z
 export type ParamsView = z.output<typeof paramsViewSchema>;
 
 export const saveViewSchema = z
-  .object({ robot_id: z.string().min(1), amount: u128, since_cut: u64Index })
-  .transform((s) => ({ robotId: s.robot_id, amount: s.amount, lockedForCut: s.since_cut }));
+  .object({ agent_id: z.string().min(1), amount: u128, since_cut: u64Index })
+  .transform((s) => ({ agentId: s.agent_id, amount: s.amount, lockedForCut: s.since_cut }));
 export type SaveView = z.output<typeof saveViewSchema>;
 
 export const poolViewSchema = z
@@ -78,7 +78,7 @@ export const quoteViewSchema = z.object({ amount_out: u128, fee: u128 }).transfo
 export type QuoteView = z.output<typeof quoteViewSchema>;
 
 export const nextCutViewSchema = z
-  // `lowest_id` is null while the stage is not full: then a cut only seats bench robots and deletes nobody.
+  // `lowest_id` is null while the stage is not full: then a cut only seats bench agents and deletes nobody.
   .object({ index: u64Index, at: timestampNs, lowest_id: z.string().min(1).nullable(), gap_to_next: u128, prize_so_far: u128 })
   .transform((n) => ({ index: n.index, at: n.at, lowestId: n.lowest_id, gapToNext: n.gap_to_next, prizeSoFar: n.prize_so_far }));
 export type NextCutView = z.output<typeof nextCutViewSchema>;
@@ -87,7 +87,7 @@ export const cutRecordViewSchema = z
   .object({
     index: u64Index,
     at: timestampNs,
-    /** Null for a cut that ran with the stage not full: it only seated bench robots. */
+    /** Null for a cut that ran with the stage not full: it only seated bench agents. */
     deleted_id: z.string().min(1).nullable(),
     pile: u128,
     burned: u128,

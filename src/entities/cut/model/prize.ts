@@ -9,7 +9,7 @@ export type SplitParams = { burnBps: number; saversBps: number; stageSize: numbe
 
 /**
  * One survivor's equal slice if `pile` is cut with `fees` in the pot: the unburned part of the pile plus
- * the fees is the prize, `saversBps` of it goes to savers, split into one slice per surviving robot.
+ * the fees is the prize, `saversBps` of it goes to savers, split into one slice per surviving agent.
  * Each step floors, as on chain. Zero with no survivors.
  */
 export function sliceIfCut(pile: bigint, fees: bigint, params: SplitParams): bigint {

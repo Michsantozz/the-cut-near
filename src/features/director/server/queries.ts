@@ -52,7 +52,7 @@ export async function getDirectorLines(query: DirectorLinesQuery = {}): Promise<
   return [...records.map(recordView), ...samples.map(sampleView)].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit);
 }
 
-/** The newest line of a kind (optionally about one robot), or null. */
+/** The newest line of a kind (optionally about one agent), or null. */
 export async function getLatestDirectorLine(kind: DirectorLineKind, options: { subjectId?: string; store?: DirectorStore } = {}): Promise<DirectorLineView | null> {
   const [line] = await getDirectorLines({ kinds: [kind], subjectId: options.subjectId, limit: 1, store: options.store });
   return line ?? null;

@@ -78,7 +78,7 @@ function cutValue(amount: bigint, ctx: ActivityContext): string {
 export function activityRow(entry: JournalEntry, ctx: ActivityContext): ActivityRow | null {
   const d = entry.data;
   const time = formatUtcTime(entry.at);
-  const robot = (id: unknown) => (typeof id === "string" ? (ctx.names.get(id) ?? id) : "");
+  const agent = (id: unknown) => (typeof id === "string" ? (ctx.names.get(id) ?? id) : "");
   const base = { key: entry.id, at: entry.at, txHash: entry.txHash, auto: false };
   switch (entry.event) {
     case "buy":
@@ -91,7 +91,7 @@ export function activityRow(entry: JournalEntry, ctx: ActivityContext): Activity
       return {
         ...base,
         kind: "save",
-        title: `Saved ${cutText(big(d, "amount"))} $CUT on ${robot(d.robot_id)}`,
+        title: `Saved ${cutText(big(d, "amount"))} $CUT on ${agent(d.agent_id)}`,
         sub: at ? `${time} · locked till ${formatUtcTime(at)} UTC` : time,
         amount: cutValue(big(d, "amount"), ctx),
       };
@@ -100,14 +100,14 @@ export function activityRow(entry: JournalEntry, ctx: ActivityContext): Activity
       return {
         ...base,
         kind: "save",
-        title: `Took back ${cutText(big(d, "amount"))} $CUT from ${robot(d.robot_id)}`,
+        title: `Took back ${cutText(big(d, "amount"))} $CUT from ${agent(d.agent_id)}`,
         sub: `${time} · with ${cutText(big(d, "prize"))} $CUT of prize`,
         amount: cutValue(big(d, "amount"), ctx),
       };
     case "claim":
       return { ...base, kind: "prize", title: `Collected ${cutText(big(d, "amount"))} $CUT`, sub: `${time} · your prizes`, amount: `+${cutText(big(d, "amount"))} $CUT` };
     case "cut": {
-      const name = robot(d.robot_id);
+      const name = agent(d.agent_id);
       return {
         ...base,
         kind: "cut",

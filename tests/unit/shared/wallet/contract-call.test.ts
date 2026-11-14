@@ -5,9 +5,9 @@ import { toActions } from "@/shared/wallet/to-actions";
 
 describe("toActions", () => {
   it("turns calls into function-call actions in order, with default gas and no deposit", () => {
-    expect(toActions([{ method: "storage_deposit", deposit: "1250000000000000000000" }, { method: "save", args: { robot_id: "kiko", amount: "1" }, deposit: ONE_YOCTO }])).toEqual([
+    expect(toActions([{ method: "storage_deposit", deposit: "1250000000000000000000" }, { method: "save", args: { agent_id: "kiko", amount: "1" }, deposit: ONE_YOCTO }])).toEqual([
       { type: "FunctionCall", params: { methodName: "storage_deposit", args: {}, gas: DEFAULT_GAS, deposit: "1250000000000000000000" } },
-      { type: "FunctionCall", params: { methodName: "save", args: { robot_id: "kiko", amount: "1" }, gas: DEFAULT_GAS, deposit: "1" } },
+      { type: "FunctionCall", params: { methodName: "save", args: { agent_id: "kiko", amount: "1" }, gas: DEFAULT_GAS, deposit: "1" } },
     ]);
   });
 

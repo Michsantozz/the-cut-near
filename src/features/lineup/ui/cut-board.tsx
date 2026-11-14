@@ -10,25 +10,25 @@ import { WalletGatedLink } from "@/shared/wallet";
 import { barPercent, type BoardEntry } from "../model/board";
 import type { Lineup } from "../server/load-lineup";
 import { cut, cutFine, rescueLine, SLICE_RULE } from "./copy";
-import { RobotTile } from "@/entities/robot";
+import { AgentTile } from "@/entities/agent";
 import { SortableBoard } from "./sortable-board";
 
-/** The cut board: robots ranked by pile, the red cut line above the lowest, and what 100 $CUT saved would pay. */
+/** The cut board: agents ranked by pile, the red cut line above the lowest, and what 100 $CUT saved would pay. */
 export function CutBoard({ lineup }: { lineup: Lineup }) {
   const { board, member, cutAt } = lineup;
   // Visitors see the hero first, so their rows are compact on a laptop: the cut line still fits the first screen.
   const compact = member === null;
-  const mine = new Map(member?.saves.map((save) => [save.robotId, save.amount]) ?? []);
+  const mine = new Map(member?.saves.map((save) => [save.agentId, save.amount]) ?? []);
   const cutLabel = `Cut line · the lowest pile is cut at ${formatUtcTime(cutAt)} UTC`;
 
   const rows = Object.fromEntries(
     board.entries.map((entry) => [
-      entry.robot.id,
+      entry.agent.id,
       <BoardRow
-        key={entry.robot.id}
+        key={entry.agent.id}
         entry={entry}
         topPile={board.topPile}
-        saved={mine.get(entry.robot.id) ?? null}
+        saved={mine.get(entry.agent.id) ?? null}
         cutLabel={cutLabel}
         compact={compact}
         shortBy={entry.isLowest && board.next && board.gap !== null ? { name: board.next.name, gap: board.gap } : null}
@@ -47,7 +47,7 @@ export function CutBoard({ lineup }: { lineup: Lineup }) {
         board.entries.length === 0 ? (
           <p className="rounded-[13px] bg-lime-soft px-3 py-2.5 text-[12px] leading-[17px] lg:mt-2.5 lg:rounded-lg lg:px-3.5 lg:py-3 lg:text-[13.5px] lg:leading-[19px]">
             <b className="font-extrabold">The stage is empty until the first cut, at {formatUtcTime(cutAt)} UTC.</b> Then the biggest bench queues
-            take the seats, and their queues become their piles. Save on a bench robot to give it one.
+            take the seats, and their queues become their piles. Save on a bench agent to give it one.
           </p>
         ) : (
         <p className="flex items-start gap-[7px] rounded-[13px] bg-lime-soft px-[9px] pt-1.5 pb-[7px] text-[11px] leading-[14.5px] lg:mt-2.5 lg:items-center lg:gap-2.5 lg:rounded-lg lg:px-3.5 lg:py-2 lg:text-[13.5px] lg:leading-[19px]">
@@ -77,9 +77,9 @@ function BoardRow({
   compact: boolean;
   shortBy: { name: string; gap: bigint } | null;
 }) {
-  const { robot, isLowest, paysPer100 } = entry;
-  const phoneSub = shortBy ? `${cut(shortBy.gap)} short of ${shortBy.name}` : `${formatCount(robot.savers)} savers · +${cut(robot.savedToday)} today`;
-  const laptopSub = shortBy ? `On the block · ${cut(shortBy.gap)} short` : robot.kind;
+  const { agent, isLowest, paysPer100 } = entry;
+  const phoneSub = shortBy ? `${cut(shortBy.gap)} short of ${shortBy.name}` : `${formatCount(agent.savers)} savers · +${cut(agent.savedToday)} today`;
+  const laptopSub = shortBy ? `On the block · ${cut(shortBy.gap)} short` : agent.kind;
 
   return (
     <div data-lowest={isLowest || undefined}>
@@ -95,13 +95,13 @@ function BoardRow({
       <div className={cn("rounded-md", isLowest && "bg-danger-soft lg:-mx-2 lg:px-2")}>
         <div className={cn("relative flex h-[33px] items-center gap-1.5 px-1 lg:gap-3.5 lg:px-0", compact ? "lg:h-[34px]" : "lg:h-11")}>
           <Link
-            href={`/robots/${robot.id}`}
+            href={`/agents/${agent.id}`}
             className="flex min-w-0 grow items-center gap-1.5 rounded-sm normal-nums outline-none after:absolute after:inset-0 focus-visible:ring-3 focus-visible:ring-ring/50 lg:w-[204px] lg:shrink-0 lg:grow-0 lg:gap-3"
           >
-            <RobotTile id={robot.id} name={robot.name} className={compact ? "lg:size-7" : "lg:size-[34px]"} />
+            <AgentTile id={agent.id} name={agent.name} className={compact ? "lg:size-7" : "lg:size-[34px]"} />
             <span className="min-w-0">
               <span className="flex items-center gap-[5px] lg:gap-1.5">
-                <span className={cn("text-[13.5px] leading-4 font-bold whitespace-nowrap lg:text-[14.5px]", compact ? "lg:leading-4" : "lg:leading-[18px]")}>{robot.name}</span>
+                <span className={cn("text-[13.5px] leading-4 font-bold whitespace-nowrap lg:text-[14.5px]", compact ? "lg:leading-4" : "lg:leading-[18px]")}>{agent.name}</span>
                 {saved !== null && (
                   <Badge variant="lime" size="xs" className="uppercase lg:px-[7px] lg:text-[10px] lg:leading-[15px]">
                     Your {cutFine(saved)}
@@ -116,22 +116,22 @@ function BoardRow({
           <span className="w-[54px] shrink-0 text-right lg:flex lg:w-auto lg:min-w-0 lg:grow lg:flex-row-reverse lg:items-center lg:gap-2.5">
             <span className="block font-heading text-sm leading-[17px] font-extrabold whitespace-nowrap lg:w-[72px] lg:shrink-0 lg:text-base">
               <span className="sr-only">Pile </span>
-              {cut(robot.pile)}
+              {cut(agent.pile)}
             </span>
             <span aria-hidden="true" className="mt-[3px] block h-1 overflow-hidden rounded-[2px] bg-line lg:mt-0 lg:h-2.5 lg:grow lg:rounded-[5px] lg:bg-canvas">
               <span
                 className={cn("block h-full rounded-[inherit]", isLowest ? "bg-danger" : "bg-ink")}
-                style={{ width: `${barPercent(robot.pile, topPile, 4)}%` }}
+                style={{ width: `${barPercent(agent.pile, topPile, 4)}%` }}
               />
             </span>
           </span>
 
           <span className="hidden w-[54px] shrink-0 text-right text-[14.5px] font-bold lg:block">
             <span className="sr-only">Savers </span>
-            {formatCount(robot.savers)}
+            {formatCount(agent.savers)}
           </span>
           <span className="hidden w-[100px] shrink-0 text-right text-sm font-bold whitespace-nowrap text-gain lg:block">
-            <span className="sr-only">Saved today </span>+{cut(robot.savedToday)}
+            <span className="sr-only">Saved today </span>+{cut(agent.savedToday)}
           </span>
 
           <span className="flex w-9 shrink-0 justify-end lg:w-[132px]">
@@ -153,7 +153,7 @@ function BoardRow({
             variant={isLowest ? "lime" : "outline"}
             className="relative z-10 w-11 px-0 lg:h-8 lg:w-16 lg:text-[13px]"
           >
-            <WalletGatedLink href={`/save/${robot.id}`} aria-label={`Save ${robot.name}`}>
+            <WalletGatedLink href={`/save/${agent.id}`} aria-label={`Save ${agent.name}`}>
               Save
             </WalletGatedLink>
           </Button>
@@ -161,7 +161,7 @@ function BoardRow({
         {shortBy && (
           <p className="flex items-start gap-1.5 px-2 pb-[7px] text-[11px] leading-[14.5px] font-semibold normal-nums lg:hidden">
             <ArrowUp aria-hidden="true" className="mt-px size-[13px] shrink-0" strokeWidth={3} />
-            <span>{rescueLine(robot.name, shortBy.name, shortBy.gap)}</span>
+            <span>{rescueLine(agent.name, shortBy.name, shortBy.gap)}</span>
           </p>
         )}
       </div>

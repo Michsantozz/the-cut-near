@@ -3,7 +3,7 @@ import { ChevronRight, Lock, Plus, Star, Target, Trophy } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { RobotTile, robotFullBody } from "@/entities/robot";
+import { AgentTile, agentFullBody } from "@/entities/agent";
 import { Button } from "@/shared/ui/button";
 import { formatAmount, formatCount, formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
@@ -74,10 +74,10 @@ function MemberCard({ club, member }: { club: Club; member: ClubMember }) {
             {member.accountId}
           </h2>
           {member.since && <p className="text-[13.5px] font-bold lg:text-[15px]">Member since {member.since}</p>}
-          <ul aria-label="The robots on the stage" className="mt-2.5 flex lg:mt-6">
-            {club.stage.map((robot) => (
-              <li key={robot.id} className="-ml-1.5 first:ml-0">
-                <RobotTile id={robot.id} name={robot.name} className="size-[30px] rounded-full bg-paper lg:size-9" />
+          <ul aria-label="The agents on the stage" className="mt-2.5 flex lg:mt-6">
+            {club.stage.map((agent) => (
+              <li key={agent.id} className="-ml-1.5 first:ml-0">
+                <AgentTile id={agent.id} name={agent.name} className="size-[30px] rounded-full bg-paper lg:size-9" />
               </li>
             ))}
           </ul>
@@ -126,15 +126,15 @@ function Perks({ perks }: { perks: Perk[] }) {
       </div>
       <ul className="mt-2 flex flex-col gap-2 lg:mt-3 lg:grid lg:grid-cols-3 lg:gap-5">
         {perks.map((perk) => {
-          const art = robotFullBody(perk.robotId);
+          const art = agentFullBody(perk.agentId);
           return (
             <li key={perk.title} className="flex items-center gap-2.5 rounded-[18px] border-2 border-ink bg-paper px-2.5 py-[9px] lg:block lg:overflow-hidden lg:rounded-3xl lg:p-0 lg:shadow-hard">
-              <div className={cn("relative hidden h-[200px] border-b-2 border-ink lg:block", PERK_TONE[perk.robotId] ?? "bg-sky")}>
+              <div className={cn("relative hidden h-[200px] border-b-2 border-ink lg:block", PERK_TONE[perk.agentId] ?? "bg-sky")}>
                 <span aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(rgb(255_255_255/0.45)_1.5px,transparent_1.5px)] [background-size:18px_18px]" />
                 {art && <Image src={art.src} alt="" width={art.width} height={art.height} className="absolute bottom-0 left-1/2 h-[180px] w-auto -translate-x-1/2" />}
                 <span className="absolute top-3 left-3 rounded-full border-2 border-ink bg-paper px-2.5 text-[11.5px] leading-5 font-extrabold">{perk.audience}</span>
               </div>
-              <RobotTile id={perk.robotId} name={perk.title} className="size-10 rounded-xl lg:hidden" />
+              <AgentTile id={perk.agentId} name={perk.title} className="size-10 rounded-xl lg:hidden" />
               <div className="min-w-0 grow lg:px-4 lg:pt-3.5">
                 <p className="truncate text-sm leading-[17px] font-bold lg:overflow-visible lg:text-base lg:leading-5 lg:font-extrabold lg:whitespace-normal">{perk.title}</p>
                 <p className="truncate text-xs leading-[15px] text-ink-3 lg:overflow-visible lg:text-[13px] lg:leading-5 lg:whitespace-normal">
@@ -158,33 +158,33 @@ function Perks({ perks }: { perks: Perk[] }) {
 function SaveCard({ save, cutAt }: { save: ClubSave; cutAt: Date }) {
   const time = `${formatUtcTime(cutAt)} UTC`;
   const rows: [string, string][] = [
-    [`${save.robot.name} ${save.robot.status === "bench" ? "queue" : "pile"}`, `${cut(save.robot.pile)}${save.rank ? ` · ${ordinal(save.rank)} of ${save.stageSize}` : ""}`],
+    [`${save.agent.name} ${save.agent.status === "bench" ? "queue" : "pile"}`, `${cut(save.agent.pile)}${save.rank ? ` · ${ordinal(save.rank)} of ${save.stageSize}` : ""}`],
     ...(save.lowest ? ([["Lowest pile now", `${save.lowest.name} · ${cut(save.lowest.pile)}`]] as [string, string][]) : []),
-    ["If the cut ran now", save.paysPer100 === null ? (save.robot === save.lowest ? "Cut" : "–") : `${pays(save.paysPer100)} per 100 saved`],
+    ["If the cut ran now", save.paysPer100 === null ? (save.agent === save.lowest ? "Cut" : "–") : `${pays(save.paysPer100)} per 100 saved`],
   ];
 
   return (
     <section aria-labelledby="save-title" className="rounded-[20px] border-2 border-ink bg-[#ffd84d] py-[11px] pr-3 pl-3.5 shadow-hard lg:rounded-3xl lg:px-[18px] lg:pt-4 lg:pb-[18px]">
       <div className="flex items-center gap-3">
-        <RobotTile id={save.robot.id} name={save.robot.name} className="size-[46px] rounded-[14px] lg:hidden" />
+        <AgentTile id={save.agent.id} name={save.agent.name} className="size-[46px] rounded-[14px] lg:hidden" />
         <div className="min-w-0 grow">
           <p className="flex items-center gap-[5px] text-[11px] font-extrabold tracking-[0.04em] whitespace-nowrap uppercase lg:gap-1.5 lg:text-[11.5px] lg:tracking-[0.05em]">
             <Lock aria-hidden="true" className="size-3" strokeWidth={3} />
             Your save<span className="hidden lg:inline"> · locked till {time}</span>
           </p>
           <div className="mt-1 hidden items-center gap-3 lg:flex">
-            <RobotTile id={save.robot.id} name={save.robot.name} className="size-[52px] rounded-xl" />
+            <AgentTile id={save.agent.id} name={save.agent.name} className="size-[52px] rounded-xl" />
             <div className="min-w-0">
               <h2 id="save-title" className="font-heading text-xl leading-6 font-extrabold whitespace-nowrap">
-                {cut(save.amount)} $CUT on {save.robot.name}
+                {cut(save.amount)} $CUT on {save.agent.name}
               </h2>
               <p className="text-[13px] font-bold">
-                {save.robot.kind} · {formatCount(save.robot.savers)} savers
+                {save.agent.kind} · {formatCount(save.agent.savers)} savers
               </p>
             </div>
           </div>
           <p className="mt-px truncate font-heading text-lg leading-[22px] font-extrabold lg:hidden">
-            {cut(save.amount)} $CUT on {save.robot.name}
+            {cut(save.amount)} $CUT on {save.agent.name}
           </p>
           <p className="truncate text-[12.5px] font-semibold lg:hidden">
             Locked till {time}
@@ -192,7 +192,7 @@ function SaveCard({ save, cutAt }: { save: ClubSave; cutAt: Date }) {
           </p>
         </div>
         <Button asChild variant="black" size="icon-sm" className="size-[34px] rounded-[11px] lg:hidden">
-          <WalletGatedLink href={`/save/${save.robot.id}`} aria-label={`Save more on ${save.robot.name}`}>
+          <WalletGatedLink href={`/save/${save.agent.id}`} aria-label={`Save more on ${save.agent.name}`}>
             <Plus aria-hidden="true" className="size-4" strokeWidth={3} />
           </WalletGatedLink>
         </Button>
@@ -206,7 +206,7 @@ function SaveCard({ save, cutAt }: { save: ClubSave; cutAt: Date }) {
         ))}
       </dl>
       <Button asChild variant="black" size="lg" className="mt-3 hidden w-full lg:flex">
-        <WalletGatedLink href={`/save/${save.robot.id}`}>
+        <WalletGatedLink href={`/save/${save.agent.id}`}>
           <Plus aria-hidden="true" className="size-4" strokeWidth={3} />
           Save more
         </WalletGatedLink>
@@ -221,7 +221,7 @@ function NoSaveCard() {
       <p className="text-[11.5px] font-extrabold tracking-[0.05em] uppercase">Your save</p>
       <p className="mt-1 text-[15px] leading-5 font-bold">Every survivor gets the same slice of the prize. Small piles share it among fewer $CUT, so they pay more.</p>
       <Button asChild variant="black" size="lg" className="mt-3 w-full">
-        <Link href="/">Save a robot</Link>
+        <Link href="/">Save an agent</Link>
       </Button>
     </section>
   );
@@ -292,7 +292,7 @@ function TopSavers({ savers, member }: { savers: TopSaver[]; member: ClubMember 
 function LockedClub({ club }: { club: Club }) {
   const benefits = [
     { title: "Perks from creators", sub: "Shout-outs, early drops, stickers", tone: "bg-pink", icon: Star },
-    { title: "Save a robot, share the prize", sub: "If it survives the cut, you share its slice", tone: "bg-[#ffd84d]", icon: Lock },
+    { title: "Save an agent, share the prize", sub: "If it survives the cut, you share its slice", tone: "bg-[#ffd84d]", icon: Lock },
     { title: "Club points and a rank", sub: "For showing up, not for size", tone: "bg-lime", icon: Trophy },
   ];
   const locked = club.perks.filter((perk) => perk.audience === "ALL MEMBERS");
@@ -320,7 +320,7 @@ function LockedClub({ club }: { club: Club }) {
             <ul className="mt-2 grid grid-cols-2 gap-3 lg:mt-2.5 lg:gap-5">
               {locked.map((perk) => (
                 <li key={perk.title} className="overflow-hidden rounded-3xl border-2 border-ink bg-paper">
-                  <div className={cn("relative flex h-[110px] items-center justify-center border-b-2 border-ink opacity-50 lg:h-[186px]", PERK_TONE[perk.robotId] ?? "bg-sky")}>
+                  <div className={cn("relative flex h-[110px] items-center justify-center border-b-2 border-ink opacity-50 lg:h-[186px]", PERK_TONE[perk.agentId] ?? "bg-sky")}>
                     <span aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(rgb(255_255_255/0.45)_1.5px,transparent_1.5px)] [background-size:18px_18px]" />
                   </div>
                   <span aria-hidden="true" className="relative mx-auto -mt-[78px] mb-[30px] flex size-11 items-center justify-center rounded-xl border-2 border-ink bg-paper shadow-hard-sm lg:-mt-[120px] lg:mb-[70px] lg:size-[52px]">

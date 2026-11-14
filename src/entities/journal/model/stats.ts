@@ -23,7 +23,7 @@ export function journalStats(entries: readonly JournalEntry[]): JournalStats {
       cuts += 1;
       saved -= amountField(e.data, "pile");
     } else if (e.event === "buy" && e.accountId) buyers.add(e.accountId);
-    else if (e.event === "register" && e.robotId) registered.add(e.robotId);
+    else if (e.event === "register" && e.agentId) registered.add(e.agentId);
   }
   const heights = entries.map((e) => e.blockHeight);
   const times = entries.map((e) => e.at.getTime());

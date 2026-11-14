@@ -32,7 +32,7 @@ fn launch_mints_the_whole_supply_into_the_pool_once() {
         (100, 5_000, 9_500, 10)
     );
     assert_eq!(params.cut_interval.0, DAY);
-    assert_eq!(params.robot_funding, NearToken::from_millinear(500));
+    assert_eq!(params.agent_funding, NearToken::from_millinear(500));
     assert_eq!(params.register_deposit, near(5));
     let metadata = w.view(|c| c.ft_metadata());
     assert_eq!((metadata.symbol.as_str(), metadata.decimals), ("CUT", 18));

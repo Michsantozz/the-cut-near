@@ -18,8 +18,8 @@ import {
   quoteBuy,
   quoteSell,
 } from "@/entities/market/server";
-import { rankByPile, type Robot } from "@/entities/robot";
-import { getBench, getStage } from "@/entities/robot/server";
+import { rankByPile, type Agent } from "@/entities/agent";
+import { getBench, getStage } from "@/entities/agent/server";
 import { getSaves } from "@/entities/save/server";
 
 import { DEFAULT_BUY, buyInputToNear, buyUnit } from "../model/buy";
@@ -27,8 +27,8 @@ import { buildPicker, type SavePicker } from "../model/save";
 import { defaultSell } from "../model/sell";
 import { splitSupply, type SupplySplit } from "../model/supply";
 
-/** A save of the viewer, with its robot's name and whether the cut it was locked for has run. */
-export type HeldSave = { robotId: string; robotName: string; amount: bigint; unlocked: boolean };
+/** A save of the viewer, with its agent's name and whether the cut it was locked for has run. */
+export type HeldSave = { agentId: string; agentName: string; amount: bigint; unlocked: boolean };
 
 export type Market = {
   /** Request time in ms: the first frame of every live clock. */
@@ -38,7 +38,7 @@ export type Market = {
   cutAt: Date;
   cutIndex: number;
   feesSoFar: bigint;
-  /** $CUT the lowest robot needs to pass the next one (`get_next_cut().gap_to_next`). */
+  /** $CUT the lowest agent needs to pass the next one (`get_next_cut().gap_to_next`). */
   gapToNext: bigint;
 };
 
@@ -49,13 +49,13 @@ async function loadMarket(): Promise<Market> {
   return { renderedAt: Date.now(), pool, usdCentsPerNear, cutAt: nextCut.at, cutIndex: nextCut.index, feesSoFar: nextCut.prizeSoFar, gapToNext: nextCut.gapToNext };
 }
 
-function heldSaves(saves: Awaited<ReturnType<typeof getSaves>>, robots: readonly Robot[], cutIndex: number): HeldSave[] {
-  const names = new Map(robots.map((robot) => [robot.id, robot.name]));
+function heldSaves(saves: Awaited<ReturnType<typeof getSaves>>, agents: readonly Agent[], cutIndex: number): HeldSave[] {
+  const names = new Map(agents.map((agent) => [agent.id, agent.name]));
   return saves
     .filter((save) => save.amount > 0n)
     .map((save) => ({
-      robotId: save.robotId,
-      robotName: names.get(save.robotId) ?? save.robotId,
+      agentId: save.agentId,
+      agentName: names.get(save.agentId) ?? save.agentId,
       amount: save.amount,
       unlocked: save.lockedForCut < cutIndex,
     }));
@@ -68,16 +68,16 @@ export type BuyData = Market & {
   storageMin: bigint;
   /** The quote for the amount the screen opens with. */
   initial: InitialQuote;
-  /** Stage robot ids by pile, for the "Now keep one alive" art. */
+  /** Stage agent ids by pile, for the "Now keep one alive" art. */
   stageIds: string[];
-  /** Where "Save a robot" goes after a buy: the robot right above the cut line, the one that pays the most. */
+  /** Where "Save an agent" goes after a buy: the agent right above the cut line, the one that pays the most. */
   saveTargetId: string | null;
   /** Null for a visitor. */
   account: { accountId: string; nearBalance: bigint | null; registered: boolean } | null;
 };
 
 export async function loadBuy(accountId: string | null): Promise<BuyData> {
-  // Live robots and prices read the clock: reach request time before any of them.
+  // Live agents and prices read the clock: reach request time before any of them.
   await connection();
   const [market, storageMin, stage, account] = await Promise.all([
     loadMarket(),
@@ -98,7 +98,7 @@ export async function loadBuy(accountId: string | null): Promise<BuyData> {
     ...market,
     storageMin,
     initial,
-    stageIds: ranked.map((robot) => robot.id),
+    stageIds: ranked.map((agent) => agent.id),
     saveTargetId: (ranked.at(-2) ?? ranked[0])?.id ?? null,
     account,
   };
@@ -110,7 +110,7 @@ export type SellData = Market & {
 };
 
 export async function loadSell(accountId: string | null): Promise<SellData> {
-  // Live robots and prices read the clock: reach request time before any of them.
+  // Live agents and prices read the clock: reach request time before any of them.
   await connection();
   const market = await loadMarket();
   if (!accountId) return { ...market, initial: null, account: null };
@@ -131,7 +131,7 @@ export type ValueData = Market & {
 };
 
 export async function loadValue(accountId: string | null, range: PriceRange): Promise<ValueData> {
-  // Live robots and prices read the clock: reach request time before any of them.
+  // Live agents and prices read the clock: reach request time before any of them.
   await connection();
   const market = await loadMarket();
   const [prices, all, params, current, stage, bench, holders, account] = await Promise.all([
@@ -145,7 +145,7 @@ export async function loadValue(accountId: string | null, range: PriceRange): Pr
     accountId ? Promise.all([getBalance(accountId), getSaves(accountId)]).then(([free, saves]) => ({ free, saves })) : null,
   ]);
   // Bench queues are locked in the contract like stage piles, the same total Receipts shows.
-  const saved = [...stage, ...bench].reduce((sum, robot) => sum + robot.pile, 0n);
+  const saved = [...stage, ...bench].reduce((sum, agent) => sum + agent.pile, 0n);
   return {
     ...market,
     range,
@@ -159,13 +159,13 @@ export async function loadValue(accountId: string | null, range: PriceRange): Pr
 
 export type SaveData = Market & {
   picker: SavePicker;
-  /** The robot the page opened on, when it is on the stage. */
-  robotId: string | null;
+  /** The agent the page opened on, when it is on the stage. */
+  agentId: string | null;
   account: { accountId: string; free: bigint; saves: HeldSave[]; storageAvailable: bigint | null } | null;
 };
 
-export async function loadSave(accountId: string | null, robotId: string): Promise<SaveData> {
-  // Live robots and prices read the clock: reach request time before any of them.
+export async function loadSave(accountId: string | null, agentId: string): Promise<SaveData> {
+  // Live agents and prices read the clock: reach request time before any of them.
   await connection();
   const market = await loadMarket();
   const [stage, bench, params, account] = await Promise.all([
@@ -178,7 +178,7 @@ export async function loadSave(accountId: string | null, robotId: string): Promi
   return {
     ...market,
     picker,
-    robotId: picker.choices.some((choice) => choice.robot.id === robotId) ? robotId : null,
+    agentId: picker.choices.some((choice) => choice.agent.id === agentId) ? agentId : null,
     account: account && {
       accountId: accountId!,
       free: account[0],

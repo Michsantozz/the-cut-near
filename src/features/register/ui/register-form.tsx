@@ -11,10 +11,10 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { useWallet } from "@/shared/wallet";
 
-import { formErrors, normalizeXHandle, registerArgs, ROBOT_KINDS, suggestRobotId, type RobotForm } from "../model/robot-form";
-import { checkRobotId, type RobotIdStatus } from "../server/actions";
+import { formErrors, normalizeXHandle, registerArgs, AGENT_KINDS, suggestAgentId, type AgentForm } from "../model/agent-form";
+import { checkAgentId, type AgentIdStatus } from "../server/actions";
 
-// `register_robot` needs at least 50 TGas: it creates the account, deploys the robot contract and calls back.
+// `register_agent` needs at least 50 TGas: it creates the account, deploys the agent contract and calls back.
 const REGISTER_GAS = "150000000000000";
 
 type Props = {
@@ -26,13 +26,13 @@ type Props = {
 
 type Sent = { txHash: string; id: string; name: string };
 
-/** Register a robot: one transaction from the creator's wallet creates `<id>.<contract>` on the bench. */
+/** Register an agent: one transaction from the creator's wallet creates `<id>.<contract>` on the bench. */
 export function RegisterForm({ deposit, depositNear, backNear }: Props) {
   const { status, openConnect, callContract } = useWallet();
-  const [form, setForm] = useState<RobotForm>({ id: "", name: "", kind: "", xHandle: "" });
+  const [form, setForm] = useState<AgentForm>({ id: "", name: "", kind: "", xHandle: "" });
   const [idEdited, setIdEdited] = useState(false);
-  const [touched, setTouched] = useState<Partial<Record<keyof RobotForm, boolean>>>({});
-  const [idStatus, setIdStatus] = useState<RobotIdStatus | "checking" | null>(null);
+  const [touched, setTouched] = useState<Partial<Record<keyof AgentForm, boolean>>>({});
+  const [idStatus, setIdStatus] = useState<AgentIdStatus | "checking" | null>(null);
   const [checking, startCheck] = useTransition();
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,19 +40,19 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
   const ids = { name: useId(), id: useId(), kind: useId(), x: useId(), kinds: useId() };
 
   const errors = useMemo(() => formErrors(form, publicEnv.contractId), [form]);
-  const account = `${form.id || "your-robot"}.${publicEnv.contractId}`;
+  const account = `${form.id || "your-agent"}.${publicEnv.contractId}`;
 
   // Ask the contract (or the sample day) whether the id is free, a moment after typing stops.
   useEffect(() => {
     if (!form.id || errors.id) return;
-    const timer = setTimeout(() => startCheck(async () => setIdStatus(await checkRobotId(form.id))), 400);
+    const timer = setTimeout(() => startCheck(async () => setIdStatus(await checkAgentId(form.id))), 400);
     return () => clearTimeout(timer);
   }, [form.id, errors.id]);
 
-  const update = (field: keyof RobotForm, value: string) => {
+  const update = (field: keyof AgentForm, value: string) => {
     setError(null);
     const next = { ...form, [field]: value };
-    if (field === "name" && !idEdited) next.id = suggestRobotId(value);
+    if (field === "name" && !idEdited) next.id = suggestAgentId(value);
     if (next.id !== form.id) setIdStatus(null);
     setForm(next);
   };
@@ -68,10 +68,10 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
     setSending(true);
     setError(null);
     try {
-      const { txHash } = await callContract([{ method: "register_robot", args: registerArgs(form), deposit, gas: REGISTER_GAS }]);
+      const { txHash } = await callContract([{ method: "register_agent", args: registerArgs(form), deposit, gas: REGISTER_GAS }]);
       setSent({ txHash, id: form.id, name: form.name.trim() });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The robot was not registered.");
+      setError(cause instanceof Error ? cause.message : "The agent was not registered.");
     } finally {
       setSending(false);
     }
@@ -98,7 +98,7 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
         className="rounded-3xl border-2 border-ink bg-paper px-4 pt-4 pb-4 shadow-hard lg:row-span-2 lg:px-6 lg:pt-6 lg:pb-5"
       >
         <div className="grid gap-3.5 lg:grid-cols-2 lg:gap-x-4 lg:gap-y-4">
-          <Field id={ids.name} label="Robot name" error={touched.name ? errors.name : undefined} hint="Shown on the lineup and in every post">
+          <Field id={ids.name} label="Agent name" error={touched.name ? errors.name : undefined} hint="Shown on the lineup and in every post">
             <Input
               id={ids.name}
               value={form.name}
@@ -125,7 +125,7 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
               className={FIELD}
             />
             <datalist id={ids.kinds}>
-              {ROBOT_KINDS.map((kind) => (
+              {AGENT_KINDS.map((kind) => (
                 <option key={kind} value={kind} />
               ))}
             </datalist>
@@ -259,7 +259,7 @@ function Registered({ sent }: { sent: Sent }) {
       </p>
       <div className="mt-4 flex flex-wrap gap-2.5">
         <Button asChild variant="black" size="lg" className="rounded-2xl">
-          <Link href={`/robots/${sent.id}`}>See its page</Link>
+          <Link href={`/agents/${sent.id}`}>See its page</Link>
         </Button>
         <Button asChild variant="outline" size="lg" className="rounded-2xl">
           <Link href="/">See the lineup</Link>

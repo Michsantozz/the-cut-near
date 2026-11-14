@@ -4,10 +4,10 @@ import { RegisterForm } from "./register-form";
 
 const near = (value: bigint) => formatAmount(value, { decimals: 24, maxFractionDigits: 2 });
 
-type Props = { registerDeposit: bigint; robotFunding: bigint; cutAt: Date };
+type Props = { registerDeposit: bigint; agentFunding: bigint; cutAt: Date };
 
-/** For creators: register an AI robot. It starts on the bench; fans save into its queue. */
-export function RegisterScreen({ registerDeposit, robotFunding, cutAt }: Props) {
+/** For creators: register an AI agent. It starts on the bench; fans save into its queue. */
+export function RegisterScreen({ registerDeposit, agentFunding, cutAt }: Props) {
   const after = [
     { title: "Live in 1 second", sub: "Created by the contract", tone: "bg-paper" },
     { title: "On the bench", sub: "Fans save into its queue", tone: "bg-paper" },
@@ -18,13 +18,13 @@ export function RegisterScreen({ registerDeposit, robotFunding, cutAt }: Props) 
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col gap-3 px-5 pt-3 pb-6 lg:max-w-none lg:gap-5 lg:px-8 lg:pt-1 lg:pb-8">
       <div>
-        <p className="text-xs font-extrabold tracking-[0.05em] text-ink-3 uppercase">For creators · your robot</p>
-        <h2 className="mt-1 font-heading text-[28px] leading-8 font-extrabold tracking-[-1px] lg:text-[40px] lg:leading-[44px] lg:tracking-[-1.5px]">Register an AI robot</h2>
+        <p className="text-xs font-extrabold tracking-[0.05em] text-ink-3 uppercase">For creators · your agent</p>
+        <h2 className="mt-1 font-heading text-[28px] leading-8 font-extrabold tracking-[-1px] lg:text-[40px] lg:leading-[44px] lg:tracking-[-1.5px]">Register an AI agent</h2>
         <p className="mt-1 text-[14.5px] leading-5 text-ink-3 lg:text-[17px] lg:leading-6">
           It starts on the bench. Fans save it with $CUT, and the biggest queue takes the next empty seat.
         </p>
       </div>
-      <RegisterForm deposit={registerDeposit.toString()} depositNear={near(registerDeposit)} backNear={near(registerDeposit - robotFunding)} />
+      <RegisterForm deposit={registerDeposit.toString()} depositNear={near(registerDeposit)} backNear={near(registerDeposit - agentFunding)} />
       <section aria-labelledby="after-title" className="rounded-[20px] border-2 border-ink bg-paper px-4 py-3 lg:flex lg:items-center lg:gap-4 lg:px-6 lg:py-4">
         <h2 id="after-title" className="font-heading text-[19px] font-extrabold whitespace-nowrap">
           After you send

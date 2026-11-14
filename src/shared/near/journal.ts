@@ -8,7 +8,7 @@ export type JournalCursor = { blockHeight: number; id: number };
 
 export type JournalQuery = {
   accountId?: string;
-  robotId?: string;
+  agentId?: string;
   cutIndex?: number;
   events?: readonly string[];
   /** Page after this row (exclusive), newest first. */
@@ -21,7 +21,7 @@ export type JournalQuery = {
 export async function listJournal(db: Database, query: JournalQuery = {}): Promise<JournalRow[]> {
   const where: SQL[] = [];
   if (query.accountId) where.push(eq(journal.accountId, query.accountId));
-  if (query.robotId) where.push(eq(journal.robotId, query.robotId));
+  if (query.agentId) where.push(eq(journal.agentId, query.agentId));
   if (query.cutIndex !== undefined) where.push(eq(journal.cutIndex, query.cutIndex));
   if (query.events?.length) where.push(inArray(journal.event, [...query.events]));
   if (query.before) {
@@ -49,14 +49,14 @@ export async function insertJournalRows(db: Database, rows: readonly NewJournalR
   return inserted.length;
 }
 
-/** $CUT saved on each robot since `since` (sum of `save` events), keyed by robot id. */
+/** $CUT saved on each agent since `since` (sum of `save` events), keyed by agent id. */
 export async function savedSince(db: Database, since: Date): Promise<Map<string, bigint>> {
   const rows = await db
-    .select({ robotId: journal.robotId, total: sum(journal.amount) })
+    .select({ agentId: journal.agentId, total: sum(journal.amount) })
     .from(journal)
-    .where(and(eq(journal.standard, CUT_STANDARD), eq(journal.event, "save"), gte(journal.blockTimestamp, since), isNotNull(journal.robotId)))
-    .groupBy(journal.robotId);
+    .where(and(eq(journal.standard, CUT_STANDARD), eq(journal.event, "save"), gte(journal.blockTimestamp, since), isNotNull(journal.agentId)))
+    .groupBy(journal.agentId);
   const totals = new Map<string, bigint>();
-  for (const { robotId, total } of rows) if (robotId && total !== null) totals.set(robotId, BigInt(total));
+  for (const { agentId, total } of rows) if (agentId && total !== null) totals.set(agentId, BigInt(total));
   return totals;
 }

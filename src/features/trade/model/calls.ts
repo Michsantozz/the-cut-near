@@ -30,18 +30,18 @@ export function sellCalls({ cutIn, minOut }: { cutIn: bigint; minOut: bigint }):
 }
 
 /**
- * Lock `amount` $CUT on a robot until the next cut. The save record is paid from the account's storage balance;
+ * Lock `amount` $CUT on an agent until the next cut. The save record is paid from the account's storage balance;
  * `storageTopUp` (yoctoNEAR) is attached when that balance is too thin, and the contract credits it first.
  */
-export function saveCalls({ robotId, amount, storageTopUp }: { robotId: string; amount: bigint; storageTopUp: bigint }): ContractCall[] {
-  const call: ContractCall = { method: "save", args: { robot_id: robotId, amount: amount.toString() } };
+export function saveCalls({ agentId, amount, storageTopUp }: { agentId: string; amount: bigint; storageTopUp: bigint }): ContractCall[] {
+  const call: ContractCall = { method: "save", args: { agent_id: agentId, amount: amount.toString() } };
   if (storageTopUp > 0n) call.deposit = storageTopUp.toString();
   return [call];
 }
 
 /** Take back a whole save with the prize it earned, once the cut it was locked for has run. */
-export function unsaveCalls(robotId: string): ContractCall[] {
-  return [{ method: "unsave", args: { robot_id: robotId } }];
+export function unsaveCalls(agentId: string): ContractCall[] {
+  return [{ method: "unsave", args: { agent_id: agentId } }];
 }
 
 /**

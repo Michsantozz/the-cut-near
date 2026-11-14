@@ -4,7 +4,7 @@ import type { JournalEntry } from "../model/types";
 
 // The design's sample history (docs/design/SPEC-v19.md §2, Receipts.dc.html), newest first, as the indexer
 // would store it: every `data` item has the fields `contracts/thecut/src/events.rs` emits, and the
-// account, robot, cut and amount columns come from the same `eventRefs` the indexer uses.
+// account, agent, cut and amount columns come from the same `eventRefs` the indexer uses.
 // Launch is Thu Nov 12 15:01 UTC; cut #1 runs Fri Nov 13 18:00 UTC. Fictional hashes and heights.
 
 export const SAMPLE_CONTRACT_ID = "thecut.near";
@@ -40,7 +40,7 @@ function tx(name: string, at: string, logs: Log[]): JournalEntry[] {
 }
 
 const STAGE = ["pixie", "lila", "oracle", "mabel", "melody", "yuna", "gremlin", "velvet", "onyx", "kiko"] as const;
-const ROBOT_NAMES: Record<string, [name: string, kind: string]> = {
+const AGENT_NAMES: Record<string, [name: string, kind: string]> = {
   pixie: ["Pixie Volt", "AI streamer"],
   lila: ["Lila Loop", "Virtual influencer"],
   oracle: ["Oracle Toad", "AI agent"],
@@ -52,8 +52,8 @@ const ROBOT_NAMES: Record<string, [name: string, kind: string]> = {
   onyx: ["Onyx Moon", "Digital model"],
   kiko: ["Kiko Bun", "VTuber"],
   chartwise: ["Chartwise", "AI analyst"],
-  bloop: ["Bloop", "AI robot"],
-  pixelkit: ["Pixel Kit", "AI robot"],
+  bloop: ["Bloop", "AI agent"],
+  pixelkit: ["Pixel Kit", "AI agent"],
 };
 const SURVIVOR_PILES: Record<string, number> = {
   pixie: 182_400,
@@ -68,9 +68,9 @@ const SURVIVOR_PILES: Record<string, number> = {
 };
 
 const register = (id: string): Item => {
-  const [name, kind] = ROBOT_NAMES[id] ?? [id, "AI robot"];
+  const [name, kind] = AGENT_NAMES[id] ?? [id, "AI agent"];
   return {
-    robot_id: id,
+    agent_id: id,
     account_id: `${id}.${SAMPLE_CONTRACT_ID}`,
     creator: `${id}-studio.near`,
     name,
@@ -86,9 +86,9 @@ const buy = (account: string, nearIn: number, cutOut: number, fee: number): Log[
   { event: "fee", items: [{ account_id: account, amount: cutTenths(fee), source: "buy", cut_index: 1 }] },
 ];
 
-const save = (account: string, robot: string, amount: number, pile: number): Log => ({
+const save = (account: string, agent: string, amount: number, pile: number): Log => ({
   event: "save",
-  items: [{ account_id: account, robot_id: robot, amount: cut(amount), total: cut(amount), pile: cut(pile), cut_index: 1 }],
+  items: [{ account_id: account, agent_id: agent, amount: cut(amount), total: cut(amount), pile: cut(pile), cut_index: 1 }],
 });
 
 const SLICE = cutTenths(17_754);
@@ -98,7 +98,7 @@ const CREATOR_SLICE = cutTenths(934);
 // Only the after-cut screens see it (SPEC-v19 §2): everywhere else the sample "now" is 13:48, before it runs.
 const CUT_1: JournalEntry[] = [
   ...tx("delete-1", "2026-11-13T18:00:03Z", [
-    { event: "delete", items: [{ cut_index: 1, robot_id: "kiko", account_id: `kiko.${SAMPLE_CONTRACT_ID}`, beneficiary: "bob.near" }] },
+    { event: "delete", items: [{ cut_index: 1, agent_id: "kiko", account_id: `kiko.${SAMPLE_CONTRACT_ID}`, beneficiary: "bob.near" }] },
   ]),
   ...tx("cut-1", "2026-11-13T18:00:01Z", [
     { standard: FT_STANDARD, event: "ft_burn", items: [{ owner_id: SAMPLE_CONTRACT_ID, amount: cut(11_800), memo: "cut 1" }] },
@@ -107,8 +107,8 @@ const CUT_1: JournalEntry[] = [
       items: [
         {
           cut_index: 1,
-          robot_id: "kiko",
-          robot_account_id: `kiko.${SAMPLE_CONTRACT_ID}`,
+          agent_id: "kiko",
+          agent_account_id: `kiko.${SAMPLE_CONTRACT_ID}`,
           pile: cut(23_600),
           burned: cut(11_800),
           prize: cut(16_820),
@@ -125,7 +125,7 @@ const CUT_1: JournalEntry[] = [
       event: "prize",
       items: Object.entries(SURVIVOR_PILES).map(([id, pile]) => ({
         cut_index: 1,
-        robot_id: id,
+        agent_id: id,
         creator: `${id}-studio.near`,
         slice: SLICE,
         creator_slice: CREATOR_SLICE,
@@ -133,13 +133,13 @@ const CUT_1: JournalEntry[] = [
         burned: false,
       })),
     },
-    { event: "join", items: [{ cut_index: 1, robot_id: "chartwise", pile: cut(88_400) }] },
+    { event: "join", items: [{ cut_index: 1, agent_id: "chartwise", pile: cut(88_400) }] },
   ]),
 ];
 
 // Day 1 saves behind the piles and queues (SPEC-v18 §5): with the two saves of day 2 they add up to every pile, so the
 // audit's "sum of piles = saved total" holds on the journal itself.
-const DAY_1_SAVES: [robot: string, amount: number, at: string][] = [
+const DAY_1_SAVES: [agent: string, amount: number, at: string][] = [
   ["pixie", 182_400, "2026-11-12T16:40:00Z"],
   ["lila", 151_200, "2026-11-12T17:05:00Z"],
   ["oracle", 139_800, "2026-11-12T17:30:00Z"],
@@ -171,8 +171,8 @@ const BEFORE_CUT: JournalEntry[] = [
   // Day 1: launch.
   ...tx("register-chartwise", "2026-11-12T16:12:00Z", [{ event: "register", items: [register("chartwise")] }]),
   ...tx("buy-mika-1", "2026-11-12T15:20:00Z", buy("mika.near", 383_508, 5_542, 56)),
-  ...tx("stage", "2026-11-12T15:01:30Z", [{ event: "join", items: STAGE.map((id) => ({ cut_index: 0, robot_id: id, pile: cut(0) })) }]),
-  ...tx("robots", "2026-11-12T15:01:20Z", [{ event: "register", items: STAGE.map(register) }]),
+  ...tx("stage", "2026-11-12T15:01:30Z", [{ event: "join", items: STAGE.map((id) => ({ cut_index: 0, agent_id: id, pile: cut(0) })) }]),
+  ...tx("agents", "2026-11-12T15:01:20Z", [{ event: "register", items: STAGE.map(register) }]),
   ...tx("launch", "2026-11-12T15:01:00Z", [
     { standard: FT_STANDARD, event: "ft_mint", items: [{ owner_id: SAMPLE_CONTRACT_ID, amount: cut(10_000_000), memo: "launch: every $CUT starts in the pool" }] },
   ]),

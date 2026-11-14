@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { getParams } from "@/entities/market/server";
 import { getJournal, getJournalStats } from "@/entities/journal/server";
-import { getBench, getStage } from "@/entities/robot/server";
+import { getBench, getStage } from "@/entities/agent/server";
 import { runAudit, LAUNCH_PARAMS } from "@/features/receipts/model/audit";
 import { describeGroup, groupEntries, whenText, type DescribeContext } from "@/features/receipts/model/describe";
 import { cursorParam, filterEvents, parseCursor, parseFilter, receiptsHref } from "@/features/receipts/model/filters";
@@ -44,7 +44,7 @@ describe("describeGroup", () => {
     const line = describeGroup(groups.find((g) => g.event === "cut")!, ctx);
     expect(line.tag).toBe("cut");
     expect(line.what).toBe("Cut #1: Kiko Bun is cut");
-    expect(line.cut).toMatchObject({ index: 1, robotId: "kiko", pile: units(23_600), burned: units(11_800), prize: units(16_820), survivors: 9 });
+    expect(line.cut).toMatchObject({ index: 1, agentId: "kiko", pile: units(23_600), burned: units(11_800), prize: units(16_820), survivors: 9 });
     expect(line.cut!.slice).toBe(units(17_754) / 10n);
   });
 
@@ -94,14 +94,14 @@ describe("supplyOf", () => {
 describe("runAudit", () => {
   it("passes on the sample day and fails on a wrong supply", async () => {
     const [stats, params, stage, bench] = await Promise.all([getJournalStats(), getParams(), getStage(), getBench()]);
-    const robots = [...stage, ...bench];
-    const saved = robots.reduce((sum, r) => sum + r.pile, 0n);
+    const agents = [...stage, ...bench];
+    const saved = agents.reduce((sum, r) => sum + r.pile, 0n);
     const input = {
       contractId: "thecut.near",
       fullAccessKeys: 0,
       stats,
       totalSupply: LAUNCH_PARAMS.totalSupply - stats.burned,
-      robots,
+      agents,
       params,
       launchIntervalMs: 86_400_000,
     };

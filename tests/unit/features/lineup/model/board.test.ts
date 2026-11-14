@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { paysPer100, sliceIfCut } from "@/entities/cut";
 import { getNextCut } from "@/entities/cut/server";
 import { getParams } from "@/entities/market/server";
-import { compareRobots, rankByPile, type Robot } from "@/entities/robot";
-import { getBench, getStage } from "@/entities/robot/server";
+import { compareAgents, rankByPile, type Agent } from "@/entities/agent";
+import { getBench, getStage } from "@/entities/agent/server";
 import {
   barPercent,
   boardOrder,
@@ -20,11 +20,11 @@ import { formatAmount } from "@/shared/ui/format";
 const LAUNCH = new Date("2026-11-12T15:01:00Z");
 const LATER = new Date("2026-11-12T16:12:00Z");
 
-const robot = (id: string, pile: number, joinedAt = LAUNCH, extra: Partial<Robot> = {}): Robot => ({
+const agent = (id: string, pile: number, joinedAt = LAUNCH, extra: Partial<Agent> = {}): Agent => ({
   id,
   accountId: `${id}.thecut.near`,
   name: id,
-  kind: "AI robot",
+  kind: "AI agent",
   xHandle: `@${id}`,
   creator: `${id}-studio.near`,
   status: "stage",
@@ -40,22 +40,22 @@ const pays = (value: bigint | null) => (value === null ? null : formatAmount(val
 
 describe("ranking", () => {
   it("puts the higher pile first", () => {
-    expect(rankByPile([robot("a", 10), robot("b", 30), robot("c", 20)]).map((r) => r.id)).toEqual(["b", "c", "a"]);
+    expect(rankByPile([agent("a", 10), agent("b", 30), agent("c", 20)]).map((r) => r.id)).toEqual(["b", "c", "a"]);
   });
 
-  it("ranks the newer robot lower on a tie, because the newer one is cut", () => {
-    const older = robot("zed", 50, LAUNCH);
-    const newer = robot("abe", 50, LATER);
+  it("ranks the newer agent lower on a tie, because the newer one is cut", () => {
+    const older = agent("zed", 50, LAUNCH);
+    const newer = agent("abe", 50, LATER);
     expect(rankByPile([newer, older]).map((r) => r.id)).toEqual(["zed", "abe"]);
-    expect(compareRobots(newer, older)).toBeGreaterThan(0);
+    expect(compareAgents(newer, older)).toBeGreaterThan(0);
   });
 
   it("keeps a stable order for a full tie", () => {
-    expect(rankByPile([robot("b", 5), robot("a", 5)]).map((r) => r.id)).toEqual(["a", "b"]);
+    expect(rankByPile([agent("b", 5), agent("a", 5)]).map((r) => r.id)).toEqual(["a", "b"]);
   });
 
   it("does not mutate its input", () => {
-    const stage = [robot("a", 1), robot("b", 2)];
+    const stage = [agent("a", 1), agent("b", 2)];
     rankByPile(stage);
     expect(stage.map((r) => r.id)).toEqual(["a", "b"]);
   });
@@ -71,22 +71,22 @@ describe("ranking", () => {
 });
 
 describe("gap to pass", () => {
-  it("needs one more than the difference when the robots are the same age", () => {
-    expect(gapToPass(robot("kiko", 23_600), robot("onyx", 61_800))).toBe(units(38_201));
+  it("needs one more than the difference when the agents are the same age", () => {
+    expect(gapToPass(agent("kiko", 23_600), agent("onyx", 61_800))).toBe(units(38_201));
   });
 
-  it("needs one more than the difference when the robot is newer", () => {
-    expect(gapToPass(robot("new", 10, LATER), robot("old", 15, LAUNCH))).toBe(units(6));
-    expect(gapToPass(robot("new", 15, LATER), robot("old", 15, LAUNCH))).toBe(units(1));
+  it("needs one more than the difference when the agent is newer", () => {
+    expect(gapToPass(agent("new", 10, LATER), agent("old", 15, LAUNCH))).toBe(units(6));
+    expect(gapToPass(agent("new", 15, LATER), agent("old", 15, LAUNCH))).toBe(units(1));
   });
 
-  it("needs only the difference when the robot is older, since it wins the tie", () => {
-    expect(gapToPass(robot("old", 10, LAUNCH), robot("new", 15, LATER))).toBe(units(5));
-    expect(gapToPass(robot("old", 15, LAUNCH), robot("new", 15, LATER))).toBe(0n);
+  it("needs only the difference when the agent is older, since it wins the tie", () => {
+    expect(gapToPass(agent("old", 10, LAUNCH), agent("new", 15, LATER))).toBe(units(5));
+    expect(gapToPass(agent("old", 15, LAUNCH), agent("new", 15, LATER))).toBe(0n);
   });
 
-  it("is zero when the robot is already above", () => {
-    expect(gapToPass(robot("a", 20), robot("b", 15))).toBe(0n);
+  it("is zero when the agent is already above", () => {
+    expect(gapToPass(agent("a", 20), agent("b", 15))).toBe(0n);
   });
 
   it("matches the contract's gap on the sample day", async () => {
@@ -131,9 +131,9 @@ describe("slice and pays per 100 saved", () => {
 });
 
 describe("board", () => {
-  it("marks the lowest robot as cut and prices every survivor with the fees so far", async () => {
+  it("marks the lowest agent as cut and prices every survivor with the fees so far", async () => {
     const board = buildBoard(await getStage(), (await getNextCut()).prizeSoFar, await getParams());
-    const byId = new Map(board.entries.map((entry) => [entry.robot.id, entry]));
+    const byId = new Map(board.entries.map((entry) => [entry.agent.id, entry]));
     expect(byId.get("kiko")?.isLowest).toBe(true);
     expect(byId.get("kiko")?.paysPer100).toBeNull();
     expect(pays(byId.get("pixie")?.paysPer100 ?? null)).toBe("0.92");
@@ -147,11 +147,11 @@ describe("board", () => {
     expect(board).toMatchObject({ entries: [], lowest: null, next: null, gap: null, slice: 0n, topPile: 0n, totalSaved: 0n });
   });
 
-  it("keeps the lowest robot last in every sort", () => {
+  it("keeps the lowest agent last in every sort", () => {
     const stage = [
-      robot("a", 300, LAUNCH, { savers: 1, savedToday: units(1) }),
-      robot("b", 200, LAUNCH, { savers: 9, savedToday: units(5) }),
-      robot("low", 100, LAUNCH, { savers: 99, savedToday: units(99) }),
+      agent("a", 300, LAUNCH, { savers: 1, savedToday: units(1) }),
+      agent("b", 200, LAUNCH, { savers: 9, savedToday: units(5) }),
+      agent("low", 100, LAUNCH, { savers: 99, savedToday: units(99) }),
     ];
     const { entries } = buildBoard(stage, 0n, params);
     expect(boardOrder(entries, "pile")).toEqual(["a", "b", "low"]);
@@ -161,7 +161,7 @@ describe("board", () => {
   });
 
   it("breaks sort ties by pile rank and computes every order", () => {
-    const stage = [robot("a", 300, LAUNCH, { savers: 5 }), robot("b", 200, LAUNCH, { savers: 5 }), robot("c", 100)];
+    const stage = [agent("a", 300, LAUNCH, { savers: 5 }), agent("b", 200, LAUNCH, { savers: 5 }), agent("c", 100)];
     const orders = boardOrders(buildBoard(stage, 0n, params).entries);
     expect(orders.savers).toEqual(["a", "b", "c"]);
     expect(Object.keys(orders)).toEqual(["pile", "savers", "today", "pays"]);

@@ -13,7 +13,7 @@ export type JournalEntry = {
   txHash: string;
   blockHeight: number;
   accountId: string | null;
-  robotId: string | null;
+  agentId: string | null;
   cutIndex: number | null;
   /** The item's `amount` in the smallest unit, when it has one. */
   amount: bigint | null;
@@ -29,7 +29,7 @@ export type JournalPage = {
 
 export type JournalFilter = {
   accountId?: string;
-  robotId?: string;
+  agentId?: string;
   cutIndex?: number;
   events?: readonly string[];
   before?: { blockHeight: number; id: number };
@@ -59,6 +59,6 @@ export type JournalStats = {
   cuts: number;
   /** Accounts with at least one `buy`. */
   buyers: number;
-  /** Robot ids that have a `register` event. */
+  /** Agent ids that have a `register` event. */
   registered: string[];
 };

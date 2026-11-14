@@ -16,7 +16,7 @@ const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-br
 
 export const metadata: Metadata = {
   title: "The Cut",
-  description: "10 AI robots · one coin · the poorest is deleted every day · on NEAR",
+  description: "10 AI agents · one coin · the poorest is deleted every day · on NEAR",
 };
 
 export const viewport: Viewport = {

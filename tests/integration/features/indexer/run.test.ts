@@ -27,8 +27,8 @@ const cursor = async () => (await t.db.select().from(indexerCursor))[0]?.nextBlo
 function seed() {
   source
     .add(1_000, contractTx("T1", 1_000, [event("buy", [{ account_id: "mika.testnet", amount: "554" }])]))
-    .add(2_000, contractTx("T2", 2_000, [event("save", [{ account_id: "mika.testnet", robot_id: "melody", amount: "400", cut_index: 1 }])]))
-    .add(3_000, contractTx("T3", 3_000, [event("cut", [{ cut_index: 1, robot_id: "kiko", runner: "bob.testnet" }]), event("ft_burn", [{ owner_id: CONTRACT, amount: "11800" }], "nep141")]));
+    .add(2_000, contractTx("T2", 2_000, [event("save", [{ account_id: "mika.testnet", agent_id: "melody", amount: "400", cut_index: 1 }])]))
+    .add(3_000, contractTx("T3", 3_000, [event("cut", [{ cut_index: 1, agent_id: "kiko", runner: "bob.testnet" }]), event("ft_burn", [{ owner_id: CONTRACT, amount: "11800" }], "nep141")]));
 }
 
 describe("runIndexer", () => {
@@ -53,7 +53,7 @@ describe("runIndexer", () => {
     seed();
     await run();
     source.headHeight = 20_000;
-    source.add(12_000, contractTx("T4", 12_000, [event("unsave", [{ account_id: "mika.testnet", robot_id: "melody", amount: "400" }])]));
+    source.add(12_000, contractTx("T4", 12_000, [event("unsave", [{ account_id: "mika.testnet", agent_id: "melody", amount: "400" }])]));
     const report = await run();
     expect(report).toMatchObject({ status: "caught_up", from: 9_901, to: 19_900, transactions: 1, inserted: 1 });
     expect(source.requests.at(-1)).toMatchObject({ from: 9_901, to: 19_900 });
@@ -112,7 +112,7 @@ describe("runIndexer", () => {
     await run();
     const mika = await listJournal(t.db, { accountId: "mika.testnet" });
     expect(mika.map((r) => r.event)).toEqual(["save", "buy"]);
-    expect(mika[0]).toMatchObject({ robotId: "melody", cutIndex: 1, amount: 400n, txHash: "T2", emitter: CONTRACT, standard: "thecut" });
+    expect(mika[0]).toMatchObject({ agentId: "melody", cutIndex: 1, amount: 400n, txHash: "T2", emitter: CONTRACT, standard: "thecut" });
     const cut = await listJournal(t.db, { cutIndex: 1, events: ["cut"] });
     expect(cut).toHaveLength(1);
     const page = await listJournal(t.db, { limit: 2 });

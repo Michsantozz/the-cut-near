@@ -1,12 +1,12 @@
 import { sliceIfCut, type DeletingCut, type NextCut, type SplitParams } from "@/entities/cut";
 import type { Params } from "@/entities/market";
-import { rankByPile, type Robot } from "@/entities/robot";
+import { rankByPile, type Agent } from "@/entities/agent";
 import { countdownParts, formatCut, formatRatio, utcClock } from "./format";
 
 // What the Director is allowed to know, already formatted the way the design writes numbers.
-// The Director decides nothing: the lowest robot comes from the contract (`NextCut.lowestId`, `CutRecord`).
+// The Director decides nothing: the lowest agent comes from the contract (`NextCut.lowestId`, `CutRecord`).
 
-export type RobotFacts = {
+export type AgentFacts = {
   id: string;
   name: string;
   kind: string;
@@ -15,7 +15,7 @@ export type RobotFacts = {
   savedToday: string;
   /** 1 = biggest pile. */
   rank: number;
-  /** $CUT paid per 100 saved if the cut ran now (equal slice ÷ pile × 100); null for the robot that would be cut. */
+  /** $CUT paid per 100 saved if the cut ran now (equal slice ÷ pile × 100); null for the agent that would be cut. */
   paysPer100: string | null;
 };
 
@@ -32,20 +32,20 @@ export type DayFacts = {
   finalHour: boolean;
   /** The day's fees the slice is computed with. */
   fees: string;
-  /** One equal slice per surviving robot, if the cut ran now. */
+  /** One equal slice per surviving agent, if the cut ran now. */
   slice: string;
-  stage: RobotFacts[];
-  lowest: RobotFacts;
-  nextUp: RobotFacts;
-  top: RobotFacts;
-  /** $CUT the lowest robot needs to pass the next one. */
+  stage: AgentFacts[];
+  lowest: AgentFacts;
+  nextUp: AgentFacts;
+  top: AgentFacts;
+  /** $CUT the lowest agent needs to pass the next one. */
   gap: string;
   bench: BenchFacts[];
 };
 
 export type DayInput = {
-  stage: Robot[];
-  bench: Robot[];
+  stage: Agent[];
+  bench: Agent[];
   nextCut: NextCut;
   params: SplitParams;
   now: Date;
@@ -58,23 +58,23 @@ const HOUR = 3_600_000;
 export function buildDayFacts(input: DayInput): DayFacts {
   const { nextCut, params, now } = input;
   const byPile = rankByPile(input.stage);
-  const lowestRobot = byPile.find((robot) => robot.id === nextCut.lowestId) ?? byPile[byPile.length - 1];
-  if (!lowestRobot || byPile.length < 2) throw new Error("The Director needs at least two robots on the stage.");
+  const lowestAgent = byPile.find((agent) => agent.id === nextCut.lowestId) ?? byPile[byPile.length - 1];
+  if (!lowestAgent || byPile.length < 2) throw new Error("The Director needs at least two agents on the stage.");
   const fees = input.fees ?? nextCut.prizeSoFar;
-  const slice = sliceIfCut(lowestRobot.pile, fees, params);
+  const slice = sliceIfCut(lowestAgent.pile, fees, params);
 
-  const stage: RobotFacts[] = byPile.map((robot, index) => ({
-    id: robot.id,
-    name: robot.name,
-    kind: robot.kind,
-    pile: formatCut(robot.pile),
-    savers: robot.savers,
-    savedToday: formatCut(robot.savedToday),
+  const stage: AgentFacts[] = byPile.map((agent, index) => ({
+    id: agent.id,
+    name: agent.name,
+    kind: agent.kind,
+    pile: formatCut(agent.pile),
+    savers: agent.savers,
+    savedToday: formatCut(agent.savedToday),
     rank: index + 1,
-    paysPer100: robot.id === lowestRobot.id || robot.pile === 0n ? null : formatRatio(slice * 100n, robot.pile, 2),
+    paysPer100: agent.id === lowestAgent.id || agent.pile === 0n ? null : formatRatio(slice * 100n, agent.pile, 2),
   }));
-  const lowest = stage.find((robot) => robot.id === lowestRobot.id) as RobotFacts;
-  const survivors = stage.filter((robot) => robot.id !== lowest.id);
+  const lowest = stage.find((agent) => agent.id === lowestAgent.id) as AgentFacts;
+  const survivors = stage.filter((agent) => agent.id !== lowest.id);
   const nextUp = survivors[survivors.length - 1];
   const top = survivors[0];
 
@@ -95,7 +95,7 @@ export function buildDayFacts(input: DayInput): DayFacts {
     gap: formatCut(nextCut.gapToNext),
     bench: [...input.bench]
       .sort((a, b) => (a.pile === b.pile ? 0 : a.pile > b.pile ? -1 : 1))
-      .map((robot) => ({ id: robot.id, name: robot.name, kind: robot.kind, queue: formatCut(robot.pile), savers: robot.savers })),
+      .map((agent) => ({ id: agent.id, name: agent.name, kind: agent.kind, queue: formatCut(agent.pile), savers: agent.savers })),
   };
 }
 
@@ -110,37 +110,37 @@ export type CutFacts = {
   creatorSlice: string;
   joined: { id: string; name: string; pile: string } | null;
   runner: string;
-  /** Robots on the stage after the cut. */
-  robotsAfter: number;
+  /** Agents on the stage after the cut. */
+  agentsAfter: number;
   /** "tomorrow, 18:00 UTC" for a daily cut, "at 18:02 UTC" otherwise. */
   nextCut: string;
 };
 
 export type CutInput = {
   cut: DeletingCut;
-  /** Every robot the cut names (stage before the cut and bench), for names and the joining queue. */
-  robots: Robot[];
+  /** Every agent the cut names (stage before the cut and bench), for names and the joining queue. */
+  agents: Agent[];
   params: Pick<Params, "stageSize" | "cutIntervalMs">;
 };
 
 const ORDINALS = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"];
 
-export function buildCutFacts({ cut, robots, params }: CutInput): CutFacts {
-  const byId = new Map(robots.map((robot) => [robot.id, robot]));
+export function buildCutFacts({ cut, agents, params }: CutInput): CutFacts {
+  const byId = new Map(agents.map((agent) => [agent.id, agent]));
   const deleted = byId.get(cut.deletedId);
   const joined = cut.joinedId ? byId.get(cut.joinedId) : undefined;
   const next = new Date(cut.at.getTime() + params.cutIntervalMs);
   return {
     index: cut.index,
     title: cut.index >= 1 && cut.index <= ORDINALS.length ? `${ORDINALS[cut.index - 1]} cut` : `Cut ${cut.index}`,
-    deleted: { id: cut.deletedId, name: deleted?.name ?? cut.deletedId, kind: deleted?.kind ?? "robot", pile: formatCut(cut.pile) },
+    deleted: { id: cut.deletedId, name: deleted?.name ?? cut.deletedId, kind: deleted?.kind ?? "agent", pile: formatCut(cut.pile) },
     burned: formatCut(cut.burned),
     prize: formatCut(cut.prize),
     slice: formatCut(cut.slice, 1),
     creatorSlice: formatCut(cut.creatorSlice, 1),
     joined: cut.joinedId ? { id: cut.joinedId, name: joined?.name ?? cut.joinedId, pile: formatCut(joined?.pile ?? 0n) } : null,
     runner: cut.runner,
-    robotsAfter: cut.joinedId ? params.stageSize : params.stageSize - 1,
+    agentsAfter: cut.joinedId ? params.stageSize : params.stageSize - 1,
     nextCut: params.cutIntervalMs === 86_400_000 ? `tomorrow, ${utcClock(next)} UTC` : `at ${utcClock(next)} UTC`,
   };
 }

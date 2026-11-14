@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_NEXT_CUT, SAMPLE_NOW } from "@/entities/cut/api/sample";
 import { SAMPLE_PARAMS } from "@/entities/market/api/sample";
-import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/robot/api/sample";
+import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/agent/api/sample";
 import { createNearAiClient, nearAiClientFromEnv, readAiEnv } from "@/shared/ai";
 import { collectAttestation, createHardwareVerifier } from "@/shared/ai/verify/server";
 import { units } from "@/shared/lib/amount";

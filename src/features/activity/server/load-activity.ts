@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { getNextCut } from "@/entities/cut/server";
 import { getJournal } from "@/entities/journal/server";
 import { getParams, getPool, getUsdCentsPerNear } from "@/entities/market/server";
-import { getBench, getStage } from "@/entities/robot/server";
+import { getBench, getStage } from "@/entities/agent/server";
 import { publicEnv } from "@/shared/config/public";
 import { explorerAccountUrl, explorerTxUrl } from "@/shared/near/network";
 
@@ -48,8 +48,8 @@ export async function loadActivity(accountId: string, filter: ActivityFilter): P
   ]);
   const now = new Date();
   const names = new Map<string, string>();
-  for (const entry of registers.entries) if (entry.robotId && typeof entry.data.name === "string") names.set(entry.robotId, entry.data.name);
-  for (const robot of [...stage, ...bench]) names.set(robot.id, robot.name);
+  for (const entry of registers.entries) if (entry.agentId && typeof entry.data.name === "string") names.set(entry.agentId, entry.data.name);
+  for (const agent of [...stage, ...bench]) names.set(agent.id, agent.name);
 
   const launchedAt = launch.entries[0]?.at ?? null;
   const ctx = {

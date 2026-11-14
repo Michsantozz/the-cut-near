@@ -108,7 +108,7 @@ export function SellScreen({ data }: { data: SellData }) {
           <p className="mt-6 font-heading text-[44px] leading-[48px] font-extrabold tracking-[-1.5px]">Sold.</p>
           <p className="mt-2 text-[17px] leading-6">
             {nearText(step.quote.amountOut)} NEAR{rate !== null ? ` (${nearMoney(step.quote.amountOut, rate)})` : ""} is in your wallet.
-            {saved && account.saves.length === 1 ? ` Your save on ${account.saves[0].robotName} is untouched.` : saved ? " Your saves are untouched." : ""}
+            {saved && account.saves.length === 1 ? ` Your save on ${account.saves[0].agentName} is untouched.` : saved ? " Your saves are untouched." : ""}
           </p>
           <div className="mt-5 rounded-2xl border-2 border-ink bg-paper px-4 py-3">
             <p className="text-[13px] font-bold text-ink-3">Still yours</p>

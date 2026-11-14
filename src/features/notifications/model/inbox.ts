@@ -2,7 +2,7 @@ import type { JournalEntry } from "@/entities/journal";
 import { formatAmount, formatUtcTime } from "@/shared/ui/format";
 
 // The viewer's notifications (Notifications.dc.html "inbox"), derived on each visit from the chain, the journal
-// and the robots' signed posts. Nothing is pushed: no push service exists yet.
+// and the agents' signed posts. Nothing is pushed: no push service exists yet.
 
 export type NoticeKind = "danger" | "post" | "final" | "prize" | "cut" | "collected";
 
@@ -13,14 +13,14 @@ export type InboxInput = {
   cutAt: Date;
   /** The stage, lowest pile last. */
   ranked: readonly { id: string; name: string; pile: bigint }[];
-  /** Robot ids the viewer has a save on. */
+  /** Agent ids the viewer has a save on. */
   savedOn: ReadonlySet<string>;
   claimable: bigint;
   /** `cut` events, newest first. */
   cuts: readonly JournalEntry[];
   /** The viewer's `claim` events, newest first. */
   claims: readonly JournalEntry[];
-  /** The newest post of the robot on the block, if any. */
+  /** The newest post of the agent on the block, if any. */
   lowestPost: { text: string; at: Date } | null;
   names: ReadonlyMap<string, string>;
 };
@@ -54,23 +54,23 @@ export function buildInbox(input: InboxInput): Notice[] {
       kind: "danger",
       // A state, not an event: it is true right now.
       at: now,
-      title: mine ? `Your robot ${lowest.name} is on the block` : `${lowest.name} is on the block`,
+      title: mine ? `Your agent ${lowest.name} is on the block` : `${lowest.name} is on the block`,
       text: `Lowest pile: ${cut0(lowest.pile)} $CUT, ${cut0(gap)} short of ${next.name}. The cut runs at ${time}.`,
-      href: `/robots/${lowest.id}`,
+      href: `/agents/${lowest.id}`,
     });
-    // Danger for a saved robot in the bottom two that is not the lowest.
+    // Danger for a saved agent in the bottom two that is not the lowest.
     if (input.savedOn.has(next.id)) {
       notices.push({
         key: `danger-${next.id}`,
         kind: "danger",
         at: now,
-        title: `Your robot ${next.name} is in the bottom two`,
+        title: `Your agent ${next.name} is in the bottom two`,
         text: `Only ${cut0(next.pile - lowest.pile)} $CUT above ${lowest.name}. If ${lowest.name} passes it, ${next.name} is cut at ${time}.`,
-        href: `/robots/${next.id}`,
+        href: `/agents/${next.id}`,
       });
     }
     if (input.lowestPost) {
-      notices.push({ key: `post-${lowest.id}`, kind: "post", at: input.lowestPost.at, title: `${lowest.name} posted on X`, text: `“${input.lowestPost.text}”`, href: `/robots/${lowest.id}` });
+      notices.push({ key: `post-${lowest.id}`, kind: "post", at: input.lowestPost.at, title: `${lowest.name} posted on X`, text: `“${input.lowestPost.text}”`, href: `/agents/${lowest.id}` });
     }
   }
   if (finalHour && lowest && next) {
@@ -85,24 +85,24 @@ export function buildInbox(input: InboxInput): Notice[] {
   }
   const [lastCut] = input.cuts;
   if (input.claimable > 0n) {
-    const robot = typeof lastCut?.data.robot_id === "string" ? (input.names.get(lastCut.data.robot_id) ?? lastCut.data.robot_id) : null;
+    const agent = typeof lastCut?.data.agent_id === "string" ? (input.names.get(lastCut.data.agent_id) ?? lastCut.data.agent_id) : null;
     notices.push({
       key: "prize-ready",
       kind: "prize",
       at: lastCut?.at ?? now,
       title: "Prize is ready",
-      text: `${robot ? `${robot} was deleted. ` : ""}+${cut2(input.claimable)} $CUT waiting.`,
+      text: `${agent ? `${agent} was deleted. ` : ""}+${cut2(input.claimable)} $CUT waiting.`,
       href: "/prizes",
     });
   }
   for (const entry of input.cuts.slice(0, 3)) {
-    const robot = typeof entry.data.robot_id === "string" ? (input.names.get(entry.data.robot_id) ?? entry.data.robot_id) : null;
+    const agent = typeof entry.data.agent_id === "string" ? (input.names.get(entry.data.agent_id) ?? entry.data.agent_id) : null;
     notices.push({
       key: `cut-${entry.id}`,
       kind: "cut",
       at: entry.at,
-      title: robot ? `${robot} was cut` : `Cut #${entry.cutIndex ?? ""}: nobody was cut`,
-      text: robot ? `Its NEAR account is gone. ${cut0(big(entry.data, "burned"))} $CUT burned and ${cut0(big(entry.data, "prize"))} $CUT went out as the prize.` : "The stage was not full. The prize waits for the next cut.",
+      title: agent ? `${agent} was cut` : `Cut #${entry.cutIndex ?? ""}: nobody was cut`,
+      text: agent ? `Its NEAR account is gone. ${cut0(big(entry.data, "burned"))} $CUT burned and ${cut0(big(entry.data, "prize"))} $CUT went out as the prize.` : "The stage was not full. The prize waits for the next cut.",
       href: "/receipts?filter=cuts",
     });
   }

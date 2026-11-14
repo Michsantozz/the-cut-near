@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
-import { DIRECTOR_ART, robotFullBody, robotTile } from "@/entities/robot";
+import { DIRECTOR_ART, agentFullBody, agentTile } from "@/entities/agent";
 import { formatUtcDate } from "@/shared/ui/format";
 
 import { cutHeadline, cutPost, cutSubline } from "../model/post";
@@ -142,7 +142,7 @@ function DeskCutCard({ share, quote, label }: { share: CutShare; quote: ShareQuo
           the cut
         </span>
         <span className="font-semibold" style={{ fontSize: u(21) }}>
-          · 10 AI robots · one coin · the poorest is deleted every day · on NEAR
+          · 10 AI agents · one coin · the poorest is deleted every day · on NEAR
         </span>
       </div>
     </section>
@@ -151,10 +151,10 @@ function DeskCutCard({ share, quote, label }: { share: CutShare; quote: ShareQuo
 
 type TileProps = { style: CSSProperties; className?: string };
 
-/** The deleted robot: its full-body sticker gone grey (its head tile without one). */
+/** The deleted agent: its full-body sticker gone grey (its head tile without one). */
 function DeletedTile({ share, style, className }: TileProps & { share: CutShare }) {
-  const body = robotFullBody(share.deleted.id);
-  const tile = robotTile(share.deleted.id);
+  const body = agentFullBody(share.deleted.id);
+  const tile = agentTile(share.deleted.id);
   return (
     <span className={cn("absolute flex items-end justify-center overflow-hidden border-ink bg-line", className)} style={style}>
       {body ? (
@@ -168,9 +168,9 @@ function DeletedTile({ share, style, className }: TileProps & { share: CutShare 
   );
 }
 
-/** The robot that took the seat: its head tile. */
+/** The agent that took the seat: its head tile. */
 function JoinedTile({ joined, style, className }: TileProps & { joined: NonNullable<CutShare["joined"]> }) {
-  const tile = robotTile(joined.id);
+  const tile = agentTile(joined.id);
   return (
     <span className={cn("absolute flex items-center justify-center overflow-hidden border-ink bg-paper", className)} style={style}>
       {tile ? <Image src={tile} alt="" width={150} height={150} className="size-full object-cover" /> : <span className="font-heading text-4xl font-extrabold">{joined.name.charAt(0)}</span>}

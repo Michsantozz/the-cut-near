@@ -19,19 +19,19 @@ import { cutToUsdCents, spotPrice } from "../model/money";
 import { defaultSave, ordinal, SAVE_STORAGE, saveProblem, shareIfCutNow, type SaveChoice } from "../model/save";
 import { cutToInput } from "../model/sell";
 import type { SaveData } from "../server/load";
-import { robotFullBody as robotSticker, robotTile } from "@/entities/robot";
+import { agentFullBody as agentSticker, agentTile } from "@/entities/agent";
 import { cutText, cutWhole, dayWord, nearText } from "./copy";
 import { TradeFrame } from "./frame";
 import { FailedStep, PendingStep, TxLink } from "./status";
 
 type Step =
   | { kind: "pick"; note?: string }
-  | { kind: "pending"; action: "save" | "unsave"; robot: SaveChoice; amount: bigint }
-  | { kind: "success"; action: "save" | "unsave"; robot: SaveChoice; amount: bigint; txHash: string }
+  | { kind: "pending"; action: "save" | "unsave"; agent: SaveChoice; amount: bigint }
+  | { kind: "success"; action: "save" | "unsave"; agent: SaveChoice; amount: bigint; txHash: string }
   | { kind: "failed"; action: "save" | "unsave"; txHash: string | null };
 
-// The design's color behind each robot (Lineup.dc.html).
-const ROBOT_BG: Record<string, string> = {
+// The design's color behind each agent (Lineup.dc.html).
+const AGENT_BG: Record<string, string> = {
   pixie: "bg-sky",
   lila: "bg-pink",
   oracle: "bg-violet",
@@ -46,7 +46,7 @@ const ROBOT_BG: Record<string, string> = {
 
 const pays = (value: bigint | null) => (value === null ? "—" : formatAmount(value, { maxFractionDigits: 2, minFractionDigits: 2 }));
 
-/** Save a robot (Club.dc.html / DeskClub.dc.html "vote"): pick a robot and an amount, locked until the next cut. */
+/** Save an agent (Club.dc.html / DeskClub.dc.html "vote"): pick an agent and an amount, locked until the next cut. */
 export function SaveScreen({ data }: { data: SaveData }) {
   const { status, openConnect, callContract } = useWallet();
   const router = useRouter();
@@ -54,13 +54,13 @@ export function SaveScreen({ data }: { data: SaveData }) {
   const { choices, slice, stageSize } = data.picker;
   const account = data.account;
   const free = account?.free ?? 0n;
-  const [pickedId, setPickedId] = useState(data.robotId ?? choices.at(-2)?.robot.id ?? choices[0]?.robot.id ?? null);
+  const [pickedId, setPickedId] = useState(data.agentId ?? choices.at(-2)?.agent.id ?? choices[0]?.agent.id ?? null);
   const [text, setText] = useState(cutToInput(account ? defaultSave(free) : 100n * 10n ** 18n));
   const [step, setStep] = useState<Step>({ kind: "pick" });
 
-  const picked = choices.find((choice) => choice.robot.id === pickedId) ?? null;
+  const picked = choices.find((choice) => choice.agent.id === pickedId) ?? null;
   const amount = parseUnits(text, CUT_DECIMALS);
-  const held = account?.saves.find((save) => save.robotId === pickedId) ?? null;
+  const held = account?.saves.find((save) => save.agentId === pickedId) ?? null;
   const problem = account ? saveProblem(amount, free, held !== null) : null;
   const rate = data.usdCentsPerNear;
   const spot = spotPrice(data.pool);
@@ -76,11 +76,11 @@ export function SaveScreen({ data }: { data: SaveData }) {
     if (!picked) return;
     const value = action === "save" ? amount : (held?.amount ?? 0n);
     if (!value || (action === "save" && problem)) return;
-    setStep({ kind: "pending", action, robot: picked, amount: value });
+    setStep({ kind: "pending", action, agent: picked, amount: value });
     try {
-      const calls = action === "save" ? saveCalls({ robotId: picked.robot.id, amount: value, storageTopUp: topUp }) : unsaveCalls(picked.robot.id);
+      const calls = action === "save" ? saveCalls({ agentId: picked.agent.id, amount: value, storageTopUp: topUp }) : unsaveCalls(picked.agent.id);
       const { txHash } = await callContract(calls);
-      setStep({ kind: "success", action, robot: picked, amount: value, txHash });
+      setStep({ kind: "success", action, agent: picked, amount: value, txHash });
       router.refresh();
     } catch (error) {
       setStep(classifyTxError(error) === "cancelled" ? { kind: "pick", note: "Cancelled in the wallet. Nothing moved." } : { kind: "failed", action, txHash: failedTxHash(error) });
@@ -88,7 +88,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
   }
 
   if (step.kind === "pending") {
-    const name = step.robot.robot.name;
+    const name = step.agent.agent.name;
     return (
       <TradeFrame title="Saving" nav={{ kind: "close" }} hideHeader>
         <PendingStep
@@ -103,7 +103,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
   }
 
   if (step.kind === "success") {
-    const { robot } = step.robot;
+    const { agent } = step.agent;
     return (
       <TradeFrame title="Saved" nav={{ kind: "close" }} hideHeader>
         <div role="status" className="flex grow flex-col pt-[72px] lg:pt-2">
@@ -113,7 +113,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
           <p className="mt-6 font-heading text-[44px] leading-[48px] font-extrabold tracking-[-1.5px]">{step.action === "save" ? "Saved." : "Taken back."}</p>
           <p className="mt-2 text-[17px] leading-6">
             {step.action === "save"
-              ? `${cutText(step.amount)} $CUT is in ${robot.name}’s pile, locked till ${at}${when}.`
+              ? `${cutText(step.amount)} $CUT is in ${agent.name}’s pile, locked till ${at}${when}.`
               : `Your ${cutText(step.amount)} $CUT and the prize it earned are back in your wallet.`}
           </p>
           <p className="mt-3 text-[13px] font-semibold">
@@ -124,7 +124,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
               <Link href="/">See the lineup</Link>
             </Button>
             <Button asChild variant="lime" size="xl" elevated className="h-14 flex-1 rounded-2xl text-[15.5px]">
-              <Link href={`/robots/${robot.id}`}>{robot.name.split(" ")[0]}’s page</Link>
+              <Link href={`/agents/${agent.id}`}>{agent.name.split(" ")[0]}’s page</Link>
             </Button>
           </div>
         </div>
@@ -134,7 +134,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
 
   if (step.kind === "failed") {
     return (
-      <TradeFrame title="Save a robot" nav={{ kind: "close" }} hideHeader>
+      <TradeFrame title="Save an agent" nav={{ kind: "close" }} hideHeader>
         <FailedStep
           txHash={step.txHash}
           title={step.action === "save" ? "The save didn't go through." : "Your save is still locked in."}
@@ -159,41 +159,41 @@ export function SaveScreen({ data }: { data: SaveData }) {
     );
   }
 
-  const name = picked?.robot.name ?? "a robot";
+  const name = picked?.agent.name ?? "an agent";
   const cta = amount && amount > 0n ? `Save ${cutText(amount)} on ${name}` : `Save ${name}`;
   const survivors = Math.max(stageSize - 1, 0);
 
   return (
-    <TradeFrame title="Save a robot" nav={{ kind: "back", label: "Back to the lineup", onClick: () => router.push("/") }} deskWidth="lg:w-[1000px]" bareOnDesk>
+    <TradeFrame title="Save an agent" nav={{ kind: "back", label: "Back to the lineup", onClick: () => router.push("/") }} deskWidth="lg:w-[1000px]" bareOnDesk>
       <div className="flex grow flex-col lg:-mx-[30px] lg:-mt-[26px] lg:-mb-[30px] lg:grid lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="lg:py-6 lg:pr-6 lg:pl-7">
-          <p className="hidden text-xs font-extrabold tracking-[0.05em] text-ink-3 uppercase lg:block">Save a robot</p>
+          <p className="hidden text-xs font-extrabold tracking-[0.05em] text-ink-3 uppercase lg:block">Save an agent</p>
           <p className="hidden font-heading text-[30px] leading-[34px] font-extrabold tracking-[-0.8px] lg:mt-0.5 lg:block">Who do you keep alive?</p>
           <p className="mt-3 px-1 text-[13.5px] leading-[19px] text-ink-2 lg:mt-1 lg:px-0 lg:text-sm lg:leading-5">
-            Your $CUT goes into the robot’s pile, locked until {when.trim() === "today" ? "today’s cut" : "the next cut"} at {at}. The lowest pile is cut; saves count by $CUT, not by people.
+            Your $CUT goes into the agent’s pile, locked until {when.trim() === "today" ? "today’s cut" : "the next cut"} at {at}. The lowest pile is cut; saves count by $CUT, not by people.
           </p>
 
           {/* Phone: a grid of tiles. Laptop: the ranked list with the cut line. */}
-          <section aria-label="Pick a robot" className="mt-3 rounded-[20px] border-2 border-ink bg-paper px-3 pt-2.5 pb-3 lg:hidden">
+          <section aria-label="Pick an agent" className="mt-3 rounded-[20px] border-2 border-ink bg-paper px-3 pt-2.5 pb-3 lg:hidden">
             <p className="flex justify-between text-[11.5px] font-extrabold tracking-[0.04em] text-ink-3 uppercase">
-              <span>Pick a robot</span>
+              <span>Pick an agent</span>
               <span>Pays per 100 saved</span>
             </p>
-            <div role="radiogroup" aria-label="Robots" className="mt-1.5 grid grid-cols-5 gap-1">
+            <div role="radiogroup" aria-label="Agents" className="mt-1.5 grid grid-cols-5 gap-1">
               {choices.map((choice) => (
                 <button
-                  key={choice.robot.id}
+                  key={choice.agent.id}
                   type="button"
                   role="radio"
-                  aria-checked={choice.robot.id === pickedId}
-                  aria-label={`${choice.robot.name}, ${choice.isLowest ? "cut if the cut ran now" : `pays ${pays(choice.paysPer100)} per 100 saved`}`}
-                  onClick={() => setPickedId(choice.robot.id)}
+                  aria-checked={choice.agent.id === pickedId}
+                  aria-label={`${choice.agent.name}, ${choice.isLowest ? "cut if the cut ran now" : `pays ${pays(choice.paysPer100)} per 100 saved`}`}
+                  onClick={() => setPickedId(choice.agent.id)}
                   className={cn(
                     "flex flex-col items-center gap-0.5 rounded-xl border-2 border-transparent pt-1 pb-[3px] outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-checked:border-ink aria-checked:bg-lime-soft",
                     choice.isLowest && "bg-danger-tint",
                   )}
                 >
-                  <Tile id={choice.robot.id} name={choice.robot.name} className="size-7 rounded-full" />
+                  <Tile id={choice.agent.id} name={choice.agent.name} className="size-7 rounded-full" />
                   <span className={cn("text-[13px] leading-[15px] font-extrabold", choice.isLowest && "text-burn")}>{choice.isLowest ? "Cut" : pays(choice.paysPer100)}</span>
                 </button>
               ))}
@@ -201,11 +201,11 @@ export function SaveScreen({ data }: { data: SaveData }) {
             <p className="mt-[5px] text-xs leading-4 text-ink-3">If the cut ran now. Small piles pay more per $CUT, but they sit closer to the cut line.</p>
             {picked && (
               <div className="mt-2 flex items-center gap-2.5 rounded-[14px] border-2 border-ink bg-lime-soft px-2.5 py-[7px]">
-                <Tile id={picked.robot.id} name={picked.robot.name} className="size-10 rounded-xl" />
+                <Tile id={picked.agent.id} name={picked.agent.name} className="size-10 rounded-xl" />
                 <div className="min-w-0 grow">
-                  <p className="text-[15px] leading-[18px] font-extrabold">{picked.robot.name}</p>
+                  <p className="text-[15px] leading-[18px] font-extrabold">{picked.agent.name}</p>
                   <p className="truncate text-xs leading-[15px] text-ink-3">
-                    Pile {cutWhole(picked.robot.pile)} · {ordinal(picked.rank)} of {stageSize}
+                    Pile {cutWhole(picked.agent.pile)} · {ordinal(picked.rank)} of {stageSize}
                   </p>
                 </div>
                 <p className="shrink-0 text-right leading-4 whitespace-nowrap">
@@ -216,16 +216,16 @@ export function SaveScreen({ data }: { data: SaveData }) {
             )}
           </section>
 
-          <section aria-label="Pick a robot" className="hidden lg:mt-4 lg:block">
+          <section aria-label="Pick an agent" className="hidden lg:mt-4 lg:block">
             <div className="flex h-[26px] items-center gap-3 px-3 text-[11px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">
-              <span className="grow">Robot</span>
+              <span className="grow">Agent</span>
               <span className="w-[72px] text-right">Pile</span>
               <span className="w-[92px] text-right whitespace-nowrap">Pays per 100</span>
               <span className="w-5" />
             </div>
-            <div role="radiogroup" aria-label="Robots" className="flex flex-col gap-[3px]">
+            <div role="radiogroup" aria-label="Agents" className="flex flex-col gap-[3px]">
               {choices.map((choice) => (
-                <div key={choice.robot.id}>
+                <div key={choice.agent.id}>
                   {choice.isLowest && (
                     <div aria-hidden="true" className="mt-0 mb-[3px] flex items-center gap-2 px-3 text-[11px] font-extrabold tracking-[0.05em] whitespace-nowrap text-burn">
                       CUT LINE · lowest pile at {at}
@@ -236,22 +236,22 @@ export function SaveScreen({ data }: { data: SaveData }) {
                   <button
                     type="button"
                     role="radio"
-                    aria-checked={choice.robot.id === pickedId}
-                    onClick={() => setPickedId(choice.robot.id)}
+                    aria-checked={choice.agent.id === pickedId}
+                    onClick={() => setPickedId(choice.agent.id)}
                     className="flex h-[38px] w-full items-center gap-3 rounded-[13px] border-2 border-transparent px-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-checked:border-ink aria-checked:bg-lime-soft"
                   >
-                    <Tile id={choice.robot.id} name={choice.robot.name} className="size-[26px] rounded-full" />
-                    <span className="w-32 shrink-0 text-sm font-semibold whitespace-nowrap in-aria-checked:font-extrabold">{choice.robot.name}</span>
+                    <Tile id={choice.agent.id} name={choice.agent.name} className="size-[26px] rounded-full" />
+                    <span className="w-32 shrink-0 text-sm font-semibold whitespace-nowrap in-aria-checked:font-extrabold">{choice.agent.name}</span>
                     <span aria-hidden="true" className="h-2.5 grow overflow-hidden rounded-[5px] bg-canvas">
                       <span
-                        className={cn("block h-full rounded-[5px]", choice.isLowest ? "bg-orange" : choice.robot.id === pickedId ? "bg-ink" : "bg-violet")}
-                        style={{ width: `${barWidth(choice.robot.pile, choices[0]?.robot.pile ?? 0n)}%` }}
+                        className={cn("block h-full rounded-[5px]", choice.isLowest ? "bg-orange" : choice.agent.id === pickedId ? "bg-ink" : "bg-violet")}
+                        style={{ width: `${barWidth(choice.agent.pile, choices[0]?.agent.pile ?? 0n)}%` }}
                       />
                     </span>
-                    <span className={cn("w-[72px] text-right text-sm font-bold", choice.isLowest && "text-burn")}>{cutWhole(choice.robot.pile)}</span>
+                    <span className={cn("w-[72px] text-right text-sm font-bold", choice.isLowest && "text-burn")}>{cutWhole(choice.agent.pile)}</span>
                     <span className={cn("w-[92px] text-right text-sm font-extrabold", choice.isLowest && "text-burn")}>{choice.isLowest ? "Cut" : pays(choice.paysPer100)}</span>
                     <span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-paper in-aria-checked:bg-lime">
-                      {choice.robot.id === pickedId && <span className="size-2 rounded-full bg-ink" />}
+                      {choice.agent.id === pickedId && <span className="size-2 rounded-full bg-ink" />}
                     </span>
                   </button>
                 </div>
@@ -270,9 +270,9 @@ export function SaveScreen({ data }: { data: SaveData }) {
             {picked && (
               <div className="hidden items-start justify-between gap-3 lg:flex">
                 <div>
-                  <p className="font-heading text-2xl leading-7 font-extrabold">{picked.robot.name}</p>
+                  <p className="font-heading text-2xl leading-7 font-extrabold">{picked.agent.name}</p>
                   <p className="text-[13px] font-semibold text-ink-3">
-                    {picked.robot.kind} · pile {cutWhole(picked.robot.pile)}
+                    {picked.agent.kind} · pile {cutWhole(picked.agent.pile)}
                   </p>
                 </div>
                 <p className="pt-1.5 text-right text-[13px] font-bold">
@@ -358,7 +358,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
                   body={
                     picked.isLowest
                       ? above && lowest
-                        ? `Lift ${picked.robot.name.split(" ")[0]} past ${above.robot.name} (${cutWhole(data.gapToNext)} $CUT) and it survives with the smallest pile: it pays the most per $CUT.`
+                        ? `Lift ${picked.agent.name.split(" ")[0]} past ${above.agent.name} (${cutWhole(data.gapToNext)} $CUT) and it survives with the smallest pile: it pays the most per $CUT.`
                         : "Its savers share its slice of the prize."
                       : share !== null && amount
                         ? `Its savers share its slice: about ${formatAmount(share, { maxFractionDigits: 2, minFractionDigits: 2 })} for your ${cutText(amount)}, if the cut ran now.`
@@ -401,7 +401,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
 const barWidth = (pile: bigint, top: bigint) => (top > 0n ? Math.max(4, Math.min(100, Number((pile * 100n) / top))) : 4);
 
 function Tile({ id, name, className }: { id: string; name: string; className?: string }) {
-  const src = robotTile(id);
+  const src = agentTile(id);
   const frame = cn("shrink-0 overflow-hidden rounded-lg border-2 border-ink bg-paper", className);
   if (!src) {
     return (
@@ -413,14 +413,14 @@ function Tile({ id, name, className }: { id: string; name: string; className?: s
   return <Image src={src} alt="" width={40} height={40} className={cn(frame, "object-cover")} />;
 }
 
-/** Laptop: the picked robot on its color, with "Your pick · 5th of 10" and the close button. */
+/** Laptop: the picked agent on its color, with "Your pick · 5th of 10" and the close button. */
 function PickHeader({ choice, stageSize }: { choice: SaveChoice; stageSize: number }) {
-  const art = robotSticker(choice.robot.id);
+  const art = agentSticker(choice.agent.id);
   return (
     <div
       className={cn(
         "relative hidden h-[168px] shrink-0 overflow-hidden border-b-2 border-ink bg-[radial-gradient(rgb(255_255_255/0.3)_1.6px,transparent_1.8px)] [background-size:18px_18px] lg:block lg:rounded-tr-[26px]",
-        ROBOT_BG[choice.robot.id] ?? "bg-lime",
+        AGENT_BG[choice.agent.id] ?? "bg-lime",
       )}
     >
       {art && <Image src={art.src} alt="" width={art.width} height={art.height} className="absolute top-3.5 left-1/2 h-[300px] w-auto max-w-none -translate-x-1/2 -rotate-2" />}

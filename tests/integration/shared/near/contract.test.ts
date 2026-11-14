@@ -8,11 +8,11 @@ import { FakeChain } from "../../../msw/near-rpc";
 const URL = "https://rpc.test";
 const CUT = 10n ** 18n;
 const ns = (iso: string) => (BigInt(Date.parse(iso)) * 1_000_000n).toString();
-const robot = (id: string, pile: bigint, status = "stage") => ({
+const agent = (id: string, pile: bigint, status = "stage") => ({
   id,
   account_id: `${id}.thecut.testnet`,
   name: id,
-  kind: "AI robot",
+  kind: "AI agent",
   x_handle: `@${id}`,
   creator: `${id}-studio.testnet`,
   status,
@@ -32,11 +32,11 @@ beforeEach(() => {
 describe("cutContract views", () => {
   it("read every view in the interface with typed results", async () => {
     chain
-      .view("get_params", { value: { total_supply: (10_000_000n * CUT).toString(), fee_bps: 100, burn_bps: 5000, savers_bps: 9500, stage_size: 10, first_cut_at: ns("2026-11-13T18:00:00Z"), cut_interval: "120000000000", robot_funding: "500000000000000000000000", register_deposit: "5000000000000000000000000", pool_cut_reserve: "1", pool_near_reserve: "2" } })
-      .view("get_stage", { value: [robot("pixie", 182_400n * CUT), robot("kiko", 23_600n * CUT)] })
-      .view("get_bench", { value: [robot("chartwise", 88_400n * CUT, "bench")] })
-      .view("get_robot", (args) => ({ value: args.id === "kiko" ? robot("kiko", 1n) : null }))
-      .view("get_saves", (args) => ({ value: args.account_id === "mika.testnet" ? [{ robot_id: "melody", amount: (400n * CUT).toString(), since_cut: 1 }] : [] }))
+      .view("get_params", { value: { total_supply: (10_000_000n * CUT).toString(), fee_bps: 100, burn_bps: 5000, savers_bps: 9500, stage_size: 10, first_cut_at: ns("2026-11-13T18:00:00Z"), cut_interval: "120000000000", agent_funding: "500000000000000000000000", register_deposit: "5000000000000000000000000", pool_cut_reserve: "1", pool_near_reserve: "2" } })
+      .view("get_stage", { value: [agent("pixie", 182_400n * CUT), agent("kiko", 23_600n * CUT)] })
+      .view("get_bench", { value: [agent("chartwise", 88_400n * CUT, "bench")] })
+      .view("get_agent", (args) => ({ value: args.id === "kiko" ? agent("kiko", 1n) : null }))
+      .view("get_saves", (args) => ({ value: args.account_id === "mika.testnet" ? [{ agent_id: "melody", amount: (400n * CUT).toString(), since_cut: 1 }] : [] }))
       .view("get_pool", { value: { near_reserve: "736", cut_reserve: "1000", fee_bps: 100 } })
       .view("quote_buy", (args) => ({ value: { amount_out: String(Number(args.near_in) * 2), fee: "1" } }))
       .view("quote_sell", (args) => ({ value: { amount_out: String(Number(args.cut_in) / 2), fee: "1" } }))
@@ -51,9 +51,9 @@ describe("cutContract views", () => {
     expect((await c.getParams()).cutIntervalMs).toBe(120_000);
     expect((await c.getStage()).map((r) => [r.id, r.pile])).toEqual([["pixie", 182_400n * CUT], ["kiko", 23_600n * CUT]]);
     expect((await c.getBench())[0].status).toBe("bench");
-    expect((await c.getRobot("kiko"))?.accountId).toBe("kiko.thecut.testnet");
-    expect(await c.getRobot("ghost")).toBeNull();
-    expect(await c.getSaves("mika.testnet")).toEqual([{ robotId: "melody", amount: 400n * CUT, lockedForCut: 1 }]);
+    expect((await c.getAgent("kiko"))?.accountId).toBe("kiko.thecut.testnet");
+    expect(await c.getAgent("ghost")).toBeNull();
+    expect(await c.getSaves("mika.testnet")).toEqual([{ agentId: "melody", amount: 400n * CUT, lockedForCut: 1 }]);
     expect(await c.getPool()).toEqual({ nearReserve: 736n, cutReserve: 1000n, feeBps: 100 });
     expect(await c.quoteBuy(10n)).toEqual({ amountOut: 20n, fee: 1n });
     expect(await c.quoteSell(10n)).toEqual({ amountOut: 5n, fee: 1n });

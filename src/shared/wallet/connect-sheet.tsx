@@ -59,7 +59,7 @@ export function ConnectSheet({ open, onOpenChange }: { open: boolean; onOpenChan
         <div aria-hidden="true" className="mx-auto -mt-2 mb-3.5 h-[5px] w-11 rounded-full bg-line-3 lg:hidden" />
         <SheetHeader>
           <SheetTitle>Connect a NEAR wallet</SheetTitle>
-          <SheetDescription>To buy, save robots and collect prizes. Looking around needs none, and connecting never moves money.</SheetDescription>
+          <SheetDescription>To buy, save agents and collect prizes. Looking around needs none, and connecting never moves money.</SheetDescription>
         </SheetHeader>
 
         <div className="mt-3.5 flex flex-col gap-2 lg:mt-4" aria-busy={wallets === null}>

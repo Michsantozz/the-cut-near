@@ -96,7 +96,7 @@ export function lineFromReply(content: string | null | undefined): string | null
 const unquote = (line: string) => line.trim().replace(/^["“'](.*)["”']$/s, "$1").trim();
 
 /**
- * Checks a line against the kind's limits and the content rules. `names` (robot names) are ignored by the
+ * Checks a line against the kind's limits and the content rules. `names` (agent names) are ignored by the
  * advice check, so "Onyx Moon" is not read as hype.
  */
 export function validateLine(raw: string, kind: DirectorLineKind, allowed: Set<string>, names: string[] = []): LineCheck {

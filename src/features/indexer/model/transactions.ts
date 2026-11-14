@@ -42,7 +42,7 @@ export type JournalEvent = {
   version: string;
   event: string;
   accountId: string | null;
-  robotId: string | null;
+  agentId: string | null;
   cutIndex: number | null;
   amount: bigint | null;
   data: Record<string, unknown>;
@@ -53,7 +53,7 @@ function succeeded(status: unknown): boolean {
   return typeof status === "object" && status !== null && ("SuccessValue" in status || "SuccessReceiptId" in status);
 }
 
-/** The main contract and its robot sub-accounts (`<id>.<contract>`) are the only trusted emitters. */
+/** The main contract and its agent sub-accounts (`<id>.<contract>`) are the only trusted emitters. */
 export function isContractAccount(contractId: string, accountId: string): boolean {
   return accountId === contractId || accountId.endsWith(`.${contractId}`);
 }

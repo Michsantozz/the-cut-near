@@ -9,7 +9,7 @@ import type { JournalEntry, JournalFilter, JournalPage, JournalStats, SampleMome
 export { SAMPLE_CONTRACT_ID } from "./api/sample";
 
 /**
- * Contract events, newest first, filtered by account, robot, cut or event name, one page at a time
+ * Contract events, newest first, filtered by account, agent, cut or event name, one page at a time
  * (pass `next` back as `before`). Live reads the journal the indexer fills (a few minutes behind the
  * chain); sample serves the design's history.
  */
@@ -33,7 +33,7 @@ const sampleJournal = (moment: SampleMoment = "before-cut") => (moment === "afte
 function matchesFilter(e: JournalEntry, filter: JournalFilter): boolean {
   return (
     (filter.accountId === undefined || e.accountId === filter.accountId) &&
-    (filter.robotId === undefined || e.robotId === filter.robotId) &&
+    (filter.agentId === undefined || e.agentId === filter.agentId) &&
     (filter.cutIndex === undefined || e.cutIndex === filter.cutIndex) &&
     (filter.events === undefined || filter.events.includes(e.event)) &&
     (filter.before === undefined || e.blockHeight < filter.before.blockHeight)

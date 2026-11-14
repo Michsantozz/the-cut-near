@@ -10,13 +10,13 @@
 //! 112,300 × 1,775.4 = 6.32 $CUT. Runner keeps 0.5 NEAR. Chartwise takes the seat with
 //! 88,400."
 //!
-//! To reach that stage through the public methods, a placeholder robot (`zed`) holds the
+//! To reach that stage through the public methods, a placeholder agent (`zed`) holds the
 //! tenth seat at cut 1 and is cut at cut 2, which also pays out the fees of the launch
 //! buys. Kiko takes its seat at cut 2. The day's fees are then exactly 5,020 $CUT: one
 //! sell of 502,000 $CUT (the sell fee is exactly 1% of the input).
 
 use super::*;
-use crate::types::RobotStatusView;
+use crate::types::AgentStatusView;
 
 const STAGE: [(&str, u128); 9] = [
     ("pixie", 182_400),
@@ -34,19 +34,19 @@ const STAGE: [(&str, u128); 9] = [
 fn the_sample_cut() {
     let mut w = World::daily();
     w.register("zed");
-    for (robot, _) in STAGE {
-        w.register(robot);
+    for (agent, _) in STAGE {
+        w.register(agent);
     }
-    for robot in ["kiko", "chartwise", "bloop", "pixelkit"] {
-        w.register(robot);
+    for agent in ["kiko", "chartwise", "bloop", "pixelkit"] {
+        w.register(agent);
     }
 
     // Launch day: the whale and mika buy; queues fill.
     w.buy("whale.near", near(250_000));
     w.buy("mika.near", near(100));
-    for (robot, pile) in STAGE {
-        let whale_part = if robot == "melody" { pile - 400 } else { pile };
-        w.save("whale.near", robot, cut(whale_part));
+    for (agent, pile) in STAGE {
+        let whale_part = if agent == "melody" { pile - 400 } else { pile };
+        w.save("whale.near", agent, cut(whale_part));
     }
     w.save("mika.near", "melody", cut(400));
     w.save("whale.near", "zed", cut(1));
@@ -81,7 +81,7 @@ fn the_sample_cut() {
     let stage = w.view(|c| c.get_stage());
     let expected: Vec<(&str, u128)> = STAGE
         .iter()
-        .map(|(robot, pile)| (*robot, cut(*pile)))
+        .map(|(agent, pile)| (*agent, cut(*pile)))
         .chain([("kiko", cut(23_600))])
         .collect();
     let actual: Vec<(&str, u128)> = stage.iter().map(|r| (r.id.as_str(), r.pile.0)).collect();
@@ -138,7 +138,7 @@ fn the_sample_cut() {
     );
 
     // Kiko is deleted, its account deletion goes to the runner, its creator gets 4.5 NEAR.
-    assert_eq!(w.robot("kiko").status, RobotStatusView::Deleted);
+    assert_eq!(w.agent("kiko").status, AgentStatusView::Deleted);
     assert_eq!(calls[0].0.as_str(), "kiko.thecut.near");
     assert_eq!(calls[0].2, r#"{"beneficiary":"runner.near"}"#);
     assert!(refunds.contains(&(
@@ -147,19 +147,19 @@ fn the_sample_cut() {
     )));
 
     // Chartwise takes the seat with 88,400; the other queues stay and are unlocked.
-    let chartwise = w.robot("chartwise");
-    assert_eq!(chartwise.status, RobotStatusView::Stage);
+    let chartwise = w.agent("chartwise");
+    assert_eq!(chartwise.status, AgentStatusView::Stage);
     assert_eq!(chartwise.pile.0, cut(88_400));
     assert_eq!(w.stage_ids().len(), 10);
     assert_eq!(w.bench_ids(), vec!["bloop", "pixelkit"]);
     let whale_saves = w.view(|c| c.get_saves(id("whale.near")));
-    let bloop = whale_saves.iter().find(|s| s.robot_id == "bloop").unwrap();
+    let bloop = whale_saves.iter().find(|s| s.agent_id == "bloop").unwrap();
     assert!(bloop.unlocked);
 
     // mika collects; her 400 keeps riding on Melody-9.
     let claimed = w.call("mika.near", zero(), |c| c.claim()).0;
     assert_eq!(claimed, mika_before + mika_prize);
-    assert_eq!(w.robot("melody").pile.0, cut(112_300));
+    assert_eq!(w.agent("melody").pile.0, cut(112_300));
 
     // The next cut is the next day at 18:00 UTC.
     assert_eq!(w.view(|c| c.get_next_cut().at.0), FIRST_CUT + 3 * DAY);

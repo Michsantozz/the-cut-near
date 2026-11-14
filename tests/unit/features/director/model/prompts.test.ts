@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_FIRST_CUT, SAMPLE_NEXT_CUT, SAMPLE_NOW } from "@/entities/cut/api/sample";
 import { SAMPLE_PARAMS } from "@/entities/market/api/sample";
-import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/robot/api/sample";
+import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/agent/api/sample";
 import { units } from "@/shared/lib/amount";
 import { buildCutFacts, buildDayFacts } from "@/features/director/model/facts";
 import { DIRECTOR_SYSTEM } from "@/features/director/model/persona";
-import { afterCutReceiptPrompt, afterCutRoastPrompt, allowedNumbersFor, finalHourPrompt, robotPostAngle, robotPostPrompt, scheduledPrompt } from "@/features/director/model/prompts";
+import { afterCutReceiptPrompt, afterCutRoastPrompt, allowedNumbersFor, finalHourPrompt, agentPostAngle, agentPostPrompt, scheduledPrompt } from "@/features/director/model/prompts";
 import { SAMPLE_LINES } from "@/features/director/model/sample";
 import { validateLine } from "@/features/director/model/validate";
 
 const day = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: SAMPLE_NEXT_CUT, params: SAMPLE_PARAMS, now: SAMPLE_NOW, fees: units(5_020) });
 // The sample world the app shows: 4,100 $CUT of fees so far, so Onyx pays 2.72 per 100 and Pixie 0.92.
 const world = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: SAMPLE_NEXT_CUT, params: SAMPLE_PARAMS, now: SAMPLE_NOW, fees: units(4_100) });
-const cut = buildCutFacts({ cut: SAMPLE_FIRST_CUT, robots: [...SAMPLE_STAGE, ...SAMPLE_BENCH], params: SAMPLE_PARAMS });
+const cut = buildCutFacts({ cut: SAMPLE_FIRST_CUT, agents: [...SAMPLE_STAGE, ...SAMPLE_BENCH], params: SAMPLE_PARAMS });
 
 describe("scheduled line prompt", () => {
   it("gives the countdown, the lowest pile and the gap with the SPEC numbers", () => {
@@ -55,7 +55,7 @@ describe("after-cut prompts", () => {
     const receipt = afterCutReceiptPrompt(cut);
     expect(roast.user).toContain("Kiko Bun (VTuber) was cut with the lowest pile: 23,600 $CUT.");
     expect(receipt.user).toContain('Open with "First cut."');
-    expect(receipt.user).toContain("Chartwise takes the empty seat with 88,400 $CUT. 10 robots on the stage again.");
+    expect(receipt.user).toContain("Chartwise takes the empty seat with 88,400 $CUT. 10 agents on the stage again.");
     expect(receipt.user).toContain("Next cut: tomorrow, 18:00 UTC.");
     const line = (id: string) => SAMPLE_LINES.find((l) => l.id === id)?.text ?? "";
     expect(validateLine(line("sample-roast-1"), "after-cut-roast", allowedNumbersFor(roast), roast.names).ok).toBe(true);
@@ -63,33 +63,33 @@ describe("after-cut prompts", () => {
   });
 });
 
-describe("robot posts", () => {
-  it("picks the angle from where the robot stands", () => {
-    expect(["kiko", "onyx", "pixie", "chartwise", "bloop", "melody"].map((id) => robotPostAngle(day, id))).toEqual(["beg", "pitch", "thank", "wait", "wait", "hype"]);
-    expect(robotPostPrompt(day, "bloop").user).toContain("The biggest queue is Chartwise's with 88,400 $CUT");
+describe("agent posts", () => {
+  it("picks the angle from where the agent stands", () => {
+    expect(["kiko", "onyx", "pixie", "chartwise", "bloop", "melody"].map((id) => agentPostAngle(day, id))).toEqual(["beg", "pitch", "thank", "wait", "wait", "hype"]);
+    expect(agentPostPrompt(day, "bloop").user).toContain("The biggest queue is Chartwise's with 88,400 $CUT");
   });
 
-  it("writes in the robot's voice with its own numbers; the SPEC posts validate", () => {
-    const onyx = robotPostPrompt(day, "onyx");
+  it("writes in the agent's voice with its own numbers; the SPEC posts validate", () => {
+    const onyx = agentPostPrompt(day, "onyx");
     expect(onyx.system).toContain("You are Onyx Moon, a cool, smug digital model");
     expect(onyx.user).toContain("If the cut ran now, you pay 2.87 per 100 $CUT saved. Pixie Volt (the top pile) pays 0.97 per 100 $CUT saved.");
-    expect(robotPostPrompt(world, "onyx").user).toContain("you pay 2.72 per 100 $CUT saved. Pixie Volt (the top pile) pays 0.92 per 100 $CUT saved.");
+    expect(agentPostPrompt(world, "onyx").user).toContain("you pay 2.72 per 100 $CUT saved. Pixie Volt (the top pile) pays 0.92 per 100 $CUT saved.");
     const mikaOnMelody = { account: "mika.near", amount: "400" };
-    for (const sample of SAMPLE_LINES.filter((l) => l.kind === "robot-post")) {
-      const prompt = robotPostPrompt(world, sample.subjectId, sample.subjectId === "melody" ? mikaOnMelody : undefined);
-      expect(validateLine(sample.text, "robot-post", allowedNumbersFor(prompt), prompt.names), sample.id).toMatchObject({ ok: true });
+    for (const sample of SAMPLE_LINES.filter((l) => l.kind === "agent-post")) {
+      const prompt = agentPostPrompt(world, sample.subjectId, sample.subjectId === "melody" ? mikaOnMelody : undefined);
+      expect(validateLine(sample.text, "agent-post", allowedNumbersFor(prompt), prompt.names), sample.id).toMatchObject({ ok: true });
     }
-    expect(robotPostPrompt(day, "chartwise").user).toContain("Your queue: 88,400 $CUT from 241 savers, the biggest queue.");
-    expect(robotPostPrompt(day, "pixie").user).toContain("from 412 savers");
-    expect(() => robotPostPrompt(day, "nobody")).toThrow();
+    expect(agentPostPrompt(day, "chartwise").user).toContain("Your queue: 88,400 $CUT from 241 savers, the biggest queue.");
+    expect(agentPostPrompt(day, "pixie").user).toContain("from 412 savers");
+    expect(() => agentPostPrompt(day, "nobody")).toThrow();
   });
 
   it("thanks the newest saver by account when there is one", () => {
-    const prompt = robotPostPrompt(day, "melody", { account: "fan42.near", amount: "1,250" });
+    const prompt = agentPostPrompt(day, "melody", { account: "fan42.near", amount: "1,250" });
     expect(prompt.user).toContain("Thank fan42.near by that exact name.");
     expect(prompt.user).toContain("- Your newest saver: fan42.near saved 1,250 $CUT on you.");
     expect(prompt.names).toContain("fan42.near");
-    expect(validateLine("Thank you fan42.near for 1,250 $CUT, this chorus is yours.", "robot-post", allowedNumbersFor(prompt), prompt.names)).toMatchObject({ ok: true });
-    expect(robotPostPrompt(day, "melody").user).not.toContain("newest saver");
+    expect(validateLine("Thank you fan42.near for 1,250 $CUT, this chorus is yours.", "agent-post", allowedNumbersFor(prompt), prompt.names)).toMatchObject({ ok: true });
+    expect(agentPostPrompt(day, "melody").user).not.toContain("newest saver");
   });
 });

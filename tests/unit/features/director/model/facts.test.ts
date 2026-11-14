@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_FIRST_CUT, SAMPLE_NEXT_CUT, SAMPLE_NOW } from "@/entities/cut/api/sample";
 import { SAMPLE_PARAMS } from "@/entities/market/api/sample";
-import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/robot/api/sample";
+import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/agent/api/sample";
 import { units } from "@/shared/lib/amount";
 import { buildCutFacts, buildDayFacts } from "@/features/director/model/facts";
 import { countdownParts, formatCut, formatRatio } from "@/features/director/model/format";
@@ -26,7 +26,7 @@ describe("buildDayFacts with the SPEC sample day", () => {
   it("computes the equal slice and the 'pays per 100 saved' column of SPEC-v19", () => {
     const facts = day();
     expect(facts.slice).toBe("1,775.4");
-    expect(Object.fromEntries(facts.stage.map((robot) => [robot.name, robot.paysPer100]))).toEqual({
+    expect(Object.fromEntries(facts.stage.map((agent) => [agent.name, agent.paysPer100]))).toEqual({
       "Pixie Volt": "0.97",
       "Lila Loop": "1.17",
       "Oracle Toad": "1.27",
@@ -50,7 +50,7 @@ describe("buildDayFacts with the SPEC sample day", () => {
 
 describe("buildCutFacts with the SPEC sample cut", () => {
   it("names the cut, the burn, the prize, the slice and Chartwise taking the seat", () => {
-    const facts = buildCutFacts({ cut: SAMPLE_FIRST_CUT, robots: [...SAMPLE_STAGE, ...SAMPLE_BENCH], params: SAMPLE_PARAMS });
+    const facts = buildCutFacts({ cut: SAMPLE_FIRST_CUT, agents: [...SAMPLE_STAGE, ...SAMPLE_BENCH], params: SAMPLE_PARAMS });
     expect(facts).toEqual({
       index: 1,
       title: "First cut",
@@ -61,7 +61,7 @@ describe("buildCutFacts with the SPEC sample cut", () => {
       creatorSlice: "93.4",
       joined: { id: "chartwise", name: "Chartwise", pile: "88,400" },
       runner: "bob.near",
-      robotsAfter: 10,
+      agentsAfter: 10,
       nextCut: "tomorrow, 18:00 UTC",
     });
   });

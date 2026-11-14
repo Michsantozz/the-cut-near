@@ -19,7 +19,7 @@ export type CollectProps = {
   usd: string | null;
   dateLabel: string;
   why: string | null;
-  keep: { robotId: string; robotName: string; amount: string; nextDay: string } | null;
+  keep: { agentId: string; agentName: string; amount: string; nextDay: string } | null;
   registered: boolean;
   explorerTxBase: string;
 };
@@ -36,7 +36,7 @@ export function CollectCard({ amount, usd, dateLabel, why, keep, registered, exp
     if (status !== "signed-in") return openConnect();
     setState({ kind: "claiming" });
     try {
-      const { txHash } = await callContract(collectCalls({ registered, unsaveRobotId: keep && !keepOn ? keep.robotId : null }));
+      const { txHash } = await callContract(collectCalls({ registered, unsaveAgentId: keep && !keepOn ? keep.agentId : null }));
       setState({ kind: "claimed", txHash, kept: keepOn });
       router.refresh();
     } catch (error) {
@@ -54,7 +54,7 @@ export function CollectCard({ amount, usd, dateLabel, why, keep, registered, exp
           <p className="font-heading text-xl leading-6 font-extrabold lg:text-[28px] lg:leading-8">{amount} $CUT in your wallet</p>
           <p className="mt-0.5 text-sm leading-5 lg:text-base">
             {usd ? `${usd}. ` : ""}
-            {keep ? (state.kept ? `Your ${keep.amount} on ${keep.robotName} rides into the next cut.` : `Your ${keep.amount} on ${keep.robotName} is back in your wallet too.`) : "Collected."}
+            {keep ? (state.kept ? `Your ${keep.amount} on ${keep.agentName} rides into the next cut.` : `Your ${keep.amount} on ${keep.agentName} is back in your wallet too.`) : "Collected."}
           </p>
           <a href={`${explorerTxBase}${encodeURIComponent(state.txHash)}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-[13px] font-bold text-blue underline">
             View the receipt on NEAR
@@ -90,7 +90,7 @@ export function CollectCard({ amount, usd, dateLabel, why, keep, registered, exp
           <label className="flex items-center gap-3 rounded-2xl border-2 border-ink bg-paper px-3.5 py-2.5 lg:flex-1">
             <span className="min-w-0 grow">
               <span className="block text-[15px] leading-5 font-extrabold">
-                Keep my {keep.amount} on {keep.robotName} for the next cut
+                Keep my {keep.amount} on {keep.agentName} for the next cut
               </span>
               <span className="block text-[12.5px] text-ink-3">Rides into {keep.nextDay}. Off: it unlocks.</span>
             </span>
@@ -98,7 +98,7 @@ export function CollectCard({ amount, usd, dateLabel, why, keep, registered, exp
               checked={keepOn}
               onCheckedChange={setKeepOn}
               disabled={state.kind === "claiming"}
-              aria-label={`Keep my ${keep.amount} on ${keep.robotName} for the next cut`}
+              aria-label={`Keep my ${keep.amount} on ${keep.agentName} for the next cut`}
               className="h-7! w-[46px]! border-2! border-ink! px-0.5 data-checked:bg-lime data-unchecked:bg-line [&>span]:size-5! [&>span]:bg-ink! [&>span]:data-checked:translate-x-[18px]!"
             />
           </label>

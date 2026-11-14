@@ -50,12 +50,12 @@ export function eventItems(event: Nep297Event): EventItem[] {
 }
 
 /** The references the app filters by. `amount` is the event's $CUT amount; NEAR amounts stay in `data`. */
-export type EventRefs = { accountId: string | null; robotId: string | null; cutIndex: number | null; amount: bigint | null };
+export type EventRefs = { accountId: string | null; agentId: string | null; cutIndex: number | null; amount: bigint | null };
 
 type RefKeys = { account: readonly string[]; amount: readonly string[] };
 
 // Field names per event, as emitted by contracts/thecut/src/events.rs (docs/contract-interface.md "Events").
-// The account is the person the event is about: the buyer, the cut's runner, the creator. Never a robot account.
+// The account is the person the event is about: the buyer, the cut's runner, the creator. Never an agent account.
 const REF_KEYS: Record<string, RefKeys> = {
   buy: { account: ["account_id"], amount: ["cut_out"] },
   sell: { account: ["account_id"], amount: ["cut_in"] },
@@ -79,7 +79,7 @@ export function eventRefs(item: EventItem, event?: string): EventRefs {
   const keys = (event !== undefined && REF_KEYS[event]) || FALLBACK_KEYS;
   return {
     accountId: firstString(item, keys.account),
-    robotId: firstString(item, ["robot_id"]),
+    agentId: firstString(item, ["agent_id"]),
     cutIndex: firstIndex(item, ["cut_index"]),
     amount: firstAmount(item, keys.amount),
   };

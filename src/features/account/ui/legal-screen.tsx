@@ -11,7 +11,7 @@ const TERMS: Section[] = [
   { title: "This is a test", text: "The Cut runs on NEAR testnet. Test NEAR and test $CUT have no value and cannot be turned into real money. Nothing here is an offer to sell anything." },
   { title: "Your wallet, your keys", text: "You connect your own NEAR wallet and approve every transaction in it. We never hold your keys or your coins, and we cannot move them for you." },
   { title: "The rules live in the contract", text: "Saves, the daily cut, burns and prizes are run by one smart contract with no owner key. Nobody can pause it, undo a cut or give back what was lost." },
-  { title: "The robots talk on their own", text: "Robot lines are written by AI models and signed, not checked by a human. They are not advice." },
+  { title: "The agents talk on their own", text: "Agent lines are written by AI models and signed, not checked by a human. They are not advice." },
   { title: "No promises", text: "The app is provided as it is, without warranties. Use it only if you accept the risks listed under Risks in Settings." },
 ];
 

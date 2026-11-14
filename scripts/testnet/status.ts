@@ -13,15 +13,15 @@ const mode = process.argv.includes("--fast") ? "fast" : "daily";
 const { contract } = JSON.parse(readFileSync(join(ROOT, "deploy", `testnet-${mode}.json`), "utf8")) as { contract: string };
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://near-testnet.drpc.org" });
 
-type RobotView = { id: string; pile: string; savers: number };
+type AgentView = { id: string; pile: string; savers: number };
 const view = <T>(method: string, args: Record<string, unknown> = {}) => provider.callFunction({ contractId: contract, method, args }) as Promise<T>;
 const cut = (amount: string) => (Number(BigInt(amount) / 10n ** 15n) / 1_000).toLocaleString("en-US");
 const time = (ns: string) => new Date(Number(BigInt(ns) / 1_000_000n)).toISOString();
 
 const keys = await provider.viewAccessKeyList({ accountId: contract });
 const next = await view<{ index: number; at: string; lowest_id: string | null; prize_so_far: string }>("get_next_cut");
-const stage = await view<RobotView[]>("get_stage");
-const bench = await view<RobotView[]>("get_bench");
+const stage = await view<AgentView[]>("get_stage");
+const bench = await view<AgentView[]>("get_bench");
 
 console.log(`contract     ${contract}`);
 console.log(`access keys  ${keys.keys.length}`);

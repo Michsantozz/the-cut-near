@@ -35,7 +35,7 @@ export function TradeFrame({
   hideHeader?: boolean;
   /** The laptop dialog's width class (designs differ per step). */
   deskWidth?: string;
-  /** The laptop dialog draws its own header (Save a robot). */
+  /** The laptop dialog draws its own header (Save an agent). */
   bareOnDesk?: boolean;
   children: ReactNode;
 }) {

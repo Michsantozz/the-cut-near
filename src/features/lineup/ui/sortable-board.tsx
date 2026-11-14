@@ -18,7 +18,7 @@ const isSortKey = (value: string): value is SortKey => (SORT_KEYS as readonly st
 
 /**
  * The cut board's frame and its sort chips. Rows are rendered on the server; this only switches between
- * orders the server computed. The robot the cut takes stays last, under the cut line, in every order.
+ * orders the server computed. The agent the cut takes stays last, under the cut line, in every order.
  */
 export function SortableBoard({
   rows,
@@ -80,7 +80,7 @@ export function SortableBoard({
         >
           <span className="min-w-0 grow pb-px lg:hidden">{ranked}</span>
           <span className="w-[54px] shrink-0 pb-px lg:hidden">Pile</span>
-          <span className="hidden w-[204px] shrink-0 lg:block">Robot</span>
+          <span className="hidden w-[204px] shrink-0 lg:block">Agent</span>
           <span className="hidden min-w-0 grow lg:block">Pile · $CUT saved</span>
           <span className="hidden w-[54px] shrink-0 text-right lg:block">Savers</span>
           <span className="hidden w-[100px] shrink-0 text-right lg:block">Today</span>

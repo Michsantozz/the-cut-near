@@ -10,7 +10,7 @@ import {
   paramsViewSchema,
   poolViewSchema,
   quoteViewSchema,
-  robotViewSchema,
+  agentViewSchema,
   saveViewSchema,
   storageBalanceSchema,
   storageBoundsSchema,
@@ -28,10 +28,10 @@ export function cutContract(rpc: NearRpc = getRpc(), contractId: string = public
     contractId,
     getParams: () => view("get_params", {}, paramsViewSchema),
     /** Sorted by pile, highest first. */
-    getStage: () => view("get_stage", {}, z.array(robotViewSchema)),
+    getStage: () => view("get_stage", {}, z.array(agentViewSchema)),
     /** Sorted by queue, highest first. */
-    getBench: () => view("get_bench", {}, z.array(robotViewSchema)),
-    getRobot: (id: string) => view("get_robot", { id }, robotViewSchema.nullable()),
+    getBench: () => view("get_bench", {}, z.array(agentViewSchema)),
+    getAgent: (id: string) => view("get_agent", { id }, agentViewSchema.nullable()),
     getSaves: (accountId: string) => view("get_saves", { account_id: accountId }, z.array(saveViewSchema)),
     getPool: () => view("get_pool", {}, poolViewSchema),
     quoteBuy: (nearIn: bigint) => view("quote_buy", { near_in: nearIn.toString() }, quoteViewSchema),

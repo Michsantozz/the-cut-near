@@ -6,13 +6,13 @@ import { getViewerAccountId } from "@/shared/wallet/server";
 
 import { LineupBackdrop } from "../../_trade/lineup-backdrop";
 
-export const metadata = { title: "Save a robot · The Cut" };
+export const metadata = { title: "Save an agent · The Cut" };
 
 export default function SavePage({ params }: PageProps<"/save/[id]">) {
   return (
     <>
       <LineupBackdrop />
-      <Suspense fallback={<TradeSkeleton label="Save a robot" />}>
+      <Suspense fallback={<TradeSkeleton label="Save an agent" />}>
         <Save params={params} />
       </Suspense>
     </>

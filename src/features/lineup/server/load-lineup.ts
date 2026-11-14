@@ -4,8 +4,8 @@ import { connection } from "next/server";
 
 import { getNextCut } from "@/entities/cut/server";
 import { getBalance, getParams, getPool, getUsdCentsPerNear } from "@/entities/market/server";
-import type { Robot } from "@/entities/robot";
-import { getBench, getStage } from "@/entities/robot/server";
+import type { Agent } from "@/entities/agent";
+import { getBench, getStage } from "@/entities/agent/server";
 import type { Save } from "@/entities/save";
 import { getSaves } from "@/entities/save/server";
 
@@ -28,7 +28,7 @@ export type Lineup = {
   day: number;
   board: Board;
   orders: Record<SortKey, string[]>;
-  bench: Robot[];
+  bench: Agent[];
   /** Null for a visitor. */
   member: LineupMember | null;
 };
@@ -84,7 +84,7 @@ async function loadMember(accountId: string) {
   return { accountId, saves, balance, usdCentsPerNear };
 }
 
-function summarizeMemberSaves(saves: Save[], robots: Robot[]) {
-  const { items, total } = summarizeSaves(saves, robots);
+function summarizeMemberSaves(saves: Save[], agents: Agent[]) {
+  const { items, total } = summarizeSaves(saves, agents);
   return { saves: items, savedTotal: total };
 }

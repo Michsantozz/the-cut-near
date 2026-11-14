@@ -3,8 +3,8 @@
 use near_sdk::json_types::{U64, U128};
 use near_sdk::{AccountId, NearToken, near};
 
-/// A robot id: the `<id>` in `<id>.thecut.near`.
-pub type RobotId = String;
+/// An agent id: the `<id>` in `<id>.thecut.near`.
+pub type AgentId = String;
 
 /// Launch parameters. Set once in `new`, never changed (there is no admin method).
 #[near(serializers = [borsh, json])]
@@ -24,9 +24,9 @@ pub struct Params {
     pub first_cut_at: U64,
     /// Time between cuts, in nanoseconds.
     pub cut_interval: U64,
-    /// NEAR left in each robot account; the cut runner receives it when the account is deleted.
-    pub robot_funding: NearToken,
-    /// NEAR a creator attaches to `register_robot`.
+    /// NEAR left in each agent account; the cut runner receives it when the account is deleted.
+    pub agent_funding: NearToken,
+    /// NEAR a creator attaches to `register_agent`.
     pub register_deposit: NearToken,
     /// $CUT in the pool at launch (the whole supply).
     pub pool_cut_reserve: U128,
@@ -44,11 +44,11 @@ pub struct Pool {
     pub cut_reserve: u128,
 }
 
-/// Where a robot is.
+/// Where an agent is.
 #[near(serializers = [borsh])]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RobotStatus {
-    /// `register_robot` was called; the account creation has not been confirmed yet.
+pub enum AgentStatus {
+    /// `register_agent` was called; the account creation has not been confirmed yet.
     Pending,
     /// Waiting for a seat. Its pile is its queue.
     Bench,
@@ -58,7 +58,7 @@ pub enum RobotStatus {
     Deleted,
 }
 
-/// What happened to a cut robot's NEAR account.
+/// What happened to a cut agent's NEAR account.
 #[near(serializers = [borsh, json])]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -71,17 +71,17 @@ pub enum DeleteState {
     Failed,
 }
 
-/// A robot as stored.
+/// An agent as stored.
 #[near(serializers = [borsh])]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Robot {
-    /// Registration order. A higher number is a newer robot (tie rule).
+pub struct Agent {
+    /// Registration order. A higher number is a newer agent (tie rule).
     pub seq: u64,
     pub name: String,
     pub kind: String,
     pub x_handle: String,
     pub creator: AccountId,
-    pub status: RobotStatus,
+    pub status: AgentStatus,
     /// $CUT saved on it. On the bench, its queue. After its cut, the pile it had.
     pub pile: u128,
     /// Accounts with a save on it (for show; money never depends on it).
@@ -100,7 +100,7 @@ pub struct Robot {
     pub runner: Option<AccountId>,
 }
 
-/// One account's save on one robot.
+/// One account's save on one agent.
 #[near(serializers = [borsh])]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SaveRecord {
@@ -108,7 +108,7 @@ pub struct SaveRecord {
     pub amount: u128,
     /// Index of the cut this save is locked for. It unlocks once that cut ran.
     pub locked_for: u64,
-    /// The robot's accumulator when the record last settled.
+    /// The agent's accumulator when the record last settled.
     pub reward_snapshot: u128,
     /// Prize already settled on this record and not yet claimed.
     pub owed: u128,
@@ -123,55 +123,55 @@ pub struct CutRecord {
     pub at: U64,
     /// Block time when it ran (ns).
     pub ran_at: U64,
-    /// Robot deleted, or `null` when the stage was not full (no robot is cut then).
-    pub deleted_id: Option<RobotId>,
-    /// Pile of the deleted robot.
+    /// Agent deleted, or `null` when the stage was not full (no agent is cut then).
+    pub deleted_id: Option<AgentId>,
+    /// Pile of the deleted agent.
     pub pile: U128,
     /// $CUT burned at this cut: half the pile plus the slices of survivors with empty piles.
     pub burned: U128,
     /// Prize paid at this cut: the unburned half of the pile plus fees since the last cut.
     pub prize: U128,
-    /// One savers' slice per surviving robot.
+    /// One savers' slice per surviving agent.
     pub slice: U128,
-    /// One creator slice per surviving robot.
+    /// One creator slice per surviving agent.
     pub creator_slice: U128,
-    /// Robots on the stage that shared the prize.
+    /// Agents on the stage that shared the prize.
     pub survivors: u32,
-    /// First bench robot that took a seat (usually the only one).
-    pub joined_id: Option<RobotId>,
-    /// Every bench robot that took a seat (several only while the stage fills up).
-    pub joined_ids: Vec<RobotId>,
-    /// Account that ran the cut; it receives the deleted robot account's balance.
+    /// First bench agent that took a seat (usually the only one).
+    pub joined_id: Option<AgentId>,
+    /// Every bench agent that took a seat (several only while the stage fills up).
+    pub joined_ids: Vec<AgentId>,
+    /// Account that ran the cut; it receives the deleted agent account's balance.
     pub runner: AccountId,
-    /// NEAR sent back to the deleted robot's creator.
+    /// NEAR sent back to the deleted agent's creator.
     pub creator_refund: NearToken,
 }
 
-/// Robot status as the app reads it.
+/// Agent status as the app reads it.
 #[near(serializers = [json])]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub enum RobotStatusView {
+pub enum AgentStatusView {
     Stage,
     Bench,
     Deleted,
 }
 
-/// `RobotView` from the interface, plus a few extra fields.
+/// `AgentView` from the interface, plus a few extra fields.
 #[near(serializers = [json])]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RobotView {
-    pub id: RobotId,
+pub struct AgentView {
+    pub id: AgentId,
     pub account_id: AccountId,
     pub name: String,
     pub kind: String,
     pub x_handle: String,
     pub creator: AccountId,
-    pub status: RobotStatusView,
+    pub status: AgentStatusView,
     pub pile: U128,
     pub savers: u32,
     pub joined_at: U64,
-    /// Registration order (higher is newer; on equal piles the newer robot is cut).
+    /// Registration order (higher is newer; on equal piles the newer agent is cut).
     pub seq: u64,
     pub stage_at: Option<U64>,
     pub cut_index: Option<u64>,
@@ -182,15 +182,15 @@ pub struct RobotView {
 #[near(serializers = [json])]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SaveView {
-    pub robot_id: RobotId,
+    pub agent_id: AgentId,
     pub amount: U128,
     /// Index of the cut this save is locked for.
     pub since_cut: u64,
-    /// True once that cut ran: `unsave` is allowed (unless the robot was cut).
+    /// True once that cut ran: `unsave` is allowed (unless the agent was cut).
     pub unlocked: bool,
     /// Prize earned on this save and not yet claimed.
     pub prize: U128,
-    pub robot_status: RobotStatusView,
+    pub agent_status: AgentStatusView,
 }
 
 #[near(serializers = [json])]
@@ -215,9 +215,9 @@ pub struct QuoteView {
 pub struct NextCutView {
     pub index: u64,
     pub at: U64,
-    /// Robot that would be cut if the cut ran now; `null` while the stage is not full.
-    pub lowest_id: Option<RobotId>,
-    /// Exact $CUT units the lowest robot needs to stop being the one cut.
+    /// Agent that would be cut if the cut ran now; `null` while the stage is not full.
+    pub lowest_id: Option<AgentId>,
+    /// Exact $CUT units the lowest agent needs to stop being the one cut.
     pub gap_to_next: U128,
     /// Prize if the cut ran now: half the lowest pile plus fees since the last cut.
     pub prize_so_far: U128,
@@ -225,7 +225,7 @@ pub struct NextCutView {
     pub slice_so_far: U128,
     /// One creator slice per survivor if the cut ran now.
     pub creator_slice_so_far: U128,
-    /// Robots that would share the prize.
+    /// Agents that would share the prize.
     pub survivors: u32,
     /// True once `at` has passed: anyone can call `run_cut` now.
     pub due: bool,
@@ -240,7 +240,7 @@ pub struct StatsView {
     /// $CUT burned so far: `minted - total_supply`.
     pub burned: U128,
     pub total_supply: U128,
-    /// $CUT in all piles and queues (sum of every live robot's pile).
+    /// $CUT in all piles and queues (sum of every live agent's pile).
     pub total_saved: U128,
     /// $CUT waiting for the next prize (fees plus rounding dust).
     pub fees_since_cut: U128,
@@ -250,7 +250,7 @@ pub struct StatsView {
     pub pool_cut_reserve: U128,
     /// $CUT held by the contract account.
     pub contract_balance: U128,
-    /// NEAR held for creators until their robots leave.
+    /// NEAR held for creators until their agents leave.
     pub creator_deposits_held: NearToken,
     pub stage_count: u32,
     pub bench_count: u32,

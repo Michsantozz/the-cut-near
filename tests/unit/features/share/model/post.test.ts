@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { cutHeadline, cutPost, cutSubline, POST_LIMIT, postLength, quoteOf, telegramShareUrl, xIntentUrl } from "@/features/share/model/post";
 
-const RECEIPT = "First cut. 23,600 $CUT between Kiko and oblivion. Pack your buns. Chartwise, the seat is yours. Ten robots again. Next cut tomorrow, 18:00.";
+const RECEIPT = "First cut. 23,600 $CUT between Kiko and oblivion. Pack your buns. Chartwise, the seat is yours. Ten agents again. Next cut tomorrow, 18:00.";
 
 describe("quoteOf", () => {
   it("skips the short opener and keeps whole sentences up to 60 characters", () => {

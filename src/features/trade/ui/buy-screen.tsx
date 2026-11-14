@@ -19,7 +19,7 @@ import { classifyTxError, failedTxHash, type TxFailure } from "../model/errors";
 import { spotPrice, tradePrice } from "../model/money";
 import { quoteBuyAction } from "../server/actions";
 import type { BuyData } from "../server/load";
-import { robotFullBody as robotSticker } from "@/entities/robot";
+import { agentFullBody as agentSticker } from "@/entities/agent";
 import { cutMoney, cutText, nearMoney, nearMoneyWhole, nearText, priceText, prizeName } from "./copy";
 import { FieldLabel, Row, TradeFrame } from "./frame";
 import { FailedStep, PendingStep, TxLink } from "./status";
@@ -160,7 +160,7 @@ export function BuyScreen({ data }: { data: BuyData }) {
               </p>
               <p className="mt-1 text-[15px] leading-[21px] font-bold">$CUT has nothing behind it. You can lose what you put in.</p>
               <p className="mt-2.5 border-t-[1.5px] border-ink/15 pt-2.5 text-sm leading-5 text-ink-2">
-                Free $CUT wins nothing at the cut. Save it on a robot to share {prize}.
+                Free $CUT wins nothing at the cut. Save it on an agent to share {prize}.
               </p>
             </section>
             {step.kind === "moved" && (
@@ -414,7 +414,7 @@ function BuySuccess({ data, quote, txHash }: { data: BuyData; quote: Quote; txHa
           <div className="order-2 mt-3.5 flex items-start gap-2.5 rounded-2xl border-2 border-ink bg-paper px-4 py-3 text-sm leading-5 font-semibold lg:order-none lg:mt-6">
             <Gift aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.4} />
             <span>
-              Free $CUT wins nothing at the cut. Save a robot before {at} UTC to share {prize}.
+              Free $CUT wins nothing at the cut. Save an agent before {at} UTC to share {prize}.
             </span>
           </div>
           <p className="order-2 mt-2 text-[13px] font-semibold lg:order-none">
@@ -424,7 +424,7 @@ function BuySuccess({ data, quote, txHash }: { data: BuyData; quote: Quote; txHa
             <Button asChild variant="black" size="xl" className="h-14 w-full rounded-2xl text-base shadow-hard-violet">
               <Link href={data.saveTargetId ? `/save/${data.saveTargetId}` : "/"}>
                 <Heart aria-hidden="true" strokeWidth={2.6} />
-                Save a robot
+                Save an agent
               </Link>
             </Button>
             <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
@@ -450,13 +450,13 @@ function BuySuccess({ data, quote, txHash }: { data: BuyData; quote: Quote; txHa
   );
 }
 
-/** The stage's robots standing on a pink floor, two rows of five. Decorative. */
+/** The stage's agents standing on a pink floor, two rows of five. Decorative. */
 function StageArt({ ids }: { ids: string[] }) {
   return (
     <div aria-hidden="true" className="order-1 mt-5 overflow-hidden rounded-3xl border-2 border-ink bg-violet shadow-hard lg:order-none lg:mt-0">
       <div className="grid grid-cols-5 gap-x-1 gap-y-3 bg-[radial-gradient(var(--color-paper)_1.2px,transparent_1.3px)] [background-size:22px_22px] px-2 pt-4 pb-3 lg:px-4 lg:pt-8 lg:pb-6">
         {ids.slice(0, 10).map((id) => {
-          const art = robotSticker(id);
+          const art = agentSticker(id);
           return art ? (
             <Image key={id} src={art.src} alt="" width={art.width} height={art.height} className="mx-auto h-[86px] w-auto lg:h-[150px]" />
           ) : (

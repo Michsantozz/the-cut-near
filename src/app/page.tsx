@@ -39,14 +39,14 @@ async function Lineup() {
   );
 }
 
-/** The newest post of the robot on the block, in its own voice. */
+/** The newest post of the agent on the block, in its own voice. */
 async function latestBlockPost(lowestId: string | undefined) {
   if (!lowestId) return null;
-  const [post] = await getDirectorLines({ kinds: ["robot-post"], subjectId: lowestId, limit: 1 });
+  const [post] = await getDirectorLines({ kinds: ["agent-post"], subjectId: lowestId, limit: 1 });
   return post ? { text: post.text, badge: proofBadge(post.proof.status).label } : null;
 }
 
-/** The Director's newest line about the robot on the block (the Final hour line, else the day's line), with its proof. */
+/** The Director's newest line about the agent on the block (the Final hour line, else the day's line), with its proof. */
 async function latestBlockLine(lowestId: string | undefined) {
   if (!lowestId) return null;
   const [line] = await getDirectorLines({ kinds: ["final-hour", "scheduled"], subjectId: lowestId, limit: 1 });

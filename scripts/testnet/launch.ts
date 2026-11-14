@@ -1,7 +1,7 @@
 // Launches The Cut on NEAR testnet, end to end, and records what it did in deploy/testnet-<mode>.json.
 //
 //   node scripts/testnet/launch.ts           # daily: a cut every day at 18:00 UTC, the app's public contract
-//   node scripts/testnet/launch.ts --fast    # fast: a cut every 2 minutes, to watch robots get deleted
+//   node scripts/testnet/launch.ts --fast    # fast: a cut every 2 minutes, to watch agents get deleted
 //
 // Build first: pnpm contracts:build.
 // Every step is idempotent: run it again and it picks up where it stopped. Accounts come from the testnet
@@ -23,7 +23,7 @@ const STATE_FILE = join(ROOT, "deploy", `testnet-${MODE}.json`);
 const WASM = join(ROOT, "contracts", "target", "near", "thecut", "thecut.wasm");
 const KEYCHAIN = join(homedir(), ".near-credentials", "testnet");
 
-// Testnet parameters (docs/contract-interface.md): cheaper robots so the faucet covers them.
+// Testnet parameters (docs/contract-interface.md): cheaper agents so the faucet covers them.
 const NS_PER_SECOND = 1_000_000_000n;
 const PARAMS = {
   fee_bps: 100,
@@ -31,7 +31,7 @@ const PARAMS = {
   savers_bps: 9_500,
   stage_size: 10,
   cut_interval: String((MODE === "fast" ? 120n : 86_400n) * NS_PER_SECOND),
-  robot_funding: nearToYocto("0.5").toString(),
+  agent_funding: nearToYocto("0.5").toString(),
   register_deposit: nearToYocto("1").toString(),
 };
 
@@ -46,8 +46,8 @@ function firstCutAtNs(): bigint {
 }
 const POOL_NEAR = nearToYocto("4");
 
-// The design's robots (src/entities/robot/api/sample.ts), split between two creator accounts.
-const ROBOTS = [
+// The design's agents (src/entities/agent/api/sample.ts), split between two creator accounts.
+const AGENTS = [
   ["pixie", "Pixie Volt", "AI streamer"],
   ["lila", "Lila Loop", "Virtual influencer"],
   ["oracle", "Oracle Toad", "AI agent"],
@@ -59,7 +59,7 @@ const ROBOTS = [
   ["onyx", "Onyx Moon", "Digital model"],
   ["kiko", "Kiko Bun", "VTuber"],
   ["chartwise", "Chartwise", "AI analyst"],
-  ["bloop", "Bloop", "AI robot"],
+  ["bloop", "Bloop", "AI agent"],
 ] as const;
 
 type State = {
@@ -197,41 +197,41 @@ async function main() {
     log(`deployed ${STATE.contract} (first cut ${STATE.firstCutAt})`);
   }
 
-  // 3. Robots: each creator registers half, so the bench fills before the first cut seats the stage.
+  // 3. Agents: each creator registers half, so the bench fills before the first cut seats the stage.
   STATE.registered ??= [];
-  for (const [index, [id, name, kind]] of ROBOTS.entries()) {
+  for (const [index, [id, name, kind]] of AGENTS.entries()) {
     if (STATE.registered.includes(id)) continue;
     // A call can land even when its RPC answer is lost (a 429 on the way back): ask the contract first.
-    const known = await provider.callFunction({ contractId: STATE.contract, method: "get_robot", args: { id } });
+    const known = await provider.callFunction({ contractId: STATE.contract, method: "get_agent", args: { id } });
     if (known) {
       STATE.registered.push(id);
       continue;
     }
     const creator = account(STATE.creators[index % 2]);
-    await call(creator, "register_robot", { id, name, kind, x_handle: xHandle(id, name) }, BigInt(PARAMS.register_deposit), teraToGas("100"));
+    await call(creator, "register_agent", { id, name, kind, x_handle: xHandle(id, name) }, BigInt(PARAMS.register_deposit), teraToGas("100"));
     STATE.registered.push(id);
     saveState(STATE);
     log(`registered ${id}`);
   }
 
-  // 4. Fans buy $CUT and save on different robots, so queues differ and the first cut seats the top ten.
+  // 4. Fans buy $CUT and save on different agents, so queues differ and the first cut seats the top ten.
   if (!STATE.seeded) {
     const plan: [string, string[]][] = [
       [STATE.fans[0], ["pixie", "lila", "oracle", "mabel", "melody", "yuna"]],
       [STATE.fans[1], ["gremlin", "velvet", "onyx", "kiko", "chartwise"]],
     ];
-    for (const [fanId, robots] of plan) {
+    for (const [fanId, agents] of plan) {
       const fan = account(fanId);
       // Registration plus room for the save records, which are paid from the storage balance.
       await call(fan, "storage_deposit", { account_id: fanId }, nearToYocto("0.1"));
       await call(fan, "buy", { min_out: "0" }, nearToYocto("1"));
       const balance = BigInt((await provider.callFunction<string>({ contractId: STATE.contract, method: "ft_balance_of", args: { account_id: fanId } })) ?? "0");
-      // Decreasing amounts: the first robot gets the biggest share.
+      // Decreasing amounts: the first agent gets the biggest share.
       let left = balance;
-      for (const [i, robotId] of robots.entries()) {
-        const amount = i === robots.length - 1 ? left / 2n : left / 3n;
+      for (const [i, agentId] of agents.entries()) {
+        const amount = i === agents.length - 1 ? left / 2n : left / 3n;
         left -= amount;
-        await call(fan, "save", { robot_id: robotId, amount: amount.toString() }, 0n);
+        await call(fan, "save", { agent_id: agentId, amount: amount.toString() }, 0n);
       }
       log(`seeded saves from ${fanId}`);
     }

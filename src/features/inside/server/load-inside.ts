@@ -6,10 +6,10 @@ import { isDeletingCut, paysPer100, sliceIfCut, type CutRecord, type DeletingCut
 import { getCut, getNextCut } from "@/entities/cut/server";
 import type { Params } from "@/entities/market";
 import { getParams, getTotalSupply } from "@/entities/market/server";
-import { rankByPile, type Robot } from "@/entities/robot";
-import { getBench, getStage } from "@/entities/robot/server";
+import { rankByPile, type Agent } from "@/entities/agent";
+import { getBench, getStage } from "@/entities/agent/server";
 
-export type LivePile = { robot: Robot; isLowest: boolean; paysPer100: bigint | null };
+export type LivePile = { agent: Agent; isLowest: boolean; paysPer100: bigint | null };
 
 export type PastCut = DeletingCut & { deletedName: string; joinedName: string | null };
 
@@ -20,8 +20,8 @@ export type Inside = {
   cutIndex: number;
   params: Params;
   piles: LivePile[];
-  lowest: Robot | null;
-  next: Robot | null;
+  lowest: Agent | null;
+  next: Agent | null;
   gap: bigint;
   fees: bigint;
   /** If the cut ran now: what burns, the prize, one savers' slice, one creators' slice. */
@@ -29,7 +29,7 @@ export type Inside = {
   prize: bigint;
   slice: bigint;
   creatorSlice: bigint;
-  bench: Robot[];
+  bench: Agent[];
   /** $CUT burned since launch: minted supply minus what exists now. */
   burned: bigint;
   /** Cuts that already ran, newest first (the latest 30). */
@@ -44,7 +44,7 @@ export async function loadInside(): Promise<Inside> {
   await connection();
   const [stage, bench, nextCut, params, supply] = await Promise.all([getStage(), getBench(), getNextCut(), getParams(), getTotalSupply()]);
   const ranked = rankByPile(stage);
-  const lowest = ranked.find((robot) => robot.id === nextCut.lowestId) ?? ranked.at(-1) ?? null;
+  const lowest = ranked.find((agent) => agent.id === nextCut.lowestId) ?? ranked.at(-1) ?? null;
   const next = lowest ? (ranked[ranked.indexOf(lowest) - 1] ?? null) : null;
   const slice = lowest ? sliceIfCut(lowest.pile, nextCut.prizeSoFar, params) : 0n;
   const burn = lowest ? (lowest.pile * BigInt(params.burnBps)) / BPS : 0n;
@@ -53,15 +53,15 @@ export async function loadInside(): Promise<Inside> {
 
   const indexes = Array.from({ length: Math.min(nextCut.index - 1, PAST_CUTS) }, (_, i) => nextCut.index - 1 - i);
   const records = (await Promise.all(indexes.map((index) => getCut(index)))).filter((cut): cut is CutRecord => cut !== null);
-  const robots = [...stage, ...bench];
-  const nameOf = (id: string) => robots.find((robot) => robot.id === id)?.name ?? id;
+  const agents = [...stage, ...bench];
+  const nameOf = (id: string) => agents.find((agent) => agent.id === id)?.name ?? id;
 
   return {
     renderedAt: Date.now(),
     cutAt: nextCut.at,
     cutIndex: nextCut.index,
     params,
-    piles: ranked.map((robot) => ({ robot, isLowest: robot === lowest, paysPer100: robot === lowest ? null : paysPer100(slice, robot.pile) })),
+    piles: ranked.map((agent) => ({ agent, isLowest: agent === lowest, paysPer100: agent === lowest ? null : paysPer100(slice, agent.pile) })),
     lowest,
     next,
     gap: nextCut.gapToNext,

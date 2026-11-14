@@ -50,7 +50,7 @@ export function ReceiptsScreen({ data }: { data: Receipts }) {
         </div>
       </div>
       <p className="mt-8 text-[13px] leading-[18px] text-ink-3">
-        {data.live ? "" : "Sample data. Every robot, account and number here is fictional. "}A $CUT transfer between two wallets is not in the journal.
+        {data.live ? "" : "Sample data. Every agent, account and number here is fictional. "}A $CUT transfer between two wallets is not in the journal.
       </p>
     </div>
   );
@@ -129,7 +129,7 @@ function StatCards({ data, now }: { data: Receipts; now: Date }) {
     {
       label: "CUTS SO FAR",
       value: formatCount(stats.cuts),
-      sub: lastCut?.robotName ? `Last: ${lastCut.robotName}, ${cutWhole(lastCut.burned)} burned` : "The first one is next",
+      sub: lastCut?.agentName ? `Last: ${lastCut.agentName}, ${cutWhole(lastCut.burned)} burned` : "The first one is next",
       icon: Scissors,
       bg: "bg-pink",
     },
@@ -327,7 +327,7 @@ function CutReceiptGrid({ cut }: { cut: CutReceipt }) {
         ))}
       </dl>
       <p className="mt-1.5 text-[12.5px] leading-[17px] text-ink-3">
-        {cut.robotAccountId ? `${cut.robotAccountId} deleted · ` : ""}run by <b className="font-bold text-ink">{cut.runner}</b>, who keeps 0.5 NEAR
+        {cut.agentAccountId ? `${cut.agentAccountId} deleted · ` : ""}run by <b className="font-bold text-ink">{cut.runner}</b>, who keeps 0.5 NEAR
       </p>
     </div>
   );

@@ -20,9 +20,9 @@ describe("contract calls", () => {
 
   it("sells, saves and unsaves with the contract's argument names", () => {
     expect(sellCalls({ cutIn: 7n, minOut: 2n })).toEqual([{ method: "sell", args: { cut_in: "7", min_out: "2" } }]);
-    expect(saveCalls({ robotId: "melody", amount: 400n, storageTopUp: 0n })).toEqual([{ method: "save", args: { robot_id: "melody", amount: "400" } }]);
-    expect(saveCalls({ robotId: "kiko", amount: 1n, storageTopUp: 9n })[0].deposit).toBe("9");
-    expect(unsaveCalls("melody")).toEqual([{ method: "unsave", args: { robot_id: "melody" } }]);
+    expect(saveCalls({ agentId: "melody", amount: 400n, storageTopUp: 0n })).toEqual([{ method: "save", args: { agent_id: "melody", amount: "400" } }]);
+    expect(saveCalls({ agentId: "kiko", amount: 1n, storageTopUp: 9n })[0].deposit).toBe("9");
+    expect(unsaveCalls("melody")).toEqual([{ method: "unsave", args: { agent_id: "melody" } }]);
   });
 
   it("tops up storage only when it runs thin", () => {

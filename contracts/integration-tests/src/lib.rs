@@ -13,7 +13,7 @@ use serde_json::{Value, json};
 pub const ONE_CUT: u128 = 1_000_000_000_000_000_000;
 pub const SEC: u64 = 1_000_000_000;
 
-/// Builds `thecut` (which embeds the committed robot wasm) with `cargo near`.
+/// Builds `thecut` (which embeds the committed agent wasm) with `cargo near`.
 pub fn build_thecut() -> Result<Vec<u8>> {
     let manifest = concat!(env!("CARGO_MANIFEST_DIR"), "/../thecut/Cargo.toml");
     let opts = cargo_near_build::BuildOpts::builder()
@@ -74,7 +74,7 @@ impl World {
                     "stage_size": launch.stage_size,
                     "first_cut_at": first_cut_at.to_string(),
                     "cut_interval": (launch.cut_interval_secs * SEC).to_string(),
-                    "robot_funding": NearToken::from_millinear(500),
+                    "agent_funding": NearToken::from_millinear(500),
                     "register_deposit": NearToken::from_near(5),
                 }),
             )?

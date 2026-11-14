@@ -4,12 +4,12 @@ import { getCut, getNextCut } from "@/entities/cut/server";
 import { paysPer100, sliceIfCut } from "@/entities/cut";
 import { getJournal, getJournalStats } from "@/entities/journal/server";
 import { getBalance, getParams, getPool, getTotalSupply } from "@/entities/market/server";
-import { rankByPile } from "@/entities/robot";
-import { getBench, getStage } from "@/entities/robot/server";
+import { rankByPile } from "@/entities/agent";
+import { getBench, getStage } from "@/entities/agent/server";
 import { getSaves } from "@/entities/save/server";
 import { loadLineup } from "@/features/lineup/server";
 import { loadReceipts } from "@/features/receipts/server";
-import { loadRobotProfile } from "@/features/robot-profile/server";
+import { loadAgentProfile } from "@/features/agent-profile/server";
 import { units } from "@/shared/lib/amount";
 
 vi.mock("next/server", () => ({ connection: async () => {} }));
@@ -30,7 +30,7 @@ describe("the sample world", () => {
       getBalance("mika.near"),
       getSaves("mika.near"),
     ]);
-    const saved = sum([...stage, ...bench].map((robot) => robot.pile));
+    const saved = sum([...stage, ...bench].map((agent) => agent.pile));
     expect(stats.minted).toBe(units(10_000_000));
     expect(stats.burned).toBe(0n);
     expect(stats.cuts).toBe(0);
@@ -59,9 +59,9 @@ describe("the sample world", () => {
     expect(stats.cuts).toBe(1);
     expect(stats.burned).toBe(cut?.burned);
     expect(stats.minted - stats.burned).toBe(units(9_988_200));
-    const stage = (await getStage()).filter((robot) => robot.id !== "kiko");
+    const stage = (await getStage()).filter((agent) => agent.id !== "kiko");
     const bench = await getBench();
-    expect(stats.saved).toBe(sum([...stage, ...bench].map((robot) => robot.pile)));
+    expect(stats.saved).toBe(sum([...stage, ...bench].map((agent) => agent.pile)));
     // The cut's slice is the shared prize math on its own numbers (23,600 cut with the day's 5,020 in fees),
     // rounded to 0.1 $CUT like the design's 1,775.4.
     const tenth = units(1) / 10n;
@@ -70,10 +70,10 @@ describe("the sample world", () => {
     expect(prizes.entries).toHaveLength(params.stageSize - 1);
   });
 
-  it("shows the same stage, rank and pays per 100 on the lineup, the robot page and the receipts", async () => {
+  it("shows the same stage, rank and pays per 100 on the lineup, the agent page and the receipts", async () => {
     const [lineup, pixie, receipts, nextCut, params, stage] = await Promise.all([
       loadLineup(null),
-      loadRobotProfile("pixie", null),
+      loadAgentProfile("pixie", null),
       loadReceipts({ filter: "all", viewer: null }),
       getNextCut(),
       getParams(),
@@ -85,7 +85,7 @@ describe("the sample world", () => {
 
     expect(lineup.board.entries).toHaveLength(10);
     expect(lineup.board.lowest?.id).toBe("kiko");
-    const onLineup = lineup.board.entries.find((entry) => entry.robot.id === "pixie");
+    const onLineup = lineup.board.entries.find((entry) => entry.agent.id === "pixie");
     expect(onLineup?.rank).toBe(1);
     expect(onLineup?.paysPer100).toBe(pixiePays);
 

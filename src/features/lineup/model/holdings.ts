@@ -1,5 +1,5 @@
 import type { Pool } from "@/entities/market";
-import type { Robot } from "@/entities/robot";
+import type { Agent } from "@/entities/agent";
 import type { Save } from "@/entities/save";
 import { CUT_DECIMALS, NEAR_DECIMALS } from "@/shared/lib/amount";
 
@@ -22,14 +22,14 @@ export function valueInUsdCents(balance: bigint, pool: Pick<Pool, "nearReserve" 
   return (numerator * 2n + denominator) / (denominator * 2n);
 }
 
-export type SavedOn = { robotId: string; robotName: string; amount: bigint };
+export type SavedOn = { agentId: string; agentName: string; amount: bigint };
 
-/** A member's saves with robot names, biggest first, and their total. Unknown robots keep their id as the name. */
-export function summarizeSaves(saves: readonly Save[], robots: readonly Robot[]): { items: SavedOn[]; total: bigint } {
-  const names = new Map(robots.map((robot) => [robot.id, robot.name]));
+/** A member's saves with agent names, biggest first, and their total. Unknown agents keep their id as the name. */
+export function summarizeSaves(saves: readonly Save[], agents: readonly Agent[]): { items: SavedOn[]; total: bigint } {
+  const names = new Map(agents.map((agent) => [agent.id, agent.name]));
   const items = saves
     .filter((save) => save.amount > 0n)
-    .map((save) => ({ robotId: save.robotId, robotName: names.get(save.robotId) ?? save.robotId, amount: save.amount }))
+    .map((save) => ({ agentId: save.agentId, agentName: names.get(save.agentId) ?? save.agentId, amount: save.amount }))
     .sort((a, b) => (a.amount === b.amount ? 0 : a.amount > b.amount ? -1 : 1));
   return { items, total: items.reduce((sum, item) => sum + item.amount, 0n) };
 }

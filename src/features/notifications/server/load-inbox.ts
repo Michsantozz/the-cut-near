@@ -4,8 +4,8 @@ import { connection } from "next/server";
 
 import { getNextCut } from "@/entities/cut/server";
 import { getJournal } from "@/entities/journal/server";
-import { rankByPile } from "@/entities/robot";
-import { getBench, getStage } from "@/entities/robot/server";
+import { rankByPile } from "@/entities/agent";
+import { getBench, getStage } from "@/entities/agent/server";
 import { getClaimable, getSaves } from "@/entities/save/server";
 
 import { buildInbox, isNew, noticeAge, type Notice } from "../model/inbox";
@@ -14,10 +14,10 @@ export type InboxNotice = Notice & { age: string; isNew: boolean };
 export type Inbox = { renderedAt: number; fresh: InboxNotice[]; earlier: InboxNotice[] };
 
 /**
- * The viewer's notifications. `lowestPost` is the newest post of a robot, by id, which the route reads from
+ * The viewer's notifications. `lowestPost` is the newest post of an agent, by id, which the route reads from
  * the Director (features cannot import each other). Request-time only.
  */
-export async function loadInbox(accountId: string, postOf: (robotId: string) => Promise<{ text: string; at: Date } | null>): Promise<Inbox> {
+export async function loadInbox(accountId: string, postOf: (agentId: string) => Promise<{ text: string; at: Date } | null>): Promise<Inbox> {
   await connection();
   // An after-cut screen: sample data shows it a minute after cut #1 ran (Notifications.dc.html, 18:01).
   const [stage, bench, nextCut, saves, claimable, cuts, claims, registers] = await Promise.all([
@@ -31,19 +31,19 @@ export async function loadInbox(accountId: string, postOf: (robotId: string) => 
     getJournal({ events: ["register"], limit: 200, sampleMoment: "after-cut" }),
   ]);
   const now = new Date();
-  // A robot whose cut is already in the journal is gone, even if the stage read lags behind it.
-  const gone = new Set(cuts.entries.map((entry) => entry.robotId).filter((id): id is string => id !== null));
-  const ranked = rankByPile(stage.filter((robot) => !gone.has(robot.id)));
+  // An agent whose cut is already in the journal is gone, even if the stage read lags behind it.
+  const gone = new Set(cuts.entries.map((entry) => entry.agentId).filter((id): id is string => id !== null));
+  const ranked = rankByPile(stage.filter((agent) => !gone.has(agent.id)));
   const lowest = ranked.at(-1);
   const names = new Map<string, string>();
-  for (const entry of registers.entries) if (entry.robotId && typeof entry.data.name === "string") names.set(entry.robotId, entry.data.name);
-  for (const robot of [...stage, ...bench]) names.set(robot.id, robot.name);
+  for (const entry of registers.entries) if (entry.agentId && typeof entry.data.name === "string") names.set(entry.agentId, entry.data.name);
+  for (const agent of [...stage, ...bench]) names.set(agent.id, agent.name);
 
   const notices = buildInbox({
     now,
     cutAt: nextCut.at,
     ranked,
-    savedOn: new Set(saves.filter((save) => save.amount > 0n).map((save) => save.robotId)),
+    savedOn: new Set(saves.filter((save) => save.amount > 0n).map((save) => save.agentId)),
     claimable,
     cuts: cuts.entries,
     claims: claims.entries,

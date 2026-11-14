@@ -2,7 +2,7 @@
 export type ContractCall = {
   method: string;
   args?: Record<string, unknown>;
-  /** yoctoNEAR to attach. Default "0"; payable methods (`buy`, `register_robot`, `storage_deposit`) need it. */
+  /** yoctoNEAR to attach. Default "0"; payable methods (`buy`, `register_agent`, `storage_deposit`) need it. */
   deposit?: string;
   /** Default 100 TGas. */
   gas?: string;

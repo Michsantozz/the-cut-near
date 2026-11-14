@@ -4,7 +4,7 @@ import { connection } from "next/server";
 
 import { isDeletingCut } from "@/entities/cut";
 import { getCut } from "@/entities/cut/server";
-import { getRobot } from "@/entities/robot/server";
+import { getAgent } from "@/entities/agent/server";
 
 export type CutShare = {
   index: number;
@@ -18,12 +18,12 @@ export type CutShare = {
 /** The facts a cut's share card shows, or null when that cut has not run. */
 export async function loadCutShare(index: number): Promise<CutShare | null> {
   if (!Number.isSafeInteger(index) || index < 1) return null;
-  // Live robots read the clock: reach request time first.
+  // Live agents read the clock: reach request time first.
   await connection();
   const cut = await getCut(index);
-  // A cut that only seated bench robots has nothing to share.
+  // A cut that only seated bench agents has nothing to share.
   if (!cut || !isDeletingCut(cut)) return null;
-  const [deleted, joined] = await Promise.all([getRobot(cut.deletedId), cut.joinedId ? getRobot(cut.joinedId) : null]);
+  const [deleted, joined] = await Promise.all([getAgent(cut.deletedId), cut.joinedId ? getAgent(cut.joinedId) : null]);
   return {
     index: cut.index,
     at: cut.at,

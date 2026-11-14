@@ -22,7 +22,7 @@ describe("latestBreakdown", () => {
       getClaimable("mika.near"),
     ]);
     const b = latestBreakdown(cuts.entries, prizes.entries, saves, 9_500)!;
-    expect(b).toMatchObject({ cutIndex: 1, cutRobotId: "kiko", robotId: "melody", pile: units(23_600), burned: units(11_800), prize: units(16_820), survivors: 9 });
+    expect(b).toMatchObject({ cutIndex: 1, cutAgentId: "kiko", agentId: "melody", pile: units(23_600), burned: units(11_800), prize: units(16_820), survivors: 9 });
     expect(b.fees).toBe(units(5_020));
     expect(b.share).toBe(claimable);
     expect(latestBreakdown(cuts.entries, prizes.entries, [], 9_500)).toBeNull();
@@ -33,10 +33,10 @@ describe("latestBreakdown", () => {
 
 describe("collectCalls", () => {
   it("claims, pays storage once and unsaves only when asked", () => {
-    expect(collectCalls({ registered: true, unsaveRobotId: null })).toEqual([{ method: "claim", args: {}, deposit: "0", gas: "100000000000000" }]);
-    const calls = collectCalls({ registered: false, unsaveRobotId: "melody" });
+    expect(collectCalls({ registered: true, unsaveAgentId: null })).toEqual([{ method: "claim", args: {}, deposit: "0", gas: "100000000000000" }]);
+    const calls = collectCalls({ registered: false, unsaveAgentId: "melody" });
     expect(calls.map((c) => c.method)).toEqual(["claim", "unsave"]);
     expect(calls[0].deposit).toBe(STORAGE_MIN_YOCTO);
-    expect(calls[1]).toMatchObject({ args: { robot_id: "melody" }, deposit: "0" });
+    expect(calls[1]).toMatchObject({ args: { agent_id: "melody" }, deposit: "0" });
   });
 });

@@ -23,12 +23,12 @@ const base: InboxInput = {
 };
 
 describe("buildInbox", () => {
-  it("warns about the lowest robot and says no cut has run", () => {
+  it("warns about the lowest agent and says no cut has run", () => {
     const notices = buildInbox(base);
     expect(notices[0]).toMatchObject({ kind: "danger", title: "Onyx Moon is on the block", at: NOW });
     expect(notices[0].text).toBe("Lowest pile: 61,800 $CUT, 12,401 short of Velvet Vee. The cut runs at 18:00 UTC.");
     expect(notices.some((n) => n.key === "no-cut")).toBe(true);
-    expect(buildInbox({ ...base, savedOn: new Set(["onyx"]) })[0].title).toBe("Your robot Onyx Moon is on the block");
+    expect(buildInbox({ ...base, savedOn: new Set(["onyx"]) })[0].title).toBe("Your agent Onyx Moon is on the block");
   });
 
   it("reports the cut and the prize waiting, newest first", async () => {

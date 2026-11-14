@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { getNextCut } from "@/entities/cut/server";
 import { getParams, getPriceHistory } from "@/entities/market/server";
-import { getStage } from "@/entities/robot/server";
+import { getStage } from "@/entities/agent/server";
 import { chartGeometry, niceDomain, niceStep, tickTimes, toChartValues } from "@/features/trade/model/chart";
 import { buildPicker, defaultSave, ordinal, saveProblem, shareIfCutNow } from "@/features/trade/model/save";
 import { units } from "@/shared/lib/amount";
@@ -13,8 +13,8 @@ const two = (v: bigint | null) => (v === null ? null : formatAmount(v, { maxFrac
 describe("save picker", () => {
   it("ranks the stage and prices it with the fees so far, like the lineup", async () => {
     const picker = buildPicker(await getStage(), (await getNextCut()).prizeSoFar, await getParams());
-    const byId = new Map(picker.choices.map((c) => [c.robot.id, c]));
-    expect(picker.choices.at(-1)?.robot.id).toBe("kiko");
+    const byId = new Map(picker.choices.map((c) => [c.agent.id, c]));
+    expect(picker.choices.at(-1)?.agent.id).toBe("kiko");
     expect(byId.get("kiko")?.isLowest).toBe(true);
     expect(byId.get("kiko")?.paysPer100).toBeNull();
     expect(two(byId.get("onyx")!.paysPer100)).toBe("2.72");
@@ -22,7 +22,7 @@ describe("save picker", () => {
   });
 
   it("shares the slice once the save is in the pile", () => {
-    const melody = { robot: { pile: units(112_300) }, isLowest: false } as Parameters<typeof shareIfCutNow>[0];
+    const melody = { agent: { pile: units(112_300) }, isLowest: false } as Parameters<typeof shareIfCutNow>[0];
     // The design's 400 of 112,300 with a 1,775.4 slice is 6.32; adding 400 more makes the pile 112,700.
     expect(two(shareIfCutNow(melody, units(17_754) / 10n, units(400)))).toBe("6.30");
     expect(shareIfCutNow({ ...melody, isLowest: true }, units(1), units(1))).toBeNull();

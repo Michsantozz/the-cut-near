@@ -2,13 +2,13 @@ import type { JournalEntry } from "@/entities/journal";
 import type { Save } from "@/entities/save";
 
 // How the viewer's prize from a cut was made (Earnings.dc.html, five steps): the cut pile, half burned,
-// the prize (the other half plus the day's fees), one slice per survivor, and the viewer's share of its robot's slice.
+// the prize (the other half plus the day's fees), one slice per survivor, and the viewer's share of its agent's slice.
 // Only what was paid, read from the cut's `cut` and `prize` events.
 
 export type Breakdown = {
   cutIndex: number;
   at: Date;
-  cutRobotId: string | null;
+  cutAgentId: string | null;
   pile: bigint;
   burned: bigint;
   prize: bigint;
@@ -18,10 +18,10 @@ export type Breakdown = {
   survivors: number;
   saversBps: number;
   /** The survivor the viewer saved on, with the pile it had at the cut. */
-  robotId: string;
+  agentId: string;
   saved: bigint;
-  robotPile: bigint;
-  /** saved / robotPile of the slice, floored like the contract. */
+  agentPile: bigint;
+  /** saved / agentPile of the slice, floored like the contract. */
   share: bigint;
 };
 
@@ -30,7 +30,7 @@ function big(data: Record<string, unknown>, key: string): bigint {
   return typeof value === "string" && /^\d{1,39}$/.test(value) ? BigInt(value) : 0n;
 }
 
-/** The viewer's share of a robot's slice: pro rata by $CUT saved, floored. */
+/** The viewer's share of an agent's slice: pro rata by $CUT saved, floored. */
 export function shareOf(slice: bigint, saved: bigint, pile: bigint): bigint {
   return pile > 0n ? (slice * saved) / pile : 0n;
 }
@@ -40,14 +40,14 @@ export function shareOf(slice: bigint, saved: bigint, pile: bigint): bigint {
  * `prizeEvents` come from the journal; `saves` are the viewer's saves now (a save rides from cut to cut).
  */
 export function latestBreakdown(cutEvents: readonly JournalEntry[], prizeEvents: readonly JournalEntry[], saves: readonly Save[], saversBps: number): Breakdown | null {
-  const savedOn = new Map(saves.filter((s) => s.amount > 0n).map((s) => [s.robotId, s]));
+  const savedOn = new Map(saves.filter((s) => s.amount > 0n).map((s) => [s.agentId, s]));
   const cuts = [...cutEvents].sort((a, b) => (b.cutIndex ?? 0) - (a.cutIndex ?? 0));
   for (const cut of cuts) {
     const index = cut.cutIndex;
     if (index === null) continue;
     const candidates = prizeEvents
-      .filter((p) => p.cutIndex === index && p.robotId && p.data.burned !== true)
-      .map((p) => ({ p, save: savedOn.get(p.robotId!) }))
+      .filter((p) => p.cutIndex === index && p.agentId && p.data.burned !== true)
+      .map((p) => ({ p, save: savedOn.get(p.agentId!) }))
       // Only a save locked for this cut (or an earlier one) was in the pile when it ran.
       .filter((c): c is { p: JournalEntry; save: Save } => c.save !== undefined && c.save.lockedForCut <= index)
       .sort((a, b) => (a.save.amount === b.save.amount ? 0 : a.save.amount > b.save.amount ? -1 : 1));
@@ -57,12 +57,12 @@ export function latestBreakdown(cutEvents: readonly JournalEntry[], prizeEvents:
     const burned = big(cut.data, "burned");
     const prize = big(cut.data, "prize");
     const slice = big(best.p.data, "slice");
-    const robotPile = big(best.p.data, "pile");
+    const agentPile = big(best.p.data, "pile");
     const survivors = typeof cut.data.survivors === "number" ? cut.data.survivors : 0;
     return {
       cutIndex: index,
       at: cut.at,
-      cutRobotId: typeof cut.data.robot_id === "string" ? cut.data.robot_id : null,
+      cutAgentId: typeof cut.data.agent_id === "string" ? cut.data.agent_id : null,
       pile,
       burned,
       prize,
@@ -70,10 +70,10 @@ export function latestBreakdown(cutEvents: readonly JournalEntry[], prizeEvents:
       slice,
       survivors,
       saversBps,
-      robotId: best.save.robotId,
+      agentId: best.save.agentId,
       saved: best.save.amount,
-      robotPile,
-      share: shareOf(slice, best.save.amount, robotPile),
+      agentPile,
+      share: shareOf(slice, best.save.amount, agentPile),
     };
   }
   return null;

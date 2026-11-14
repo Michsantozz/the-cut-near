@@ -106,7 +106,7 @@ export function InboxScreen({ inbox }: { inbox: Inbox }) {
   );
 }
 
-/** A visitor: notifications are about your robots, so connect first. */
+/** A visitor: notifications are about your agents, so connect first. */
 export function InboxVisitor() {
   return (
     <>
@@ -115,8 +115,8 @@ export function InboxVisitor() {
         <span aria-hidden="true" className="flex size-[84px] -rotate-[4deg] items-center justify-center rounded-[26px] border-2 border-ink bg-[#ffd84d] shadow-hard">
           <Bell className="size-10" strokeWidth={2.4} />
         </span>
-        <h2 className="mt-6 font-heading text-[30px] leading-[33px] font-extrabold tracking-[-0.6px]">Know before your robot is cut</h2>
-        <p className="mt-2 max-w-[420px] text-[15px] leading-[22px] text-ink-3">Connect a wallet to see when your robot is in danger, the Final hour, and prizes ready to collect.</p>
+        <h2 className="mt-6 font-heading text-[30px] leading-[33px] font-extrabold tracking-[-0.6px]">Know before your agent is cut</h2>
+        <p className="mt-2 max-w-[420px] text-[15px] leading-[22px] text-ink-3">Connect a wallet to see when your agent is in danger, the Final hour, and prizes ready to collect.</p>
         <ConnectButton elevated className="mt-6 h-[54px] w-full rounded-xl text-base lg:w-auto lg:px-7">
           Connect a wallet
         </ConnectButton>

@@ -6,8 +6,8 @@ import { getNextCut } from "@/entities/cut/server";
 import type { JournalEntry } from "@/entities/journal";
 import { getJournal, getJournalStats, SAMPLE_CONTRACT_ID } from "@/entities/journal/server";
 import { getParams, getPool, getTotalSupply, getUsdCentsPerNear } from "@/entities/market/server";
-import { rankByPile, type Robot } from "@/entities/robot";
-import { getBench, getStage } from "@/entities/robot/server";
+import { rankByPile, type Agent } from "@/entities/agent";
+import { getBench, getStage } from "@/entities/agent/server";
 import { isLive } from "@/shared/config/data-source";
 import { publicEnv } from "@/shared/config/public";
 import { explorerTxUrl } from "@/shared/near/network";
@@ -36,7 +36,7 @@ export type Receipts = {
     usdCentsPerNear: bigint | null;
     buyers: number;
     feesSoFar: bigint;
-    lowest: Robot | null;
+    lowest: Agent | null;
     gap: bigint;
     cutAt: Date;
     cuts: number;
@@ -47,7 +47,7 @@ export type Receipts = {
   /** True for "Mine" without a connected wallet: the list asks to connect instead. */
   needsViewer: boolean;
   /** The next cut, shown on top of the first page until its receipt is in the journal. */
-  pending: { index: number; at: Date; lowest: Robot | null } | null;
+  pending: { index: number; at: Date; lowest: Agent | null } | null;
   rows: ReceiptRow[];
   next: Cursor | null;
   isFirstPage: boolean;
@@ -83,13 +83,13 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
   ]);
   const now = new Date();
 
-  // Names of every robot, including deleted ones, which are no longer on the stage or bench.
+  // Names of every agent, including deleted ones, which are no longer on the stage or bench.
   const names = new Map<string, string>();
   for (const entry of registers.entries) {
     const name = entry.data.name;
-    if (entry.robotId && typeof name === "string" && name) names.set(entry.robotId, name);
+    if (entry.agentId && typeof name === "string" && name) names.set(entry.agentId, name);
   }
-  for (const robot of [...stage, ...bench]) names.set(robot.id, robot.name);
+  for (const agent of [...stage, ...bench]) names.set(agent.id, agent.name);
 
   const cutAt = (index: number) => (index >= 1 ? new Date(params.firstCutAt.getTime() + (index - 1) * params.cutIntervalMs) : null);
   const byTx = new Map<string, JournalEntry[]>();
@@ -101,13 +101,13 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
     return { ...line, href: explorerTxUrl(publicEnv.network, line.txHash) };
   });
 
-  // The robot of the latest cut is gone, even if the stage read lags behind the journal.
-  const gone = lastCuts.entries[0]?.robotId ?? null;
-  const ranked = rankByPile(stage.filter((robot) => robot.id !== gone));
+  // The agent of the latest cut is gone, even if the stage read lags behind the journal.
+  const gone = lastCuts.entries[0]?.agentId ?? null;
+  const ranked = rankByPile(stage.filter((agent) => agent.id !== gone));
   const lowest = ranked.at(-1) ?? null;
   const above = ranked.at(-2) ?? null;
-  const robots = [...stage, ...bench];
-  const piles = robots.reduce((sum, robot) => sum + robot.pile, 0n);
+  const agents = [...stage, ...bench];
+  const piles = agents.reduce((sum, agent) => sum + agent.pile, 0n);
   const isFirstPage = !before;
   const cutDone = (index: number) => lastCuts.entries.some((entry) => entry.cutIndex !== null && entry.cutIndex >= index);
   const lastCutEntry = lastCuts.entries[0];
@@ -117,7 +117,7 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
     fullAccessKeys,
     stats,
     totalSupply,
-    robots,
+    agents,
     params,
     // The sample day is mainnet-shaped: a cut every day.
     launchIntervalMs: !isLive() || publicEnv.network === "mainnet" ? DAY_MS : TEST_CUT_INTERVAL_MS,
@@ -161,13 +161,13 @@ function paramRows(params: Awaited<ReturnType<typeof getParams>>): { label: stri
   return [
     { label: "Supply, minted once", value: `${(params.totalSupply / ONE_CUT).toLocaleString("en-US")} $CUT` },
     { label: "The cut", value: daily ? `Every day, ${at} UTC` : `Every ${Math.round(params.cutIntervalMs / 1000)} s` },
-    { label: "Who is cut", value: "Lowest pile · tie: newer robot" },
+    { label: "Who is cut", value: "Lowest pile · tie: newer agent" },
     { label: "Burn", value: `${params.burnBps / 100}% of the cut pile` },
     { label: "Fee on every buy and sell", value: `${params.feeBps / 100}% · to the prize` },
     { label: "Prize split", value: `${params.saversBps / 100}% savers · ${(10_000 - params.saversBps) / 100}% creators` },
     { label: `Savers’ ${params.saversBps / 100}%`, value: `${params.stageSize - 1} equal slices, one per survivor` },
-    { label: "Run the cut", value: `Anyone · keeps ${near(params.robotFunding)} NEAR` },
-    { label: "Robot deposit", value: `${near(params.registerDeposit)} NEAR · ${near(params.registerDeposit - params.robotFunding)} back` },
+    { label: "Run the cut", value: `Anyone · keeps ${near(params.agentFunding)} NEAR` },
+    { label: "Agent deposit", value: `${near(params.registerDeposit)} NEAR · ${near(params.registerDeposit - params.agentFunding)} back` },
     { label: "Seats on the stage", value: params.stageSize.toString() },
   ];
 }

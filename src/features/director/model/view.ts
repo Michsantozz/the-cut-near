@@ -8,7 +8,7 @@ export type DirectorProofStatus = ProofStatus | "unsigned";
 export type DirectorLineView = {
   id: string;
   kind: DirectorLineKind;
-  /** The robot the line is about, or the robot speaking (robot posts). */
+  /** The agent the line is about, or the agent speaking (agent posts). */
   subjectId: string | null;
   cutIndex: number | null;
   text: string;

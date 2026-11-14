@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { getPool } from "@/entities/market/server";
-import type { Robot } from "@/entities/robot";
-import { getStage } from "@/entities/robot/server";
+import type { Agent } from "@/entities/agent";
+import { getStage } from "@/entities/agent/server";
 import { cutPriceInYoctoNear, summarizeSaves, valueInUsdCents } from "@/features/lineup/model/holdings";
 import { NEAR_DECIMALS, units } from "@/shared/lib/amount";
 import { formatAmount, formatUsd } from "@/shared/ui/format";
@@ -26,18 +26,18 @@ describe("holdings", () => {
     const stage = await getStage();
     const summary = summarizeSaves(
       [
-        { accountId: "mika.near", robotId: "kiko", amount: units(50), lockedForCut: 1 },
-        { accountId: "mika.near", robotId: "melody", amount: units(400), lockedForCut: 1 },
-        { accountId: "mika.near", robotId: "gone", amount: units(1), lockedForCut: 1 },
-        { accountId: "mika.near", robotId: "pixie", amount: 0n, lockedForCut: 1 },
+        { accountId: "mika.near", agentId: "kiko", amount: units(50), lockedForCut: 1 },
+        { accountId: "mika.near", agentId: "melody", amount: units(400), lockedForCut: 1 },
+        { accountId: "mika.near", agentId: "gone", amount: units(1), lockedForCut: 1 },
+        { accountId: "mika.near", agentId: "pixie", amount: 0n, lockedForCut: 1 },
       ],
       stage,
     );
-    expect(summary.items.map((item) => item.robotName)).toEqual(["Melody-9", "Kiko Bun", "gone"]);
+    expect(summary.items.map((item) => item.agentName)).toEqual(["Melody-9", "Kiko Bun", "gone"]);
     expect(summary.total).toBe(units(451));
   });
 
   it("is empty without saves", () => {
-    expect(summarizeSaves([], [] as Robot[])).toEqual({ items: [], total: 0n });
+    expect(summarizeSaves([], [] as Agent[])).toEqual({ items: [], total: 0n });
   });
 });

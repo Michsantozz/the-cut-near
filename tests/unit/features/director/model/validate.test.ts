@@ -34,20 +34,20 @@ describe("validateLine", () => {
 
   it("never lets a number through that the facts do not have", () => {
     expect(validateLine("Kiko has 23,600 and needs 40,000 more.", "scheduled", allowed)).toEqual({ ok: false, reason: "The number 40000 is not in the facts." });
-    expect(validateLine("Kiko pays 1.8 per 100 saved, if the cut ran now.", "robot-post", allowed).ok).toBe(true);
+    expect(validateLine("Kiko pays 1.8 per 100 saved, if the cut ran now.", "agent-post", allowed).ok).toBe(true);
   });
 
   it("refuses financial advice, hype, links, handles, markup and emoji", () => {
     for (const line of ["Buy $CUT before 18:00 UTC, bunny fans.", "Guaranteed gains for Kiko savers today.", "Kiko to the moon, savers, hold tight.", "Kiko could 10x your pile tonight, friends.", "The price of a seat is 23,600 today."]) {
-      expect(validateLine(line, "robot-post", allowed).ok, line).toBe(false);
+      expect(validateLine(line, "agent-post", allowed).ok, line).toBe(false);
     }
-    expect(validateLine("Save Kiko at thecut.app before 18:00 UTC.", "robot-post", allowed)).toEqual({ ok: false, reason: "Contains a link." });
-    expect(validateLine("Save Kiko, @PixieVoltCut is watching you.", "robot-post", allowed).ok).toBe(false);
-    expect(validateLine("Save Kiko, **now** before the cut, please.", "robot-post", allowed).ok).toBe(false);
-    expect(validateLine("Save Kiko before the cut, please 🐰", "robot-post", allowed)).toEqual({ ok: false, reason: "Contains an emoji." });
+    expect(validateLine("Save Kiko at thecut.app before 18:00 UTC.", "agent-post", allowed)).toEqual({ ok: false, reason: "Contains a link." });
+    expect(validateLine("Save Kiko, @PixieVoltCut is watching you.", "agent-post", allowed).ok).toBe(false);
+    expect(validateLine("Save Kiko, **now** before the cut, please.", "agent-post", allowed).ok).toBe(false);
+    expect(validateLine("Save Kiko before the cut, please 🐰", "agent-post", allowed)).toEqual({ ok: false, reason: "Contains an emoji." });
   });
 
-  it("does not read robot names as hype", () => {
+  it("does not read agent names as hype", () => {
     expect(validateLine("Onyx Moon has 61,800 and a smug grin.", "scheduled", allowed, ["Onyx Moon"]).ok).toBe(true);
     expect(validateLine("Onyx Moon has 61,800 and a smug grin.", "scheduled", allowed).ok).toBe(false);
   });

@@ -1,14 +1,14 @@
 "use server";
 
-import { getRobot } from "@/entities/robot/server";
+import { getAgent } from "@/entities/agent/server";
 import { publicEnv } from "@/shared/config/public";
 
-import { robotIdError } from "../model/robot-form";
+import { agentIdError } from "../model/agent-form";
 
-export type RobotIdStatus = "free" | "taken" | "invalid";
+export type AgentIdStatus = "free" | "taken" | "invalid";
 
-/** Whether `<id>.<contract>` can still be created: ids of deleted robots are never reused, so any known robot takes it. */
-export async function checkRobotId(id: string): Promise<RobotIdStatus> {
-  if (typeof id !== "string" || robotIdError(id, publicEnv.contractId)) return "invalid";
-  return (await getRobot(id)) ? "taken" : "free";
+/** Whether `<id>.<contract>` can still be created: ids of deleted agents are never reused, so any known agent takes it. */
+export async function checkAgentId(id: string): Promise<AgentIdStatus> {
+  if (typeof id !== "string" || agentIdError(id, publicEnv.contractId)) return "invalid";
+  return (await getAgent(id)) ? "taken" : "free";
 }

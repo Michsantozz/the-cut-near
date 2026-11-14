@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { cutRecordViewSchema, nextCutViewSchema, paramsViewSchema, robotViewSchema, saveViewSchema } from "@/shared/near/views";
+import { cutRecordViewSchema, nextCutViewSchema, paramsViewSchema, agentViewSchema, saveViewSchema } from "@/shared/near/views";
 
 const CUT = 10n ** 18n;
 const NEAR = 10n ** 24n;
 const ns = (iso: string) => (BigInt(Date.parse(iso)) * 1_000_000n).toString();
 
 describe("view schemas", () => {
-  it("parse RobotView into camelCase with bigint pile and Date", () => {
-    const robot = robotViewSchema.parse({
+  it("parse AgentView into camelCase with bigint pile and Date", () => {
+    const agent = agentViewSchema.parse({
       id: "kiko",
       account_id: "kiko.thecut.testnet",
       name: "Kiko Bun",
@@ -19,7 +19,7 @@ describe("view schemas", () => {
       savers: 96,
       joined_at: ns("2026-11-12T15:01:00Z"),
     });
-    expect(robot).toEqual({
+    expect(agent).toEqual({
       id: "kiko",
       accountId: "kiko.thecut.testnet",
       name: "Kiko Bun",
@@ -33,8 +33,8 @@ describe("view schemas", () => {
     });
   });
 
-  it("rejects a robot status outside the interface", () => {
-    expect(robotViewSchema.safeParse({ id: "x", status: "zombie" }).success).toBe(false);
+  it("rejects an agent status outside the interface", () => {
+    expect(agentViewSchema.safeParse({ id: "x", status: "zombie" }).success).toBe(false);
   });
 
   it("parse Params, with the cut interval in nanoseconds", () => {
@@ -46,10 +46,10 @@ describe("view schemas", () => {
       stage_size: 10,
       first_cut_at: ns("2026-11-13T18:00:00Z"),
       cut_interval: "86400000000000",
-      robot_funding: (NEAR / 2n).toString(),
+      agent_funding: (NEAR / 2n).toString(),
       register_deposit: (5n * NEAR).toString(),
     });
-    expect(params).toMatchObject({ feeBps: 100, cutIntervalMs: 86_400_000, robotFunding: NEAR / 2n, firstCutAt: new Date("2026-11-13T18:00:00Z"), poolCutReserve: null });
+    expect(params).toMatchObject({ feeBps: 100, cutIntervalMs: 86_400_000, agentFunding: NEAR / 2n, firstCutAt: new Date("2026-11-13T18:00:00Z"), poolCutReserve: null });
   });
 
   it("rejects basis points above 10,000", () => {
@@ -57,7 +57,7 @@ describe("view schemas", () => {
   });
 
   it("parse saves, next cut and cut records", () => {
-    expect(saveViewSchema.parse({ robot_id: "melody", amount: (400n * CUT).toString(), since_cut: 1 })).toEqual({ robotId: "melody", amount: 400n * CUT, lockedForCut: 1 });
+    expect(saveViewSchema.parse({ agent_id: "melody", amount: (400n * CUT).toString(), since_cut: 1 })).toEqual({ agentId: "melody", amount: 400n * CUT, lockedForCut: 1 });
     expect(nextCutViewSchema.parse({ index: 1, at: ns("2026-11-13T18:00:00Z"), lowest_id: "kiko", gap_to_next: "1", prize_so_far: "2" })).toEqual({
       index: 1,
       at: new Date("2026-11-13T18:00:00Z"),

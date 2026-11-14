@@ -14,7 +14,7 @@ export function toJournalEntry(row: JournalRow): JournalEntry {
     txHash: row.txHash,
     blockHeight: row.blockHeight,
     accountId: row.accountId,
-    robotId: row.robotId,
+    agentId: row.agentId,
     cutIndex: row.cutIndex,
     amount: row.amount,
     data: row.data,
@@ -30,7 +30,7 @@ export async function getLiveJournal(filter: JournalFilter): Promise<JournalPage
 
 const sumOf = (expr: SQL, event: string) => sql<string | null>`coalesce(sum(${expr}) filter (where ${journal.event} = ${event}), 0)::text`;
 
-/** Totals over the whole journal in one scan, plus the registered robot ids. */
+/** Totals over the whole journal in one scan, plus the registered agent ids. */
 export async function getLiveJournalStats(): Promise<JournalStats> {
   const db = getDb();
   const pile = sql`(${journal.data}->>'pile')::numeric`;
@@ -49,9 +49,9 @@ export async function getLiveJournalStats(): Promise<JournalStats> {
     })
     .from(journal);
   const registered = await db
-    .selectDistinct({ robotId: journal.robotId })
+    .selectDistinct({ agentId: journal.agentId })
     .from(journal)
-    .where(and(eq(journal.event, "register"), isNotNull(journal.robotId)));
+    .where(and(eq(journal.event, "register"), isNotNull(journal.agentId)));
   const big = (value: string | null | undefined) => BigInt(value ?? "0");
   return {
     entries: Number(totals?.entries ?? 0),
@@ -62,6 +62,6 @@ export async function getLiveJournalStats(): Promise<JournalStats> {
     saved: big(totals?.saves) - big(totals?.unsaves) - big(totals?.cutPiles),
     cuts: Number(totals?.cuts ?? 0),
     buyers: Number(totals?.buyers ?? 0),
-    registered: registered.flatMap((r) => (r.robotId ? [r.robotId] : [])).sort(),
+    registered: registered.flatMap((r) => (r.agentId ? [r.agentId] : [])).sort(),
   };
 }

@@ -47,11 +47,11 @@ export function nearMoneyWhole(yocto: bigint, usdCentsPerNear: bigint | null): s
   return formatUsd((nearToUsdCents(yocto, usdCentsPerNear) / 100n) * 100n).replace(/\.00$/, "");
 }
 
-/** "400 saved on Melody-9" or "600 saved on 2 robots". Null without saves. */
-export function savedLine(saves: readonly { robotName: string; amount: bigint }[]): string | null {
+/** "400 saved on Melody-9" or "600 saved on 2 agents". Null without saves. */
+export function savedLine(saves: readonly { agentName: string; amount: bigint }[]): string | null {
   if (saves.length === 0) return null;
   const total = saves.reduce((sum, save) => sum + save.amount, 0n);
-  return saves.length === 1 ? `${cutText(total)} saved on ${saves[0].robotName}` : `${cutText(total)} saved on ${saves.length} robots`;
+  return saves.length === 1 ? `${cutText(total)} saved on ${saves[0].agentName}` : `${cutText(total)} saved on ${saves.length} agents`;
 }
 
 /** Big money, short: "$18.4M", "$812.5K", "$950". */

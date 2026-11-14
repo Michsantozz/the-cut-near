@@ -9,11 +9,11 @@ use near_sdk::{AccountId, Gas, NearToken, PromiseResult, VMContext, env, testing
 use near_sdk_contract_tools::ft::{Nep141, Nep141Controller, Nep145};
 
 use crate::Contract;
-use crate::types::{CutRecord, RobotView};
+use crate::types::{CutRecord, AgentView};
 
 mod contract_cut;
 mod contract_pool;
-mod contract_robots_saves;
+mod contract_agents_saves;
 mod math_rules;
 mod spec_day;
 
@@ -44,8 +44,8 @@ pub fn contract_id() -> AccountId {
     id("thecut.near")
 }
 
-pub fn creator_of(robot: &str) -> AccountId {
-    id(&format!("creator-{robot}.near"))
+pub fn creator_of(agent: &str) -> AccountId {
+    id(&format!("creator-{agent}.near"))
 }
 
 /// Events logged by the last call, as `(standard, event, data)`.
@@ -243,20 +243,20 @@ impl World {
         f(&self.c)
     }
 
-    /// Registers a robot created by `creator-<id>.near` and confirms its account.
-    pub fn register(&mut self, robot: &str) {
-        let creator = creator_of(robot);
+    /// Registers an agent created by `creator-<id>.near` and confirms its account.
+    pub fn register(&mut self, agent: &str) {
+        let creator = creator_of(agent);
         self.call(creator.as_str(), near(5), |c| {
-            c.register_robot(
-                robot.to_string(),
-                format!("Robot {robot}"),
-                "AI robot".to_string(),
-                format!("@{robot}"),
+            c.register_agent(
+                agent.to_string(),
+                format!("Agent {agent}"),
+                "AI agent".to_string(),
+                format!("@{agent}"),
             )
             .detach()
         });
         let created = self.callback(PromiseResult::Successful(vec![]), |c| {
-            c.on_robot_created(robot.to_string())
+            c.on_agent_created(agent.to_string())
         });
         assert!(created);
     }
@@ -265,11 +265,11 @@ impl World {
         self.call(who, amount, |c| c.buy(U128(0))).0
     }
 
-    /// Saves `amount` on `robot`, attaching 0.005 NEAR for the record's storage like the
+    /// Saves `amount` on `agent`, attaching 0.005 NEAR for the record's storage like the
     /// app does.
-    pub fn save(&mut self, who: &str, robot: &str, amount: u128) {
+    pub fn save(&mut self, who: &str, agent: &str, amount: u128) {
         self.call(who, NearToken::from_millinear(5), |c| {
-            c.save(robot.to_string(), U128(amount))
+            c.save(agent.to_string(), U128(amount))
         });
     }
 
@@ -294,8 +294,8 @@ impl World {
         self.view(|c| c.get_claimable(id(who)).0)
     }
 
-    pub fn robot(&mut self, robot: &str) -> RobotView {
-        self.view(|c| c.get_robot(robot.to_string()).expect("robot"))
+    pub fn agent(&mut self, agent: &str) -> AgentView {
+        self.view(|c| c.get_agent(agent.to_string()).expect("agent"))
     }
 
     pub fn stage_ids(&mut self) -> Vec<String> {

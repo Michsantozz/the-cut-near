@@ -6,14 +6,14 @@ import { formatAmount, formatCount, formatUtcDate, formatUtcTime, relativeUtcDay
 
 export type ReceiptTag = "launch" | "buy" | "sell" | "fee" | "save" | "unsave" | "cut" | "burn" | "prize" | "join" | "delete" | "claim" | "other";
 
-/** Entries of one NEP-297 event in one transaction (a join of 10 robots, a prize for 9 survivors) read as one line. */
+/** Entries of one NEP-297 event in one transaction (a join of 10 agents, a prize for 9 survivors) read as one line. */
 export type ReceiptGroup = { key: string; event: string; txHash: string; at: Date; entries: JournalEntry[] };
 
 export type CutReceipt = {
   index: number;
-  robotId: string | null;
-  robotName: string | null;
-  robotAccountId: string | null;
+  agentId: string | null;
+  agentName: string | null;
+  agentAccountId: string | null;
   pile: bigint;
   burned: bigint;
   prize: bigint;
@@ -36,7 +36,7 @@ export type ReceiptLine = {
 };
 
 export type DescribeContext = {
-  /** Robot names by id; unknown robots keep their id. */
+  /** Agent names by id; unknown agents keep their id. */
   names: ReadonlyMap<string, string>;
   now: Date;
   /** When cut `index` is (or was) scheduled, or null when unknown. */
@@ -120,12 +120,12 @@ function prizeOf(ctx: DescribeContext, cutIndex: number): string {
 }
 
 export function cutReceipt(data: Record<string, unknown>, names: ReadonlyMap<string, string>): CutReceipt {
-  const robotId = str(data, "robot_id") || null;
+  const agentId = str(data, "agent_id") || null;
   return {
     index: num(data, "cut_index"),
-    robotId,
-    robotName: robotId ? (names.get(robotId) ?? robotId) : null,
-    robotAccountId: str(data, "robot_account_id") || null,
+    agentId,
+    agentName: agentId ? (names.get(agentId) ?? agentId) : null,
+    agentAccountId: str(data, "agent_account_id") || null,
     pile: big(data, "pile"),
     burned: big(data, "burned"),
     prize: big(data, "prize"),
@@ -142,7 +142,7 @@ export function describeGroup(group: ReceiptGroup, ctx: DescribeContext): Receip
   const [first] = group.entries;
   const d = first.data;
   const name = (id: string) => ctx.names.get(id) ?? id;
-  const robot = name(str(d, "robot_id"));
+  const agent = name(str(d, "agent_id"));
   const n = group.entries.length;
   let what = group.event;
   let detail = "";
@@ -177,51 +177,51 @@ export function describeGroup(group: ReceiptGroup, ctx: DescribeContext): Receip
     }
     case "save": {
       const at = ctx.cutAt(num(d, "cut_index"));
-      what = `${str(d, "account_id")} saved ${cutText(big(d, "amount"))} $CUT on ${robot}`;
-      detail = `${robot}’s pile: ${cutText(big(d, "pile"))}${at ? ` · locked till ${formatUtcTime(at)} UTC` : ""}`;
+      what = `${str(d, "account_id")} saved ${cutText(big(d, "amount"))} $CUT on ${agent}`;
+      detail = `${agent}’s pile: ${cutText(big(d, "pile"))}${at ? ` · locked till ${formatUtcTime(at)} UTC` : ""}`;
       break;
     }
     case "unsave":
-      what = `${str(d, "account_id")} took back ${cutText(big(d, "amount"))} $CUT from ${robot}`;
-      detail = `With ${cutText(big(d, "prize"))} $CUT of prize · ${robot}’s pile: ${cutText(big(d, "pile"))}`;
+      what = `${str(d, "account_id")} took back ${cutText(big(d, "amount"))} $CUT from ${agent}`;
+      detail = `With ${cutText(big(d, "prize"))} $CUT of prize · ${agent}’s pile: ${cutText(big(d, "pile"))}`;
       break;
     case "cut":
       cut = cutReceipt(d, ctx.names);
-      what = cut.robotName ? `Cut #${cut.index}: ${cut.robotName} is cut` : `Cut #${cut.index}: nobody was cut`;
-      detail = cut.robotName
+      what = cut.agentName ? `Cut #${cut.index}: ${cut.agentName} is cut` : `Cut #${cut.index}: nobody was cut`;
+      detail = cut.agentName
         ? `Half of its ${cutText(cut.pile)} burned; the prize of ${cutText(cut.prize)} went out in ${formatCount(cut.survivors)} equal slices. Run by ${cut.runner}.`
         : `The stage was not full. The prize waits for the next cut. Run by ${cut.runner}.`;
       break;
     case "prize": {
       const burnedSlices = group.entries.filter((e) => e.data.burned === true).length;
-      what = n === 1 ? `${robot}’s savers got a slice of ${cutText(big(d, "slice"))} $CUT` : `${formatCount(n)} survivors got a slice of ${cutText(big(d, "slice"))} $CUT`;
-      detail = `Each slice is shared by that robot’s savers · ${cutText(big(d, "creator_slice"))} $CUT to each creator`;
+      what = n === 1 ? `${agent}’s savers got a slice of ${cutText(big(d, "slice"))} $CUT` : `${formatCount(n)} survivors got a slice of ${cutText(big(d, "slice"))} $CUT`;
+      detail = `Each slice is shared by that agent’s savers · ${cutText(big(d, "creator_slice"))} $CUT to each creator`;
       if (burnedSlices > 0) detail += ` · ${formatCount(burnedSlices)} empty ${burnedSlices === 1 ? "pile" : "piles"} burned ${burnedSlices === 1 ? "its slice" : "their slices"}`;
       break;
     }
     case "join":
       if (num(d, "cut_index") === 0 || n > 1) {
-        const ids = group.entries.map((e) => name(str(e.data, "robot_id")));
-        what = n === 1 ? `${robot} took the stage` : `${formatCount(n)} robots took the stage`;
+        const ids = group.entries.map((e) => name(str(e.data, "agent_id")));
+        what = n === 1 ? `${agent} took the stage` : `${formatCount(n)} agents took the stage`;
         detail = n === 1 ? `Its queue of ${cutText(big(d, "pile"))} $CUT became its pile` : `${ids[0]} to ${ids.at(-1)}, each made by the contract`;
       } else {
-        what = `${robot} took the empty seat`;
+        what = `${agent} took the empty seat`;
         detail = `Its queue of ${cutText(big(d, "pile"))} $CUT became its pile`;
       }
       break;
     case "register": {
       const deposit = formatAmount(big(d, "deposit"), { decimals: NEAR_DECIMALS, maxFractionDigits: 1 });
       if (n === 1) {
-        what = `${str(d, "name") || robot} joined the bench`;
+        what = `${str(d, "name") || agent} joined the bench`;
         detail = `${str(d, "account_id")} created by the contract · ${deposit} NEAR deposit`;
       } else {
-        what = `${formatCount(n)} robots joined the bench`;
+        what = `${formatCount(n)} agents joined the bench`;
         detail = `${str(d, "account_id")} to ${str(group.entries.at(-1)!.data, "account_id")}, each created by the contract`;
       }
       break;
     }
     case "delete":
-      what = `${robot}’s NEAR account was deleted`;
+      what = `${agent}’s NEAR account was deleted`;
       detail = `${str(d, "account_id")} is gone · its 0.5 NEAR went to ${str(d, "beneficiary")}, who ran the cut`;
       break;
     case "claim":

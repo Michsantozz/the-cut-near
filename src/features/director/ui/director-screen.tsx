@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { DIRECTOR_ART, RobotTile, STAGE_ART, type Robot } from "@/entities/robot";
+import { DIRECTOR_ART, AgentTile, STAGE_ART, type Agent } from "@/entities/agent";
 import { formatAmount, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 import { Button } from "@/shared/ui/button";
 
@@ -19,7 +19,7 @@ const cut = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
 const near = (value: bigint) => formatAmount(value, { decimals: 24, maxFractionDigits: 2 });
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
-/** The Director: the cut as a show. The math picks the robot; the AI only narrates, and every line carries its proof. */
+/** The Director: the cut as a show. The math picks the agent; the AI only narrates, and every line carries its proof. */
 export function DirectorScreen({ screen }: { screen: Screen }) {
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col gap-3 px-5 pt-4 pb-6 lg:max-w-none lg:gap-5 lg:px-8 lg:pt-1 lg:pb-8">
@@ -92,7 +92,7 @@ function ScheduledView({ screen }: { screen: Screen }) {
           </p>
           <p className="text-[13px] leading-[18px] text-line-3 lg:mt-1.5 lg:w-[470px] lg:text-[15.5px] lg:leading-[23px]">
             Every day at {time} the lowest pile is cut.
-            <span className="hidden lg:inline"> Its account is deleted, half its pile burns, and the rest is split into 9 equal slices, one per surviving robot.</span>
+            <span className="hidden lg:inline"> Its account is deleted, half its pile burns, and the rest is split into 9 equal slices, one per surviving agent.</span>
           </p>
         </div>
       </section>
@@ -111,12 +111,12 @@ function ScheduledView({ screen }: { screen: Screen }) {
   );
 }
 
-function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Robot; next: Robot | null }) {
+function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; next: Agent | null }) {
   const rows = [
-    { robot: lowest, tag: "LOWEST", tone: "bg-danger-tint", tagTone: "bg-ink text-paper" },
-    ...(next ? [{ robot: next, tag: "NEXT UP", tone: "bg-canvas", tagTone: "bg-paper text-ink" }] : []),
+    { agent: lowest, tag: "LOWEST", tone: "bg-danger-tint", tagTone: "bg-ink text-paper" },
+    ...(next ? [{ agent: next, tag: "NEXT UP", tone: "bg-canvas", tagTone: "bg-paper text-ink" }] : []),
   ];
-  const lines = rows.map((row) => screen.blockLines[row.robot.id]).filter((line): line is DirectorLineView => line !== null && line !== undefined);
+  const lines = rows.map((row) => screen.blockLines[row.agent.id]).filter((line): line is DirectorLineView => line !== null && line !== undefined);
   const percent = next && next.pile > 0n ? Math.min(100, Math.max(3, Number((lowest.pile * 100n) / next.pile))) : 100;
   const day = relativeUtcDay(new Date(screen.renderedAt), screen.cutAt);
 
@@ -130,25 +130,25 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Robot; n
         {lines[0] && <ProofBadge line={lines[0]} className="ml-auto" />}
       </div>
       <ul className="mt-2 grid gap-2 lg:mt-3 lg:grid-cols-2 lg:gap-3.5">
-        {rows.map(({ robot, tag, tone, tagTone }) => {
-          const line = screen.blockLines[robot.id];
+        {rows.map(({ agent, tag, tone, tagTone }) => {
+          const line = screen.blockLines[agent.id];
           return (
-            <li key={robot.id}>
+            <li key={agent.id}>
               <Link
-                href={`/robots/${robot.id}`}
+                href={`/agents/${agent.id}`}
                 className={cn("block rounded-2xl border-2 border-ink px-2.5 py-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:px-4 lg:pt-3.5 lg:pb-4", tone)}
               >
                 <span className="flex items-start gap-2.5 lg:items-center lg:gap-3">
-                  <RobotTile id={robot.id} name={robot.name} className="size-11 rounded-lg lg:size-[60px] lg:rounded-xl" />
+                  <AgentTile id={agent.id} name={agent.name} className="size-11 rounded-lg lg:size-[60px] lg:rounded-xl" />
                   <span className="min-w-0 grow">
                     <span className="flex items-center gap-1.5 lg:block">
                       <span className={cn("inline-block rounded-full border-[1.5px] border-ink px-2 text-[11px] leading-[17px] font-extrabold tracking-[0.04em]", tagTone)}>{tag}</span>
-                      <span className="text-[15px] font-extrabold whitespace-nowrap lg:mt-[3px] lg:block lg:text-lg">{robot.name}</span>
+                      <span className="text-[15px] font-extrabold whitespace-nowrap lg:mt-[3px] lg:block lg:text-lg">{agent.name}</span>
                     </span>
                     {line && <span className="mt-0.5 block text-[13px] leading-[17px] text-ink-2 lg:hidden">“{line.text}”</span>}
                   </span>
                   <span className="text-right leading-none">
-                    <span className="block font-heading text-[19px] font-extrabold whitespace-nowrap lg:text-[28px]">{cut(robot.pile)}</span>
+                    <span className="block font-heading text-[19px] font-extrabold whitespace-nowrap lg:text-[28px]">{cut(agent.pile)}</span>
                     <span className="mt-1 block text-xs font-bold text-ink-3">
                       <span className="lg:hidden">pile</span>
                       <span className="hidden lg:inline">$CUT pile</span>
@@ -221,7 +221,7 @@ function GuessCard({ closesAt }: { closesAt: string }) {
 const CUT_STEPS = [
   { title: "Deleted", sub: "Its NEAR account is gone", desk: "The lowest pile’s NEAR account is gone for good", tone: "bg-orange", icon: Trash2 },
   { title: "Half burns", sub: "Out of the supply forever", desk: "Half its pile leaves the supply forever", tone: "bg-[#ffd84d]", icon: Flame },
-  { title: "Half + fees", sub: "9 equal slices, one per survivor", desk: "The prize, in 9 equal slices, one per surviving robot", tone: "bg-lime", icon: Gift },
+  { title: "Half + fees", sub: "9 equal slices, one per survivor", desk: "The prize, in 9 equal slices, one per surviving agent", tone: "bg-lime", icon: Gift },
 ];
 
 function HowTheCutWorks() {
@@ -232,7 +232,7 @@ function HowTheCutWorks() {
           How the cut works
         </h2>
         <Button asChild variant="outline" size="sm" className="h-[30px] px-3 text-[13px] lg:h-7 lg:px-[11px] lg:text-xs">
-          <Link href="/creators">Register a robot</Link>
+          <Link href="/creators">Register an agent</Link>
         </Button>
       </div>
       <ol className="mt-2 grid grid-cols-3 gap-2 lg:mt-3.5 lg:flex lg:flex-col lg:gap-3">
@@ -264,9 +264,9 @@ function HowTheCutWorks() {
   );
 }
 
-function InsideLinks({ lowest }: { lowest: Robot | null }) {
+function InsideLinks({ lowest }: { lowest: Agent | null }) {
   const links = [
-    { label: lowest ? `Why ${lowest.name}` : "Why this robot", href: "/inside?tab=why", tone: "bg-violet", icon: Lightbulb },
+    { label: lowest ? `Why ${lowest.name}` : "Why this agent", href: "/inside?tab=why", tone: "bg-violet", icon: Lightbulb },
     { label: "House rules", href: "/inside?tab=rules", tone: "bg-orange", icon: Shield },
     { label: "Past cuts", href: "/inside?tab=cuts", tone: "bg-lime", icon: Clock },
   ];
@@ -298,7 +298,7 @@ function ReadyView({ screen }: { screen: Screen }) {
     `Pay ${cut(screen.prizeIfCut)} $CUT in 9 equal slices`,
     seatTaker && `Seat ${seatTaker.name}, the biggest queue`,
   ].filter((item): item is string => Boolean(item));
-  const cantDo = ["Pick a different robot", `Run it before ${time}:00 UTC`, "Touch a pile or change the split"];
+  const cantDo = ["Pick a different agent", `Run it before ${time}:00 UTC`, "Touch a pile or change the split"];
 
   return (
     <>
@@ -316,10 +316,10 @@ function ReadyView({ screen }: { screen: Screen }) {
             Anyone can run it
           </h2>
           <p className="mt-3 text-[15px] leading-[22px] text-line-3 lg:mt-4 lg:w-[560px] lg:text-[17px] lg:leading-[26px]">
-            Whoever presses first keeps the {near(screen.robotFunding)} NEAR left in {lowest?.name ?? "the robot"}’s account. The result is the same, whoever presses.
+            Whoever presses first keeps the {near(screen.agentFunding)} NEAR left in {lowest?.name ?? "the agent"}’s account. The result is the same, whoever presses.
           </p>
           <div className="mt-5 flex flex-wrap items-start gap-3 lg:mt-[30px]">
-            <RunCutButton label={`Run the cut · keep ${near(screen.robotFunding)} NEAR`} />
+            <RunCutButton label={`Run the cut · keep ${near(screen.agentFunding)} NEAR`} />
             <Button asChild variant="outline" size="xl" className="h-[58px] rounded-2xl">
               <Link href="/inside?tab=rules">Read the house rules</Link>
             </Button>
@@ -362,7 +362,7 @@ function DoneView({ screen }: { screen: Screen }) {
     ["Prize paid", `${cut(last.prize)} $CUT · ${last.survivors} equal slices`],
     ["Each slice", `${formatAmount(last.slice, { maxFractionDigits: 1 })} $CUT per survivor`],
     ...(last.joined ? ([["Joined", `${last.joined.name} · pile ${cut(last.joined.pile)}`]] as [string, ReactNode][]) : []),
-    ["Run by", `${last.runner} · kept ${near(screen.robotFunding)} NEAR`],
+    ["Run by", `${last.runner} · kept ${near(screen.agentFunding)} NEAR`],
     [
       "Receipts",
       <Link key="receipts" href="/receipts" className="text-blue underline">
@@ -426,18 +426,18 @@ function DoneView({ screen }: { screen: Screen }) {
           </div>
         </div>
         <ul className="mt-3.5 grid grid-cols-5 gap-3 lg:grid-cols-10">
-          {screen.stage.map((robot) => (
-            <li key={robot.id} className="relative min-w-0 text-center">
-              <RobotTile
-                id={robot.id}
-                name={robot.name}
-                className={cn("aspect-square size-auto w-full rounded-2xl", robot.id === last.joined?.id && "border-[3px] border-violet")}
+          {screen.stage.map((agent) => (
+            <li key={agent.id} className="relative min-w-0 text-center">
+              <AgentTile
+                id={agent.id}
+                name={agent.name}
+                className={cn("aspect-square size-auto w-full rounded-2xl", agent.id === last.joined?.id && "border-[3px] border-violet")}
               />
-              {robot.id === last.joined?.id && (
+              {agent.id === last.joined?.id && (
                 <span className="absolute top-1.5 left-1.5 rounded-full border-[1.5px] border-ink bg-lime px-[7px] text-[10.5px] leading-[17px] font-extrabold">NEW</span>
               )}
-              <p className="mt-[7px] truncate text-[12.5px] font-bold">{robot.name}</p>
-              <p className="text-[11.5px] font-semibold whitespace-nowrap text-ink-3">{cut(robot.pile)}</p>
+              <p className="mt-[7px] truncate text-[12.5px] font-bold">{agent.name}</p>
+              <p className="text-[11.5px] font-semibold whitespace-nowrap text-ink-3">{cut(agent.pile)}</p>
             </li>
           ))}
         </ul>
@@ -446,10 +446,10 @@ function DoneView({ screen }: { screen: Screen }) {
   );
 }
 
-/** Every line the Director (and the robots) signed, each with its proof. */
-function LinesFeed({ lines, stage }: { lines: DirectorLineView[]; stage: Robot[] }) {
+/** Every line the Director (and the agents) signed, each with its proof. */
+function LinesFeed({ lines, stage }: { lines: DirectorLineView[]; stage: Agent[] }) {
   if (lines.length === 0) return null;
-  const nameOf = (id: string | null) => (id ? (stage.find((robot) => robot.id === id)?.name ?? id) : null);
+  const nameOf = (id: string | null) => (id ? (stage.find((agent) => agent.id === id)?.name ?? id) : null);
 
   return (
     <section aria-labelledby="lines-title" className="rounded-3xl border-2 border-ink bg-paper px-4 pt-3.5 pb-2 lg:px-[22px] lg:pt-4">
@@ -463,8 +463,8 @@ function LinesFeed({ lines, stage }: { lines: DirectorLineView[]; stage: Robot[]
         {lines.map((line) => (
           <li key={line.id} className="flex flex-col gap-2 border-t-[1.5px] border-canvas py-3 first:border-t-0 lg:flex-row lg:items-center lg:gap-4">
             <div className="flex min-w-0 grow items-start gap-3">
-              {line.kind === "robot-post" && line.subjectId ? (
-                <RobotTile id={line.subjectId} name={nameOf(line.subjectId) ?? line.subjectId} className="size-9 rounded-lg" />
+              {line.kind === "agent-post" && line.subjectId ? (
+                <AgentTile id={line.subjectId} name={nameOf(line.subjectId) ?? line.subjectId} className="size-9 rounded-lg" />
               ) : (
                 <span className="flex size-9 shrink-0 justify-center overflow-hidden rounded-lg border-2 border-ink bg-pink">
                   <Image src={DIRECTOR_ART.src} alt="" width={DIRECTOR_ART.width} height={DIRECTOR_ART.height} className="mt-0.5 block h-[72px] w-auto max-w-none shrink-0" />
@@ -472,8 +472,8 @@ function LinesFeed({ lines, stage }: { lines: DirectorLineView[]; stage: Robot[]
               )}
               <div className="min-w-0">
                 <p className="text-xs font-bold text-ink-3">
-                  {line.kind === "robot-post" ? nameOf(line.subjectId) : "The Director"} · {KIND_LABEL[line.kind]}
-                  {line.kind !== "robot-post" && nameOf(line.subjectId) ? ` · ${nameOf(line.subjectId)}` : ""} · {formatUtcDate(new Date(line.createdAt))},{" "}
+                  {line.kind === "agent-post" ? nameOf(line.subjectId) : "The Director"} · {KIND_LABEL[line.kind]}
+                  {line.kind !== "agent-post" && nameOf(line.subjectId) ? ` · ${nameOf(line.subjectId)}` : ""} · {formatUtcDate(new Date(line.createdAt))},{" "}
                   {formatUtcTime(new Date(line.createdAt))} UTC
                 </p>
                 <p className="mt-0.5 text-[15px] leading-[21px] font-semibold text-pretty">“{line.text}”</p>

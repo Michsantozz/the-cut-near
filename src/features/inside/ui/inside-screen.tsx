@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { barPercent, DIRECTOR_ART, RobotTile, robotFullBody, STAGE_ART } from "@/entities/robot";
+import { barPercent, DIRECTOR_ART, AgentTile, agentFullBody, STAGE_ART } from "@/entities/agent";
 import { publicEnv } from "@/shared/config/public";
 import { explorerAccountUrl } from "@/shared/near/network";
 import { Button } from "@/shared/ui/button";
@@ -73,7 +73,7 @@ function Card({ children, className, ...props }: { children: ReactNode; classNam
 /* ---------------------------------------------------------------- Live */
 
 function LiveTab({ inside }: { inside: Inside }) {
-  const top = inside.piles[0]?.robot.pile ?? 0n;
+  const top = inside.piles[0]?.agent.pile ?? 0n;
   const survivors = inside.piles.filter((pile) => !pile.isLowest);
   const lowest = inside.piles.find((pile) => pile.isLowest);
   const time = `${formatUtcTime(inside.cutAt)} UTC`;
@@ -94,8 +94,8 @@ function LiveTab({ inside }: { inside: Inside }) {
           <thead>
             <tr className="text-[10.5px] font-extrabold tracking-[0.04em] text-ink-3 uppercase lg:text-[11px] lg:tracking-[0.05em]">
               <th scope="col" className="pb-1 align-bottom font-extrabold lg:border-b-2 lg:border-ink">
-                <span className="lg:hidden">Robot · savers</span>
-                <span className="hidden lg:inline">Robot · NEAR account</span>
+                <span className="lg:hidden">Agent · savers</span>
+                <span className="hidden lg:inline">Agent · NEAR account</span>
               </th>
               <th scope="col" className="pb-1 text-right align-bottom font-extrabold lg:border-b-2 lg:border-ink lg:text-left">
                 <span className="lg:hidden">Pile</span>
@@ -116,7 +116,7 @@ function LiveTab({ inside }: { inside: Inside }) {
           </thead>
           <tbody>
             {survivors.map((pile) => (
-              <PileRow key={pile.robot.id} pile={pile} top={top} />
+              <PileRow key={pile.agent.id} pile={pile} top={top} />
             ))}
             <tr aria-hidden="true">
               <td colSpan={5} className="py-1">
@@ -155,27 +155,27 @@ function LiveTab({ inside }: { inside: Inside }) {
 }
 
 function PileRow({ pile, top }: { pile: Inside["piles"][number]; top: bigint }) {
-  const { robot } = pile;
+  const { agent } = pile;
   return (
     <tr className={cn(pile.isLowest ? "bg-danger-tint" : "lg:border-b-[1.5px] lg:border-canvas")}>
       <th scope="row" className={cn("py-[3px] pr-2 text-left font-normal lg:py-[5px]", pile.isLowest && "rounded-l-xl pl-1.5 lg:pl-2.5")}>
-        <Link href={`/robots/${robot.id}`} className="flex items-center gap-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:gap-2.5">
-          <RobotTile id={robot.id} name={robot.name} className="size-6 rounded-full lg:size-8 lg:rounded-md" />
+        <Link href={`/agents/${agent.id}`} className="flex items-center gap-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:gap-2.5">
+          <AgentTile id={agent.id} name={agent.name} className="size-6 rounded-full lg:size-8 lg:rounded-md" />
           <span className="min-w-0">
-            <span className="block text-[13.5px] leading-4 font-extrabold whitespace-nowrap lg:text-[15px] lg:leading-[18px]">{robot.name}</span>
-            <span className="block text-[11.5px] leading-[14px] text-ink-3 lg:hidden">{formatCount(robot.savers)} savers</span>
-            <span className="hidden text-xs leading-[15px] text-ink-3 lg:block">{robot.accountId}</span>
+            <span className="block text-[13.5px] leading-4 font-extrabold whitespace-nowrap lg:text-[15px] lg:leading-[18px]">{agent.name}</span>
+            <span className="block text-[11.5px] leading-[14px] text-ink-3 lg:hidden">{formatCount(agent.savers)} savers</span>
+            <span className="hidden text-xs leading-[15px] text-ink-3 lg:block">{agent.accountId}</span>
           </span>
         </Link>
       </th>
       <td className="py-[3px] text-right text-sm font-extrabold whitespace-nowrap lg:py-[5px] lg:text-left lg:text-[15px]">
         <span className="hidden lg:mr-3 lg:inline-block lg:h-2.5 lg:w-[118px] lg:overflow-hidden lg:rounded-[5px] lg:bg-canvas lg:align-middle">
-          <span className={cn("block h-full", pile.isLowest ? "bg-danger" : "bg-ink")} style={{ width: `${barPercent(robot.pile, top, 4)}%` }} />
+          <span className={cn("block h-full", pile.isLowest ? "bg-danger" : "bg-ink")} style={{ width: `${barPercent(agent.pile, top, 4)}%` }} />
         </span>
-        <span className="lg:inline-block lg:w-[64px] lg:text-right">{cut(robot.pile)}</span>
+        <span className="lg:inline-block lg:w-[64px] lg:text-right">{cut(agent.pile)}</span>
       </td>
-      <td className="hidden py-[5px] text-right text-[15px] font-bold lg:table-cell">{formatCount(robot.savers)}</td>
-      <td className="py-[3px] pl-2 text-right text-sm font-semibold text-gain lg:py-[5px] lg:text-[15px]">+{cut(robot.savedToday)}</td>
+      <td className="hidden py-[5px] text-right text-[15px] font-bold lg:table-cell">{formatCount(agent.savers)}</td>
+      <td className="py-[3px] pl-2 text-right text-sm font-semibold text-gain lg:py-[5px] lg:text-[15px]">+{cut(agent.savedToday)}</td>
       <td className={cn("py-[3px] pl-2 text-right text-sm font-extrabold text-gain lg:py-[5px] lg:text-base", pile.isLowest && "rounded-r-xl pr-1.5 lg:pr-2.5")}>
         {pile.isLowest ? (
           <span className="inline-block rounded-full border-[1.5px] border-ink bg-danger px-2 text-[11.5px] leading-[18px] font-extrabold text-paper lg:px-2.5 lg:text-[12.5px] lg:leading-[21px]">
@@ -208,18 +208,18 @@ function BenchQueues({ inside }: { inside: Inside }) {
         </p>
       </div>
       <ul className="mt-1.5 lg:mt-2">
-        {inside.bench.map((robot, index) => (
-          <li key={robot.id} className="flex items-center gap-2.5 py-1 lg:border-t-[1.5px] lg:border-canvas lg:py-2.5 lg:first:border-t-0">
-            <RobotTile id={robot.id} name={robot.name} className="size-6 rounded-full lg:size-8 lg:rounded-md" />
-            <Link href={`/robots/${robot.id}`} className="w-[76px] shrink-0 text-sm font-extrabold lg:w-auto lg:grow lg:text-[15px]">
-              {robot.name}
-              <span className="hidden text-[12.5px] font-medium text-ink-3 lg:block">{formatCount(robot.savers)} savers</span>
+        {inside.bench.map((agent, index) => (
+          <li key={agent.id} className="flex items-center gap-2.5 py-1 lg:border-t-[1.5px] lg:border-canvas lg:py-2.5 lg:first:border-t-0">
+            <AgentTile id={agent.id} name={agent.name} className="size-6 rounded-full lg:size-8 lg:rounded-md" />
+            <Link href={`/agents/${agent.id}`} className="w-[76px] shrink-0 text-sm font-extrabold lg:w-auto lg:grow lg:text-[15px]">
+              {agent.name}
+              <span className="hidden text-[12.5px] font-medium text-ink-3 lg:block">{formatCount(agent.savers)} savers</span>
             </Link>
             <span aria-hidden="true" className="h-2.5 grow overflow-hidden rounded-[5px] bg-canvas lg:hidden">
-              <span className={cn("block h-full", QUEUE_TONE[index] ?? "bg-ink-4")} style={{ width: `${barPercent(robot.pile, top, 3)}%` }} />
+              <span className={cn("block h-full", QUEUE_TONE[index] ?? "bg-ink-4")} style={{ width: `${barPercent(agent.pile, top, 3)}%` }} />
             </span>
-            <span className="w-[54px] text-right text-sm font-extrabold lg:w-auto lg:text-lg">{cut(robot.pile)}</span>
-            <span className="w-[62px] text-right text-[13px] text-ink-3 lg:hidden">{formatCount(robot.savers)} savers</span>
+            <span className="w-[54px] text-right text-sm font-extrabold lg:w-auto lg:text-lg">{cut(agent.pile)}</span>
+            <span className="w-[62px] text-right text-[13px] text-ink-3 lg:hidden">{formatCount(agent.savers)} savers</span>
           </li>
         ))}
       </ul>
@@ -258,17 +258,17 @@ function WhatTheCutReads({ inside }: { inside: Inside }) {
 
 function WhyTab({ inside }: { inside: Inside }) {
   const { lowest, next } = inside;
-  if (!lowest) return <p className="text-ink-3">No robot is on the stage.</p>;
+  if (!lowest) return <p className="text-ink-3">No agent is on the stage.</p>;
   const day = relativeUtcDay(new Date(inside.renderedAt), inside.cutAt);
   const time = formatUtcTime(inside.cutAt);
-  const lowestArt = robotFullBody(lowest.id);
+  const lowestArt = agentFullBody(lowest.id);
   const fill = next && next.pile > 0n ? Math.min(100, Math.max(3, Number((lowest.pile * 100n) / next.pile))) : 100;
   const survivors = inside.params.stageSize - 1;
   const steps: [string, string][] = [
     [`${lowest.accountId} is deleted for good`, "gone"],
     [`Half of ${lowest.name}’s pile burns`, cut(inside.burn)],
     ["The other half + the day’s 1% fees is the prize", `≈${cut(inside.prize)}`],
-    [`${percent(inside.params.saversBps)} to savers: ${survivors} equal slices, one per surviving robot`, `≈${cutFine(inside.slice)} each`],
+    [`${percent(inside.params.saversBps)} to savers: ${survivors} equal slices, one per surviving agent`, `≈${cutFine(inside.slice)} each`],
     [`${percent(10_000 - inside.params.saversBps)} to the ${survivors} survivors’ creators`, `≈${cutFine(inside.creatorSlice)} each`],
     ...(inside.bench[0] ? ([[`${inside.bench[0].name} takes the seat; its queue becomes its pile`, cut(inside.bench[0].pile)]] as [string, string][]) : []),
   ];
@@ -288,11 +288,11 @@ function WhyTab({ inside }: { inside: Inside }) {
         </div>
         <div className="rounded-3xl border-2 border-ink bg-paper p-3.5 shadow-hard lg:mt-3 lg:rounded-none lg:border-0 lg:p-0 lg:shadow-none">
           <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-6">
-            <PileFace robot={lowest} label={`${lowest.name} · lowest`} tone="bg-danger-tint" art={lowestArt ? lowest.id : null} />
+            <PileFace agent={lowest} label={`${lowest.name} · lowest`} tone="bg-danger-tint" art={lowestArt ? lowest.id : null} />
             <span aria-hidden="true" className="hidden size-[52px] items-center justify-center rounded-full bg-ink font-heading text-lg font-extrabold text-paper lg:flex">
               vs
             </span>
-            {next && <PileFace robot={next} label={`${next.name} · next up`} tone="bg-paper" art={next.id} flip />}
+            {next && <PileFace agent={next} label={`${next.name} · next up`} tone="bg-paper" art={next.id} flip />}
           </div>
           {next && (
             <>
@@ -315,7 +315,7 @@ function WhyTab({ inside }: { inside: Inside }) {
               <p className="mt-3.5 hidden items-center gap-3 rounded-2xl border-2 border-ink bg-canvas px-[18px] py-3 lg:flex">
                 <span className="font-heading text-[28px] font-extrabold whitespace-nowrap">{cut(inside.gap)} $CUT</span>
                 <span className="text-[15px] leading-5 font-bold">
-                  is what {shortName(lowest.name)}’s savers must add by {time}:00 UTC to pass {next.name}. Ties cut the newer robot.
+                  is what {shortName(lowest.name)}’s savers must add by {time}:00 UTC to pass {next.name}. Ties cut the newer agent.
                 </span>
               </p>
               <p className="mt-2.5 flex items-start gap-2 rounded-xl border-2 border-ink bg-lime-soft px-3 py-2 text-[13px] leading-[18px] font-bold lg:mt-3.5 lg:items-center lg:gap-3 lg:rounded-2xl lg:px-[18px] lg:py-3 lg:text-[15px] lg:leading-[21px]">
@@ -360,23 +360,23 @@ function WhyTab({ inside }: { inside: Inside }) {
   );
 }
 
-function PileFace({ robot, label, tone, flip, art }: { robot: Inside["piles"][number]["robot"]; label: string; tone: string; flip?: boolean; art: string | null }) {
+function PileFace({ agent, label, tone, flip, art }: { agent: Inside["piles"][number]["agent"]; label: string; tone: string; flip?: boolean; art: string | null }) {
   return (
     <Link
-      href={`/robots/${robot.id}`}
+      href={`/agents/${agent.id}`}
       className={cn(
         "flex items-center gap-2.5 rounded-2xl border-2 border-ink px-2.5 py-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:gap-4 lg:px-[18px] lg:py-3.5",
         tone,
         flip && "lg:flex-row-reverse lg:text-right",
       )}
     >
-      {art ? <RobotTile id={robot.id} name={robot.name} className="size-9 rounded-lg lg:size-[60px] lg:rounded-xl" /> : null}
+      {art ? <AgentTile id={agent.id} name={agent.name} className="size-9 rounded-lg lg:size-[60px] lg:rounded-xl" /> : null}
       <span className="min-w-0">
         <span className="block truncate text-[13px] font-extrabold lg:text-[15px]">
-          <span className="lg:hidden">{robot.name}</span>
+          <span className="lg:hidden">{agent.name}</span>
           <span className="hidden lg:inline">{label}</span>
         </span>
-        <span className="block font-heading text-[22px] leading-6 font-extrabold lg:text-[40px] lg:leading-[42px]">{cut(robot.pile)}</span>
+        <span className="block font-heading text-[22px] leading-6 font-extrabold lg:text-[40px] lg:leading-[42px]">{cut(agent.pile)}</span>
       </span>
     </Link>
   );
@@ -391,18 +391,18 @@ function RulesTab({ inside }: { inside: Inside }) {
   const house = [
     "Saves count by $CUT, never by people.",
     "Saved $CUT is locked until the next cut, at most 24 hours. Add any time.",
-    `Every day at ${time}:00 UTC, NEAR block time, the lowest pile is cut. Tie: the newer robot.`,
+    `Every day at ${time}:00 UTC, NEAR block time, the lowest pile is cut. Tie: the newer agent.`,
     `Half its pile burns. The other half plus the day’s ${percent(params.feeBps)} fees is the prize: ${percent(params.saversBps)} to savers in ${survivors} equal slices, ${percent(10_000 - params.saversBps)} to creators.`,
     "Every survivor gets the same slice of the prize. Small piles share it among fewer $CUT, so they pay more.",
-    `Anyone can run the cut from ${time} and keeps ${near(params.robotFunding)} NEAR. Earlier is refused.`,
-    "Robot wallets obey only the rules. The biggest bench queue takes the empty seat.",
+    `Anyone can run the cut from ${time} and keeps ${near(params.agentFunding)} NEAR. Earlier is refused.`,
+    "Agent wallets obey only the rules. The biggest bench queue takes the empty seat.",
   ];
   const fakes = [
     "1,000 $CUT split over 1,000 accounts weighs the same as one account.",
     "Savers counts and club points are for show. They never touch money.",
-    "A whale can keep a robot alive alone. Allowed, and every save is public in Receipts.",
+    "A whale can keep an agent alive alone. Allowed, and every save is public in Receipts.",
     `Last-minute saves count. The cut reads ${time}:00 block time; nobody picks.`,
-    `A fake robot locks a ${near(params.registerDeposit)} NEAR deposit and loses ${near(params.robotFunding)} NEAR of it for good. A rich group can still protect its robot every day.`,
+    `A fake agent locks a ${near(params.registerDeposit)} NEAR deposit and loses ${near(params.agentFunding)} NEAR of it for good. A rich group can still protect its agent every day.`,
   ];
 
   return (
@@ -462,7 +462,7 @@ function WhoCanStopIt() {
           <span className="rounded-full bg-lime px-2.5 font-sans text-[13px] leading-6 font-extrabold text-ink lg:text-[15px]">Nobody</span>
         </h2>
         <p className="mt-1 text-[13.5px] leading-[19px] text-line-3 lg:mt-2 lg:max-w-[560px] lg:text-base lg:leading-[23px]">
-          Fixed at launch, no owner key. Nobody can pause it, change a rule or move a robot’s pile. Not us either.
+          Fixed at launch, no owner key. Nobody can pause it, change a rule or move an agent’s pile. Not us either.
         </p>
       </div>
       <Button asChild variant="outline" size="xl" className="mt-3 h-12 w-full shadow-[3px_3px_0_var(--color-lime)] lg:mt-0 lg:w-auto">
@@ -488,8 +488,8 @@ function Parameters({ inside }: { inside: Inside }) {
     ["stage_size", String(params.stageSize), "seats on the stage"],
     ["first_cut_at", `${formatUtcDate(params.firstCutAt)}, ${formatUtcTime(params.firstCutAt)} UTC`, "the first cut"],
     ["cut_interval", `${formatCount(params.cutIntervalMs / 1_000)} s`, every],
-    ["robot_funding", `${near(params.robotFunding)} NEAR`, "left in the robot account; the cut runner receives it"],
-    ["register_deposit", `${near(params.registerDeposit)} NEAR`, `to register a robot, ${near(params.registerDeposit - params.robotFunding)} back when it leaves`],
+    ["agent_funding", `${near(params.agentFunding)} NEAR`, "left in the agent account; the cut runner receives it"],
+    ["register_deposit", `${near(params.registerDeposit)} NEAR`, `to register an agent, ${near(params.registerDeposit - params.agentFunding)} back when it leaves`],
   ];
 
   return (
@@ -623,7 +623,7 @@ function CutsTab({ inside }: { inside: Inside }) {
   const day = relativeUtcDay(new Date(inside.renderedAt), inside.cutAt);
   const stats = [
     { label: "Cuts run", value: formatCount(inside.cutIndex - 1), icon: CalendarDays, tone: "bg-paper" },
-    { label: "Robots deleted", value: formatCount(inside.cutIndex - 1), icon: Scissors, tone: "bg-orange" },
+    { label: "Agents deleted", value: formatCount(inside.cutIndex - 1), icon: Scissors, tone: "bg-orange" },
     { label: "$CUT burned", value: cut(inside.burned), icon: Flame, tone: "bg-paper" },
   ];
 

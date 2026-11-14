@@ -59,7 +59,7 @@ type Alert = { kind: AlertKind; title: string; sub: string; icon: LucideIcon; to
 export function AlertSwitches({ initialOff, finalHour }: { initialOff: AlertKind[]; finalHour: string }) {
   const [off, setOff] = useState<AlertKind[]>(initialOff);
   const alerts: Alert[] = [
-    { kind: "danger", title: "Your robot is in danger", sub: "When it sits in the bottom two", icon: TriangleAlert, tone: "bg-orange" },
+    { kind: "danger", title: "Your agent is in danger", sub: "When it sits in the bottom two", icon: TriangleAlert, tone: "bg-orange" },
     { kind: "final", title: "Final hour", sub: `Every day at ${finalHour} UTC`, icon: Clock, tone: "bg-[#ffd84d]" },
     { kind: "prize", title: "Prize is ready", sub: "Every day, right after the cut", icon: Gift, tone: "bg-lime" },
   ];

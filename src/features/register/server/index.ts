@@ -1,3 +1,3 @@
 import "server-only";
 
-export { checkRobotId, type RobotIdStatus } from "./actions";
+export { checkAgentId, type AgentIdStatus } from "./actions";

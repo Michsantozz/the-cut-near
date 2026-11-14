@@ -9,7 +9,7 @@ export const SAMPLE_PARAMS: Params = {
   stageSize: 10,
   firstCutAt: new Date("2026-11-13T18:00:00Z"),
   cutIntervalMs: 86_400_000,
-  robotFunding: units(5, NEAR_DECIMALS) / 10n,
+  agentFunding: units(5, NEAR_DECIMALS) / 10n,
   registerDeposit: units(5, NEAR_DECIMALS),
 };
 

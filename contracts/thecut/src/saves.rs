@@ -1,8 +1,8 @@
 //! Saves, unsaves and prize claims.
 //!
-//! Prizes use a reward-per-unit accumulator per robot: at each cut, a surviving robot's
+//! Prizes use a reward-per-unit accumulator per agent: at each cut, a surviving agent's
 //! accumulator grows by `slice / pile`. A save's prize is `amount * (accumulator now -
-//! accumulator when it last settled)`. So the cut touches each robot once and never
+//! accumulator when it last settled)`. So the cut touches each agent once and never
 //! loops over savers, and `claim` only loops over the caller's own saves (at most
 //! `MAX_SAVES_PER_ACCOUNT`).
 //!
@@ -13,11 +13,11 @@
 use near_sdk::json_types::U128;
 use near_sdk::{AccountId, env, near, require};
 
-use crate::types::{RobotId, RobotStatus, RobotStatusView, SaveRecord, SaveView};
+use crate::types::{AgentId, AgentStatus, AgentStatusView, SaveRecord, SaveView};
 use crate::{Contract, ContractExt, MAX_SAVES_PER_ACCOUNT, MIN_SAVE, checked, events, math};
 
 impl Contract {
-    /// Prize earned by `record` on a robot whose accumulator is `acc_now`, including what
+    /// Prize earned by `record` on an agent whose accumulator is `acc_now`, including what
     /// was already settled on the record.
     pub(crate) fn record_prize(record: &SaveRecord, acc_now: u128) -> u128 {
         let pending = checked(math::pending_reward(
@@ -28,39 +28,39 @@ impl Contract {
         checked(record.owed.checked_add(pending))
     }
 
-    fn remove_saver_robot(&mut self, account_id: &AccountId, robot_id: &str) {
-        let Some(list) = self.saver_robots.get_mut(account_id) else {
+    fn remove_saver_agent(&mut self, account_id: &AccountId, agent_id: &str) {
+        let Some(list) = self.saver_agents.get_mut(account_id) else {
             return;
         };
-        list.retain(|id| id != robot_id);
+        list.retain(|id| id != agent_id);
         if list.is_empty() {
-            self.saver_robots.remove(account_id);
+            self.saver_agents.remove(account_id);
         }
     }
 }
 
 #[near]
 impl Contract {
-    /// Locks `amount` $CUT into a stage robot's pile or a bench robot's queue until the
+    /// Locks `amount` $CUT into a stage agent's pile or a bench agent's queue until the
     /// next cut. Adding to an existing save locks the whole save again until the next cut.
     ///
     /// The save record's storage is paid from the caller's NEP-145 storage balance; any
     /// NEAR attached is added to that balance first.
     #[payable]
-    pub fn save(&mut self, robot_id: RobotId, amount: U128) -> U128 {
+    pub fn save(&mut self, agent_id: AgentId, amount: U128) -> U128 {
         let account_id = env::predecessor_account_id();
         require!(
             !self.cut_is_due(),
-            "The cut is due: piles are frozen until someone calls run_cut (anyone can, and keeps the robot's 0.5 NEAR)"
+            "The cut is due: piles are frozen until someone calls run_cut (anyone can, and keeps the agent's 0.5 NEAR)"
         );
         require!(amount.0 > 0, "amount must be positive");
-        let robot = self.robot(&robot_id);
-        match robot.status {
-            RobotStatus::Stage | RobotStatus::Bench => {}
-            RobotStatus::Pending => env::panic_str("This robot is still being created"),
-            RobotStatus::Deleted => env::panic_str("This robot was cut"),
+        let agent = self.agent(&agent_id);
+        match agent.status {
+            AgentStatus::Stage | AgentStatus::Bench => {}
+            AgentStatus::Pending => env::panic_str("This agent is still being created"),
+            AgentStatus::Deleted => env::panic_str("This agent was cut"),
         }
-        let acc_now = robot.reward_per_unit;
+        let acc_now = agent.reward_per_unit;
         let balance = near_sdk_contract_tools::ft::Nep141Controller::balance_of(self, &account_id);
         require!(
             balance >= amount.0,
@@ -74,7 +74,7 @@ impl Contract {
         self.top_up_storage(&account_id, env::attached_deposit());
         self.require_registered(&account_id);
 
-        let key = (account_id.clone(), robot_id.clone());
+        let key = (account_id.clone(), agent_id.clone());
         let lock = self.next_cut_index;
         let total = match self.saves.get_mut(&key) {
             Some(record) => {
@@ -90,14 +90,14 @@ impl Contract {
                     amount.0 >= MIN_SAVE,
                     format!("A new save must be at least {MIN_SAVE} units (0.1 $CUT)")
                 );
-                let list = self.saver_robots.entry(account_id.clone()).or_default();
+                let list = self.saver_agents.entry(account_id.clone()).or_default();
                 require!(
                     list.len() < MAX_SAVES_PER_ACCOUNT,
                     format!(
-                        "You already have saves on {MAX_SAVES_PER_ACCOUNT} robots: unsave or claim first"
+                        "You already have saves on {MAX_SAVES_PER_ACCOUNT} agents: unsave or claim first"
                     )
                 );
-                list.push(robot_id.clone());
+                list.push(agent_id.clone());
                 self.saves.insert(
                     key,
                     SaveRecord {
@@ -107,14 +107,14 @@ impl Contract {
                         owed: 0,
                     },
                 );
-                let robot = self.robot_mut(&robot_id);
-                robot.savers = checked(robot.savers.checked_add(1));
+                let agent = self.agent_mut(&agent_id);
+                agent.savers = checked(agent.savers.checked_add(1));
                 amount.0
             }
         };
-        let robot = self.robot_mut(&robot_id);
-        robot.pile = checked(robot.pile.checked_add(amount.0));
-        let pile = robot.pile;
+        let agent = self.agent_mut(&agent_id);
+        agent.pile = checked(agent.pile.checked_add(amount.0));
+        let pile = agent.pile;
         self.total_saved = checked(self.total_saved.checked_add(amount.0));
         self.settle_storage(&account_id, start);
 
@@ -123,7 +123,7 @@ impl Contract {
             "save",
             &[events::Save {
                 account_id,
-                robot_id,
+                agent_id,
                 amount,
                 total: U128(total),
                 pile: U128(pile),
@@ -134,37 +134,37 @@ impl Contract {
     }
 
     /// Takes back a whole save, with the prize it earned. Allowed once the cut it was
-    /// locked for has run, on a robot that survived it or a bench robot that is still
-    /// waiting. A save on a cut robot is gone; `claim` collects what it earned before.
-    pub fn unsave(&mut self, robot_id: RobotId) -> U128 {
+    /// locked for has run, on an agent that survived it or a bench agent that is still
+    /// waiting. A save on a cut agent is gone; `claim` collects what it earned before.
+    pub fn unsave(&mut self, agent_id: AgentId) -> U128 {
         let account_id = env::predecessor_account_id();
         require!(
             !self.cut_is_due(),
             "The cut is due: piles are frozen until someone calls run_cut"
         );
-        let key = (account_id.clone(), robot_id.clone());
+        let key = (account_id.clone(), agent_id.clone());
         let record = *self
             .saves
             .get(&key)
-            .unwrap_or_else(|| env::panic_str("You have no save on this robot"));
-        let robot = self.robot(&robot_id);
+            .unwrap_or_else(|| env::panic_str("You have no save on this agent"));
+        let agent = self.agent(&agent_id);
         require!(
-            robot.status != RobotStatus::Deleted,
-            "This robot was cut: its saves are gone. Call claim() for the prizes it earned before"
+            agent.status != AgentStatus::Deleted,
+            "This agent was cut: its saves are gone. Call claim() for the prizes it earned before"
         );
         require!(
             self.next_cut_index > record.locked_for,
             format!("Locked until cut {} has run", record.locked_for)
         );
-        let prize = Self::record_prize(&record, robot.reward_per_unit);
+        let prize = Self::record_prize(&record, agent.reward_per_unit);
 
         let start = env::storage_usage();
         self.saves.remove(&key);
-        self.remove_saver_robot(&account_id, &robot_id);
-        let robot = self.robot_mut(&robot_id);
-        robot.pile = checked(robot.pile.checked_sub(record.amount));
-        robot.savers = robot.savers.saturating_sub(1);
-        let pile = robot.pile;
+        self.remove_saver_agent(&account_id, &agent_id);
+        let agent = self.agent_mut(&agent_id);
+        agent.pile = checked(agent.pile.checked_sub(record.amount));
+        agent.savers = agent.savers.saturating_sub(1);
+        let pile = agent.pile;
         self.total_saved = checked(self.total_saved.checked_sub(record.amount));
         self.prizes_outstanding = checked(self.prizes_outstanding.checked_sub(prize));
         self.settle_storage(&account_id, start);
@@ -175,7 +175,7 @@ impl Contract {
             "unsave",
             &[events::Unsave {
                 account_id,
-                robot_id,
+                agent_id,
                 amount: U128(record.amount),
                 prize: U128(prize),
                 pile: U128(pile),
@@ -185,7 +185,7 @@ impl Contract {
     }
 
     /// Sends the caller every prize it can collect: prizes earned by its saves (which keep
-    /// riding) and its creator slices. Clears its records on cut robots. Any NEAR
+    /// riding) and its creator slices. Clears its records on cut agents. Any NEAR
     /// attached is added to the caller's storage balance (needed once to receive $CUT).
     #[payable]
     pub fn claim(&mut self) -> U128 {
@@ -195,23 +195,23 @@ impl Contract {
 
         let start = env::storage_usage();
         let mut total: u128 = 0;
-        let robot_ids = self
-            .saver_robots
+        let agent_ids = self
+            .saver_agents
             .get(&account_id)
             .cloned()
             .unwrap_or_default();
-        for robot_id in robot_ids {
-            let key = (account_id.clone(), robot_id.clone());
+        for agent_id in agent_ids {
+            let key = (account_id.clone(), agent_id.clone());
             let Some(record) = self.saves.get(&key).copied() else {
                 continue;
             };
-            let robot = self.robot(&robot_id);
-            let (acc_now, deleted) = (robot.reward_per_unit, robot.status == RobotStatus::Deleted);
+            let agent = self.agent(&agent_id);
+            let (acc_now, deleted) = (agent.reward_per_unit, agent.status == AgentStatus::Deleted);
             let prize = Self::record_prize(&record, acc_now);
             total = checked(total.checked_add(prize));
             if deleted {
                 self.saves.remove(&key);
-                self.remove_saver_robot(&account_id, &robot_id);
+                self.remove_saver_agent(&account_id, &agent_id);
             } else if let Some(record) = self.saves.get_mut(&key) {
                 record.owed = 0;
                 record.reward_snapshot = acc_now;
@@ -236,37 +236,37 @@ impl Contract {
         U128(total)
     }
 
-    /// The account's saves, including records on cut robots that `claim` has not cleared.
+    /// The account's saves, including records on cut agents that `claim` has not cleared.
     pub fn get_saves(&self, account_id: AccountId) -> Vec<SaveView> {
-        let Some(robot_ids) = self.saver_robots.get(&account_id) else {
+        let Some(agent_ids) = self.saver_agents.get(&account_id) else {
             return Vec::new();
         };
-        robot_ids
+        agent_ids
             .iter()
-            .filter_map(|robot_id| {
-                let record = self.saves.get(&(account_id.clone(), robot_id.clone()))?;
-                let robot = self.robots.get(robot_id)?;
-                let robot_status = match robot.status {
-                    RobotStatus::Stage => RobotStatusView::Stage,
-                    RobotStatus::Deleted => RobotStatusView::Deleted,
-                    RobotStatus::Bench | RobotStatus::Pending => RobotStatusView::Bench,
+            .filter_map(|agent_id| {
+                let record = self.saves.get(&(account_id.clone(), agent_id.clone()))?;
+                let agent = self.agents.get(agent_id)?;
+                let agent_status = match agent.status {
+                    AgentStatus::Stage => AgentStatusView::Stage,
+                    AgentStatus::Deleted => AgentStatusView::Deleted,
+                    AgentStatus::Bench | AgentStatus::Pending => AgentStatusView::Bench,
                 };
                 Some(SaveView {
-                    robot_id: robot_id.clone(),
+                    agent_id: agent_id.clone(),
                     amount: U128(record.amount),
                     since_cut: record.locked_for,
                     unlocked: self.next_cut_index > record.locked_for
-                        && robot.status != RobotStatus::Deleted,
+                        && agent.status != AgentStatus::Deleted,
                     prize: U128(
                         math::pending_reward(
                             record.amount,
-                            robot.reward_per_unit,
+                            agent.reward_per_unit,
                             record.reward_snapshot,
                         )
                         .and_then(|p| p.checked_add(record.owed))
                         .unwrap_or(0),
                     ),
-                    robot_status,
+                    agent_status,
                 })
             })
             .collect()

@@ -14,9 +14,9 @@ export function MemberCard({ member, cutAt }: { member: LineupMember; cutAt: Dat
   const locked = `locked till ${formatUtcTime(cutAt)} UTC`;
   const savedLine =
     saves.length === 1
-      ? { bold: `${cutFine(saves[0].amount)} saved on ${saves[0].robotName}`, href: `/robots/${saves[0].robotId}` }
+      ? { bold: `${cutFine(saves[0].amount)} saved on ${saves[0].agentName}`, href: `/agents/${saves[0].agentId}` }
       : saves.length > 1
-        ? { bold: `${cutFine(savedTotal)} saved on ${saves.length} robots`, href: "/activity" }
+        ? { bold: `${cutFine(savedTotal)} saved on ${saves.length} agents`, href: "/activity" }
         : null;
 
   return (

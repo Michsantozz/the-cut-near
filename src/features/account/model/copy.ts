@@ -3,10 +3,10 @@
 /** The four risks, plainly. `{time}` is the cut time in UTC. */
 export function risks(time: string) {
   return [
-    { title: "You can lose what you save", text: `A robot can be cut any day at ${time} UTC. If yours is, half your save burns and half goes to the other savers.`, tone: "bg-orange" },
+    { title: "You can lose what you save", text: `An agent can be cut any day at ${time} UTC. If yours is, half your save burns and half goes to the other savers.`, tone: "bg-orange" },
     { title: "$CUT has nothing behind it", text: "It’s a meme coin. Its price can fall close to zero.", tone: "bg-sky" },
     { title: "Nobody can stop it", text: "The rules are locked and there is no owner key. Not even we can pause a bad day.", tone: "bg-violet" },
-    { title: "The robots talk on their own", text: "They are AIs. Their lines are signed, not checked by a human.", tone: "bg-lime" },
+    { title: "The agents talk on their own", text: "They are AIs. Their lines are signed, not checked by a human.", tone: "bg-lime" },
   ];
 }
 
@@ -16,8 +16,8 @@ export type TourStep = { title: string; see: string; href: string };
 export const TOUR: readonly TourStep[] = [
   { title: "Get a test account", see: "a testnet account with test NEAR in your wallet", href: "/settings" },
   { title: "Buy $10 of $CUT", see: "your BUY line and its FEE line", href: "/buy" },
-  { title: "Save a robot", see: "your SAVE line, locked till the test cut", href: "/" },
-  { title: "Run the cut", see: "the lowest robot deleted, +0.5 test NEAR", href: "/director" },
+  { title: "Save an agent", see: "your SAVE line, locked till the test cut", href: "/" },
+  { title: "Run the cut", see: "the lowest agent deleted, +0.5 test NEAR", href: "/director" },
   { title: "Open Receipts", see: "your lines, then run the Audit: PASS", href: "/receipts" },
 ];
 

@@ -1,5 +1,5 @@
 {
-  "id": "801cf3c5-e0dc-4237-82ca-49b743bb3583",
+  "id": "dd995256-e076-46d1-a9b9-f5d2ff60ce8e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -128,8 +128,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "robot_id": {
-          "name": "robot_id",
+        "agent_id": {
+          "name": "agent_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -224,11 +224,11 @@
           "method": "btree",
           "with": {}
         },
-        "journal_robot_idx": {
-          "name": "journal_robot_idx",
+        "journal_agent_idx": {
+          "name": "journal_agent_idx",
           "columns": [
             {
-              "expression": "robot_id",
+              "expression": "agent_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

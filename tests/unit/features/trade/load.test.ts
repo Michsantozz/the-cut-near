@@ -21,7 +21,7 @@ describe("trade loaders on the sample day", () => {
     const data = await loadSell("mika.near");
     expect(data.account?.free).toBe(units(2742) / 10n);
     expect(data.initial?.amount).toBe(units(1371) / 10n);
-    expect(data.account?.saves).toEqual([{ robotId: "melody", robotName: "Melody-9", amount: units(400), unlocked: false }]);
+    expect(data.account?.saves).toEqual([{ agentId: "melody", agentName: "Melody-9", amount: units(400), unlocked: false }]);
   });
 
   it("show where the supply is and when trading began", async () => {
@@ -31,8 +31,8 @@ describe("trade loaders on the sample day", () => {
     expect(data.prices).toHaveLength(13);
   });
 
-  it("open the save page on a stage robot only", async () => {
-    expect((await loadSave("mika.near", "melody")).robotId).toBe("melody");
-    expect((await loadSave(null, "chartwise")).robotId).toBeNull();
+  it("open the save page on a stage agent only", async () => {
+    expect((await loadSave("mika.near", "melody")).agentId).toBe("melody");
+    expect((await loadSave(null, "chartwise")).agentId).toBeNull();
   });
 });

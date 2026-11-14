@@ -9,11 +9,11 @@ import { WalletGatedLink } from "@/shared/wallet";
 
 import { barPercent } from "../model/board";
 import type { Lineup } from "../server/load-lineup";
-import { DIRECTOR_ART, RobotPoses, RobotTile, type Robot } from "@/entities/robot";
+import { DIRECTOR_ART, AgentPoses, AgentTile, type Agent } from "@/entities/agent";
 import { cut, rescueLine, shortName } from "./copy";
 import { TimeLeft } from "./countdown";
 
-/** The newest post of the robot on the block, with its proof badge. The app adds it to the lineup. */
+/** The newest post of the agent on the block, with its proof badge. The app adds it to the lineup. */
 export type BlockPost = { text: string; badge: string };
 
 /** Who the cut takes if nothing moves, its own plea, how far it is from safety, and why rescuing it pays. */
@@ -30,11 +30,11 @@ export function OnTheBlockCard({ lineup, className }: { lineup: Lineup & { block
       className={cn("overflow-hidden rounded-3xl border-2 border-ink bg-violet text-paper shadow-hard", className)}
     >
       <Link
-        href={`/robots/${lowest.id}`}
+        href={`/agents/${lowest.id}`}
         aria-label={`${lowest.name}: see its page`}
         className="flex h-32 items-end justify-center border-b-2 border-ink bg-violet-deep bg-[radial-gradient(circle_at_50%_0%,var(--color-danger)_0%,transparent_70%)] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
-        <RobotPoses id={lowest.id} imageClassName="h-[118px] w-auto" />
+        <AgentPoses id={lowest.id} imageClassName="h-[118px] w-auto" />
       </Link>
       <div className="px-4 pt-[11px] pb-3.5">
         <p className="text-[11.5px] font-extrabold tracking-[0.05em] uppercase">
@@ -84,8 +84,8 @@ export function OnTheBlockCard({ lineup, className }: { lineup: Lineup & { block
 
 const QUEUE_BAR = ["bg-ink", "bg-pink", "bg-orange"];
 
-/** The bench: robots waiting for a seat. The biggest queue takes the empty seat at the cut. */
-export function BenchCard({ bench, className }: { bench: Robot[]; className?: string }) {
+/** The bench: agents waiting for a seat. The biggest queue takes the empty seat at the cut. */
+export function BenchCard({ bench, className }: { bench: Agent[]; className?: string }) {
   const [first] = bench;
   if (!first) return null;
   const top = first.pile;
@@ -93,10 +93,10 @@ export function BenchCard({ bench, className }: { bench: Robot[]; className?: st
   return (
     <section aria-labelledby="bench-title" className={cn("relative rounded-2xl border-2 border-ink bg-paper px-4 py-3.5", className)}>
       <div className="flex items-center gap-2.5">
-        <RobotTile id={first.id} name={first.name} className="size-10 rounded-md" />
+        <AgentTile id={first.id} name={first.name} className="size-10 rounded-md" />
         <div className="min-w-0 grow">
           <h2 id="bench-title" className="text-[15px] font-extrabold">
-            <Link href={`/robots/${first.id}`} className="outline-none after:absolute after:inset-0 after:rounded-2xl focus-visible:after:ring-3 focus-visible:after:ring-ring/50">
+            <Link href={`/agents/${first.id}`} className="outline-none after:absolute after:inset-0 after:rounded-2xl focus-visible:after:ring-3 focus-visible:after:ring-ring/50">
               On the bench: {first.name}
             </Link>
           </h2>
@@ -107,13 +107,13 @@ export function BenchCard({ bench, className }: { bench: Robot[]; className?: st
       </div>
       <h3 className="mt-2.5 text-[11px] font-extrabold tracking-[0.055em] text-ink-3 uppercase">Bench queues · $CUT</h3>
       <ul className="mt-0.5">
-        {bench.map((robot, index) => (
-          <li key={robot.id} className="mt-1.5 flex items-center gap-2.5 text-[12.5px] font-bold">
-            <span className="w-16 truncate">{robot.name}</span>
+        {bench.map((agent, index) => (
+          <li key={agent.id} className="mt-1.5 flex items-center gap-2.5 text-[12.5px] font-bold">
+            <span className="w-16 truncate">{agent.name}</span>
             <span aria-hidden="true" className="h-2.5 grow overflow-hidden rounded-[5px] bg-canvas">
-              <span className={cn("block h-full", QUEUE_BAR[index] ?? "bg-ink-4")} style={{ width: `${barPercent(robot.pile, top, 2)}%` }} />
+              <span className={cn("block h-full", QUEUE_BAR[index] ?? "bg-ink-4")} style={{ width: `${barPercent(agent.pile, top, 2)}%` }} />
             </span>
-            <span className="w-[50px] text-right">{cut(robot.pile)}</span>
+            <span className="w-[50px] text-right">{cut(agent.pile)}</span>
           </li>
         ))}
       </ul>
@@ -122,7 +122,7 @@ export function BenchCard({ bench, className }: { bench: Robot[]; className?: st
   );
 }
 
-/** The Director's latest line about the robot on the block, with its proof badge. The app adds it to the lineup. */
+/** The Director's latest line about the agent on the block, with its proof badge. The app adds it to the lineup. */
 export type DirectorCardLine = { text: string; badge: string; proofUrl: string };
 
 /** The Director's one-liner and what its proof says. Hidden until the Director said something about this cut. */

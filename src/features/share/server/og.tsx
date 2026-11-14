@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 import sharp from "sharp";
 
-import { DIRECTOR_ART, robotFullBody, robotTile } from "@/entities/robot";
+import { DIRECTOR_ART, agentFullBody, agentTile } from "@/entities/agent";
 import { formatUtcDate } from "@/shared/ui/format";
 
 import { cutSubline } from "../model/post";
@@ -49,11 +49,11 @@ export type OgQuote = { text: string; badge: string };
 
 /** The share card of a cut (ShareCard.dc.html), drawn for `ImageResponse` (flexbox and inline styles only). */
 export async function CutOgImage({ share, quote }: { share: CutShare; quote: OgQuote | null }) {
-  const body = robotFullBody(share.deleted.id);
+  const body = agentFullBody(share.deleted.id);
   const [deletedBody, deletedTile, joinedTile, director] = await Promise.all([
     publicDataUrl(body?.src ?? null, { grey: true }),
-    body ? null : publicDataUrl(robotTile(share.deleted.id)),
-    share.joined ? publicDataUrl(robotTile(share.joined.id)) : null,
+    body ? null : publicDataUrl(agentTile(share.deleted.id)),
+    share.joined ? publicDataUrl(agentTile(share.joined.id)) : null,
     quote ? publicDataUrl(DIRECTOR_ART.src) : null,
   ]);
   const subline = cutSubline({ joinedName: share.joined?.name ?? null });
@@ -135,7 +135,7 @@ export async function CutOgImage({ share, quote }: { share: CutShare; quote: OgQ
           </svg>
         </div>
         <span style={{ fontFamily: "Bricolage", fontSize: 30, whiteSpace: "nowrap" }}>the cut</span>
-        <span style={{ fontSize: 21, fontWeight: 600, whiteSpace: "nowrap" }}>· 10 AI robots · the poorest is deleted every day · on NEAR</span>
+        <span style={{ fontSize: 21, fontWeight: 600, whiteSpace: "nowrap" }}>· 10 AI agents · the poorest is deleted every day · on NEAR</span>
       </div>
     </div>
   );

@@ -113,9 +113,9 @@ pub struct PrizeSplit {
     pub savers_total: u128,
     /// The rest: the creators' share.
     pub creators_total: u128,
-    /// One savers' slice per surviving robot.
+    /// One savers' slice per surviving agent.
     pub slice: u128,
-    /// One creator slice per surviving robot.
+    /// One creator slice per surviving agent.
     pub creator_slice: u128,
     /// Rounding remainder, carried into the next prize so no $CUT goes missing.
     pub dust: u128,
@@ -142,7 +142,7 @@ pub fn split_prize(prize: u128, savers_bps: u16, survivors: u32) -> Option<Prize
     })
 }
 
-/// Increase of a robot's reward-per-unit accumulator when its pile receives `slice`.
+/// Increase of an agent's reward-per-unit accumulator when its pile receives `slice`.
 /// `None` when the pile is empty (that slice burns instead).
 pub fn reward_increment(slice: u128, pile: u128) -> Option<u128> {
     mul_div(slice, ACC_SCALE, pile)
@@ -164,52 +164,52 @@ pub fn next_cut_after(at: u64, interval: u64, now: u64) -> Option<u64> {
     at.checked_add(steps.checked_mul(interval)?)
 }
 
-/// A robot as seen by the cut and seat rules.
+/// An agent as seen by the cut and seat rules.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Contender {
     /// $CUT in its pile (stage) or queue (bench).
     pub pile: u128,
-    /// Registration order: a higher `seq` is a newer robot.
+    /// Registration order: a higher `seq` is a newer agent.
     pub seq: u64,
 }
 
-/// Whether `a` would be cut before `b`: lower pile first, and on a tie the newer robot.
+/// Whether `a` would be cut before `b`: lower pile first, and on a tie the newer agent.
 fn cut_before(a: Contender, b: Contender) -> bool {
     a.pile < b.pile || (a.pile == b.pile && a.seq > b.seq)
 }
 
-/// Index of the robot the cut deletes: the lowest pile; on a tie, the newer robot.
-pub fn pick_lowest(robots: &[Contender]) -> Option<usize> {
+/// Index of the agent the cut deletes: the lowest pile; on a tie, the newer agent.
+pub fn pick_lowest(agents: &[Contender]) -> Option<usize> {
     let mut best: Option<usize> = None;
-    for (i, robot) in robots.iter().enumerate() {
+    for (i, agent) in agents.iter().enumerate() {
         match best {
-            Some(b) if !cut_before(*robot, robots[b]) => {}
+            Some(b) if !cut_before(*agent, agents[b]) => {}
             _ => best = Some(i),
         }
     }
     best
 }
 
-/// Index of the bench robot that takes a free seat: the biggest queue; on a tie, the
-/// older robot.
-pub fn pick_biggest(robots: &[Contender]) -> Option<usize> {
+/// Index of the bench agent that takes a free seat: the biggest queue; on a tie, the
+/// older agent.
+pub fn pick_biggest(agents: &[Contender]) -> Option<usize> {
     let mut best: Option<usize> = None;
-    for (i, robot) in robots.iter().enumerate() {
+    for (i, agent) in agents.iter().enumerate() {
         match best {
             Some(b)
-                if !(robot.pile > robots[b].pile
-                    || (robot.pile == robots[b].pile && robot.seq < robots[b].seq)) => {}
+                if !(agent.pile > agents[b].pile
+                    || (agent.pile == agents[b].pile && agent.seq < agents[b].seq)) => {}
             _ => best = Some(i),
         }
     }
     best
 }
 
-/// $CUT the lowest robot needs so that another robot becomes the one cut.
-/// `next` is the robot that would be cut if `lowest` were gone.
+/// $CUT the lowest agent needs so that another agent becomes the one cut.
+/// `next` is the agent that would be cut if `lowest` were gone.
 pub fn gap_to_next(lowest: Contender, next: Contender) -> u128 {
     let diff = next.pile.saturating_sub(lowest.pile);
-    // On equal piles the newer robot is cut, so a newer `lowest` needs one unit more.
+    // On equal piles the newer agent is cut, so a newer `lowest` needs one unit more.
     if lowest.seq > next.seq {
         diff.saturating_add(1)
     } else {

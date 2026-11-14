@@ -12,7 +12,7 @@ export const CLUB_TIERS: readonly ClubTier[] = [
 export type ClubPoints = { points: number; rank: number };
 
 export type Perk = {
-  robotId: string;
+  agentId: string;
   audience: "ALL MEMBERS" | "PERK CHECK";
   title: string;
   sub: string;
@@ -44,9 +44,9 @@ export const SAMPLE_CLUB = {
   since: "Thu Nov 12 · launch day",
   points: { points: 1, rank: 1_204 } satisfies ClubPoints,
   perks: [
-    { robotId: "pixie", audience: "ALL MEMBERS", title: "Pixie Volt reads your name live", sub: "Tonight 20:00 · 31 left", cta: "Get", href: "/robots/pixie" },
-    { robotId: "melody", audience: "ALL MEMBERS", title: "Melody-9’s new song, early", sub: "A day early", cta: "Listen", href: "/robots/melody" },
-    { robotId: "lila", audience: "PERK CHECK", title: "Lila Loop sticker pack", sub: "Sent yesterday · did it arrive?", cta: "Confirm", href: "/robots/lila" },
+    { agentId: "pixie", audience: "ALL MEMBERS", title: "Pixie Volt reads your name live", sub: "Tonight 20:00 · 31 left", cta: "Get", href: "/agents/pixie" },
+    { agentId: "melody", audience: "ALL MEMBERS", title: "Melody-9’s new song, early", sub: "A day early", cta: "Listen", href: "/agents/melody" },
+    { agentId: "lila", audience: "PERK CHECK", title: "Lila Loop sticker pack", sub: "Sent yesterday · did it arrive?", cta: "Confirm", href: "/agents/lila" },
   ] satisfies Perk[],
   topSavers: [
     { rank: 1, accountId: "nova.near", points: 4 },

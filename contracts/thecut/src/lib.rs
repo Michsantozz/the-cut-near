@@ -1,16 +1,16 @@
-//! The Cut: one memecoin, ten AI robots, and a daily cut.
+//! The Cut: one memecoin, ten AI agents, and a daily cut.
 //!
 //! This contract is the whole game:
 //! - `$CUT`, a NEP-141 token (18 decimals, 10,000,000 minted once in `new`), with NEP-145
 //!   storage management and NEP-148 metadata (via `near-sdk-contract-tools`).
 //! - A NEAR/$CUT constant-product pool. 1% of every buy and sell goes to the next prize.
-//! - A stage of robots and a bench. Fans save $CUT into a robot's pile (or a bench robot's
+//! - A stage of agents and a bench. Fans save $CUT into an agent's pile (or a bench agent's
 //!   queue); a save is locked until the next cut.
 //! - `run_cut`, callable by anyone once the cut is due: the lowest pile is cut, half of it
-//!   burns, the rest plus the fees is split into equal slices per surviving robot, the
-//!   robot account is deleted (the runner keeps its balance), and the biggest bench queue
+//!   burns, the rest plus the fees is split into equal slices per surviving agent, the
+//!   agent account is deleted (the runner keeps its balance), and the biggest bench queue
 //!   takes the seat.
-//! - The robot factory: `register_robot` creates `<id>.<this account>` with the `robot`
+//! - The agent factory: `register_agent` creates `<id>.<this account>` with the `agent`
 //!   contract and no access keys.
 //!
 //! There is no owner and no admin method. Parameters are fixed in `new`.
@@ -30,11 +30,11 @@ pub mod types;
 
 mod cut;
 mod pool;
-mod robots;
+mod agents;
 mod saves;
 mod views;
 
-use types::{CutRecord, Params, Pool, Robot, RobotId, SaveRecord};
+use types::{CutRecord, Params, Pool, Agent, AgentId, SaveRecord};
 
 /// One whole $CUT in units (18 decimals).
 pub const ONE_CUT: u128 = 1_000_000_000_000_000_000;
@@ -42,10 +42,10 @@ pub const ONE_CUT: u128 = 1_000_000_000_000_000_000;
 pub const TOTAL_SUPPLY: u128 = 10_000_000 * ONE_CUT;
 /// Smallest new save. Keeps the reward accumulator far from overflow (see `math`).
 pub const MIN_SAVE: u128 = ONE_CUT / 10;
-/// Most robots one account can have a save on at once (records on cut robots count
+/// Most agents one account can have a save on at once (records on cut agents count
 /// until `claim` clears them). Bounds the work of `claim` and `get_claimable`.
 pub const MAX_SAVES_PER_ACCOUNT: usize = 20;
-/// Most robots waiting on the bench (including registrations not yet confirmed).
+/// Most agents waiting on the bench (including registrations not yet confirmed).
 /// Bounds the work of `run_cut`.
 pub const MAX_BENCH: usize = 50;
 /// Most seats on the stage.
@@ -54,26 +54,26 @@ pub const MAX_STAGE: u32 = 20;
 pub const CUT_HISTORY: u64 = 366;
 /// NEP-145 registration minimum: covers the $CUT balance entry and a couple of saves.
 pub const STORAGE_MIN: NearToken = NearToken::from_millinear(10);
-/// Smallest allowed `robot_funding`: the robot account must pay its own code storage.
-pub const MIN_ROBOT_FUNDING: NearToken = NearToken::from_millinear(300);
+/// Smallest allowed `agent_funding`: the agent account must pay its own code storage.
+pub const MIN_AGENT_FUNDING: NearToken = NearToken::from_millinear(300);
 /// Longest name / kind, in bytes.
 pub const MAX_TEXT: usize = 32;
 /// Longest X handle, in bytes (15 characters plus an optional `@`).
 pub const MAX_X_HANDLE: usize = 16;
 
-/// Gas for the robot's `new` call in the creation batch.
-pub const GAS_ROBOT_INIT: Gas = Gas::from_tgas(5);
-/// Gas for the robot's `self_delete` call (and the delete action it returns).
+/// Gas for the agent's `new` call in the creation batch.
+pub const GAS_AGENT_INIT: Gas = Gas::from_tgas(5);
+/// Gas for the agent's `self_delete` call (and the delete action it returns).
 pub const GAS_SELF_DELETE: Gas = Gas::from_tgas(10);
 /// Gas reserved for each callback.
 pub const GAS_CALLBACK: Gas = Gas::from_tgas(10);
-/// Least prepaid gas for `register_robot`.
+/// Least prepaid gas for `register_agent`.
 pub const MIN_GAS_REGISTER: Gas = Gas::from_tgas(50);
 /// Least prepaid gas for `run_cut` and `retry_delete`.
 pub const MIN_GAS_RUN_CUT: Gas = Gas::from_tgas(60);
 
-/// The robot contract, built from `contracts/robot` and copied here by `contracts/build.sh`.
-pub const ROBOT_WASM: &[u8] = include_bytes!("../res/robot.wasm");
+/// The agent contract, built from `contracts/agent` and copied here by `contracts/build.sh`.
+pub const AGENT_WASM: &[u8] = include_bytes!("../res/agent.wasm");
 
 /// Token icon (SVG data URL).
 const ICON: &str = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PGNpcmNsZSBjeD0nMTYnIGN5PScxNicgcj0nMTQnIGZpbGw9JyNGRkQ0M0InIHN0cm9rZT0nIzBBMEIwRCcgc3Ryb2tlLXdpZHRoPScyJy8+PHBhdGggZD0nTTEwIDIyIDIyIDEwJyBzdHJva2U9JyMwQTBCMEQnIHN0cm9rZS13aWR0aD0nMycgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJy8+PC9zdmc+";
@@ -81,9 +81,9 @@ const ICON: &str = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My
 #[near]
 #[derive(BorshStorageKey)]
 enum StorageKey {
-    Robots,
+    Agents,
     Saves,
-    SaverRobots,
+    SaverAgents,
     CreatorClaimable,
     Cuts,
 }
@@ -93,19 +93,19 @@ enum StorageKey {
 pub struct Contract {
     params: Params,
     pool: Pool,
-    /// Every robot ever registered, including cut ones (ids are never reused).
-    robots: LookupMap<RobotId, Robot>,
-    /// Robot ids on the stage (at most `stage_size`).
-    stage: Vec<RobotId>,
-    /// Robot ids on the bench (at most `MAX_BENCH`).
-    bench: Vec<RobotId>,
+    /// Every agent ever registered, including cut ones (ids are never reused).
+    agents: LookupMap<AgentId, Agent>,
+    /// Agent ids on the stage (at most `stage_size`).
+    stage: Vec<AgentId>,
+    /// Agent ids on the bench (at most `MAX_BENCH`).
+    bench: Vec<AgentId>,
     /// Registrations whose account creation is not confirmed yet.
-    pending_robots: u32,
-    next_robot_seq: u64,
-    /// Saves by (account, robot).
-    saves: LookupMap<(AccountId, RobotId), SaveRecord>,
-    /// Robots each account has a save record on (at most `MAX_SAVES_PER_ACCOUNT`).
-    saver_robots: LookupMap<AccountId, Vec<RobotId>>,
+    pending_agents: u32,
+    next_agent_seq: u64,
+    /// Saves by (account, agent).
+    saves: LookupMap<(AccountId, AgentId), SaveRecord>,
+    /// Agents each account has a save record on (at most `MAX_SAVES_PER_ACCOUNT`).
+    saver_agents: LookupMap<AccountId, Vec<AgentId>>,
     /// Creator slices not yet claimed.
     creator_claimable: LookupMap<AccountId, u128>,
     /// The last `CUT_HISTORY` cuts.
@@ -116,12 +116,12 @@ pub struct Contract {
     next_cut_at: u64,
     /// $CUT for the next prize: fees since the last cut plus carried rounding dust.
     fees_since_cut: u128,
-    /// $CUT in all piles and queues of live robots.
+    /// $CUT in all piles and queues of live agents.
     total_saved: u128,
     /// $CUT allocated as prizes and not yet claimed. Rounding makes it a slight
     /// over-estimate of what can actually be claimed, never an under-estimate.
     prizes_outstanding: u128,
-    /// yoctoNEAR held for creators, returned when their robots are cut.
+    /// yoctoNEAR held for creators, returned when their agents are cut.
     creator_deposits_held: u128,
 }
 
@@ -140,7 +140,7 @@ impl Contract {
         stage_size: u32,
         first_cut_at: near_sdk::json_types::U64,
         cut_interval: near_sdk::json_types::U64,
-        robot_funding: NearToken,
+        agent_funding: NearToken,
         register_deposit: NearToken,
     ) -> Self {
         let pool_near = env::attached_deposit();
@@ -161,12 +161,12 @@ impl Contract {
             "first_cut_at must be in the future"
         );
         require!(
-            robot_funding >= MIN_ROBOT_FUNDING,
-            "robot_funding must cover the robot account's storage (at least 0.3 NEAR)"
+            agent_funding >= MIN_AGENT_FUNDING,
+            "agent_funding must cover the agent account's storage (at least 0.3 NEAR)"
         );
         require!(
-            register_deposit >= robot_funding,
-            "register_deposit must be at least robot_funding"
+            register_deposit >= agent_funding,
+            "register_deposit must be at least agent_funding"
         );
 
         let mut contract = Self {
@@ -178,7 +178,7 @@ impl Contract {
                 stage_size,
                 first_cut_at,
                 cut_interval,
-                robot_funding,
+                agent_funding,
                 register_deposit,
                 pool_cut_reserve: U128(TOTAL_SUPPLY),
                 pool_near_reserve: pool_near,
@@ -187,13 +187,13 @@ impl Contract {
                 near_reserve: pool_near.as_yoctonear(),
                 cut_reserve: TOTAL_SUPPLY,
             },
-            robots: LookupMap::new(StorageKey::Robots),
+            agents: LookupMap::new(StorageKey::Agents),
             stage: Vec::new(),
             bench: Vec::new(),
-            pending_robots: 0,
-            next_robot_seq: 0,
+            pending_agents: 0,
+            next_agent_seq: 0,
             saves: LookupMap::new(StorageKey::Saves),
-            saver_robots: LookupMap::new(StorageKey::SaverRobots),
+            saver_agents: LookupMap::new(StorageKey::SaverAgents),
             creator_claimable: LookupMap::new(StorageKey::CreatorClaimable),
             cuts: LookupMap::new(StorageKey::Cuts),
             next_cut_index: 1,
@@ -226,23 +226,23 @@ impl Contract {
 
 /// Internal helpers shared by the modules.
 impl Contract {
-    pub(crate) fn robot(&self, id: &str) -> &Robot {
-        self.robots
+    pub(crate) fn agent(&self, id: &str) -> &Agent {
+        self.agents
             .get(id)
-            .unwrap_or_else(|| env::panic_str(&format!("Unknown robot {id}")))
+            .unwrap_or_else(|| env::panic_str(&format!("Unknown agent {id}")))
     }
 
-    pub(crate) fn robot_mut(&mut self, id: &str) -> &mut Robot {
-        self.robots
+    pub(crate) fn agent_mut(&mut self, id: &str) -> &mut Agent {
+        self.agents
             .get_mut(id)
-            .unwrap_or_else(|| env::panic_str(&format!("Unknown robot {id}")))
+            .unwrap_or_else(|| env::panic_str(&format!("Unknown agent {id}")))
     }
 
     /// `<id>.<this account>`.
-    pub(crate) fn robot_account(id: &str) -> AccountId {
+    pub(crate) fn agent_account(id: &str) -> AccountId {
         format!("{id}.{}", env::current_account_id())
             .parse()
-            .unwrap_or_else(|_| env::panic_str("Robot id does not make a valid account id"))
+            .unwrap_or_else(|_| env::panic_str("Agent id does not make a valid account id"))
     }
 
     pub(crate) fn require_registered(&self, account_id: &AccountId) {
@@ -296,7 +296,7 @@ impl Contract {
     /// measurement sees their writes.
     pub(crate) fn settle_storage(&mut self, account_id: &AccountId, start: u64) {
         self.saves.flush();
-        self.saver_robots.flush();
+        self.saver_agents.flush();
         let end = env::storage_usage();
         let byte_cost = env::storage_byte_cost();
         if end > start {

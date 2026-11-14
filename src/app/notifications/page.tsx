@@ -10,11 +10,11 @@ import { AppHeader } from "../_shell/app-header";
 
 export const metadata = { title: "Notifications · The Cut" };
 
-// Your robot in danger, the Final hour and prizes ready to collect (Notifications.dc.html, "inbox").
+// Your agent in danger, the Final hour and prizes ready to collect (Notifications.dc.html, "inbox").
 export default function NotificationsPage() {
   return (
     <>
-      <AppHeader title="Notifications" sub="Your robot in danger, the Final hour, and prizes ready to collect" />
+      <AppHeader title="Notifications" sub="Your agent in danger, the Final hour, and prizes ready to collect" />
       <Suspense
         fallback={
           <div aria-busy="true" aria-label="Loading notifications" className="flex flex-col gap-2.5 px-5 pt-16 lg:max-w-[560px] lg:px-8 lg:pt-1">
@@ -33,8 +33,8 @@ export default function NotificationsPage() {
 async function Inbox() {
   const accountId = await getViewerAccountId();
   if (!accountId) return <InboxVisitor />;
-  const inbox = await loadInbox(accountId, async (robotId) => {
-    const post = await getLatestDirectorLine("robot-post", { subjectId: robotId });
+  const inbox = await loadInbox(accountId, async (agentId) => {
+    const post = await getLatestDirectorLine("agent-post", { subjectId: agentId });
     return post ? { text: post.text, at: new Date(post.createdAt) } : null;
   });
   return <InboxScreen inbox={inbox} />;

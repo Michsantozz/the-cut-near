@@ -1,6 +1,6 @@
 import type { JournalStats } from "@/entities/journal";
 import type { Params } from "@/entities/market";
-import type { Robot } from "@/entities/robot";
+import type { Agent } from "@/entities/agent";
 import { NEAR_DECIMALS, units } from "@/shared/lib/amount";
 import { formatAmount, formatCount } from "@/shared/ui/format";
 
@@ -15,8 +15,8 @@ export type AuditInput = {
   stats: JournalStats;
   /** `ft_total_supply` now. */
   totalSupply: bigint;
-  /** Every robot on the stage and the bench. */
-  robots: readonly Robot[];
+  /** Every agent on the stage and the bench. */
+  agents: readonly Agent[];
   params: Params;
   /** The cut interval the network launched with: a day on mainnet, 2 minutes on testnet. */
   launchIntervalMs: number;
@@ -31,21 +31,21 @@ export const LAUNCH_PARAMS = {
   burnBps: 5_000,
   saversBps: 9_500,
   stageSize: 10,
-  robotFunding: units(5, NEAR_DECIMALS) / 10n,
+  agentFunding: units(5, NEAR_DECIMALS) / 10n,
   registerDeposit: units(5, NEAR_DECIMALS),
 };
 
 export function runAudit(input: AuditInput): AuditCheck[] {
-  const { stats, params, robots } = input;
-  const piles = robots.reduce((sum, robot) => sum + robot.pile, 0n);
-  const unregistered = robots.filter((robot) => !stats.registered.includes(robot.id));
+  const { stats, params, agents } = input;
+  const piles = agents.reduce((sum, agent) => sum + agent.pile, 0n);
+  const unregistered = agents.filter((agent) => !stats.registered.includes(agent.id));
   const paramsMatch =
     params.totalSupply === LAUNCH_PARAMS.totalSupply &&
     params.feeBps === LAUNCH_PARAMS.feeBps &&
     params.burnBps === LAUNCH_PARAMS.burnBps &&
     params.saversBps === LAUNCH_PARAMS.saversBps &&
     params.stageSize === LAUNCH_PARAMS.stageSize &&
-    params.robotFunding === LAUNCH_PARAMS.robotFunding &&
+    params.agentFunding === LAUNCH_PARAMS.agentFunding &&
     params.registerDeposit === LAUNCH_PARAMS.registerDeposit &&
     params.cutIntervalMs === input.launchIntervalMs;
   const slices = params.stageSize - 1;
@@ -68,15 +68,15 @@ export function runAudit(input: AuditInput): AuditCheck[] {
     },
     {
       title: "Sum of piles = saved total",
-      detail: `The ${formatCount(robots.length)} piles and queues add up to ${cut(piles)} $CUT; the journal says ${cut(stats.saved)}.`,
+      detail: `The ${formatCount(agents.length)} piles and queues add up to ${cut(piles)} $CUT; the journal says ${cut(stats.saved)}.`,
       pass: piles === stats.saved,
     },
     {
-      title: "Every robot account made by the contract",
+      title: "Every agent account made by the contract",
       detail:
         unregistered.length === 0
-          ? `Each *.${input.contractId} robot traces back to a register call on ${input.contractId}.`
-          : `No register event for ${unregistered.map((robot) => robot.name).join(", ")}.`,
+          ? `Each *.${input.contractId} agent traces back to a register call on ${input.contractId}.`
+          : `No register event for ${unregistered.map((agent) => agent.name).join(", ")}.`,
       pass: unregistered.length === 0,
     },
     {

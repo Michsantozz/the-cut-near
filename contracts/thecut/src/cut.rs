@@ -1,10 +1,10 @@
 //! The daily cut.
 //!
 //! `run_cut` does every state change synchronously, in one receipt: it picks and removes
-//! the robot, burns, splits the prize, refunds the creator, seats the bench robot and
-//! schedules the next cut. Only then does it ask the robot account to delete itself.
+//! the agent, burns, splits the prize, refunds the creator, seats the bench agent and
+//! schedules the next cut. Only then does it ask the agent account to delete itself.
 //! That deletion is the one asynchronous step and nothing depends on it: the callback
-//! only records whether it worked. If it failed (the robot account still exists with its
+//! only records whether it worked. If it failed (the agent account still exists with its
 //! 0.5 NEAR), anyone can call `retry_delete`, which sends the balance to the original
 //! runner.
 
@@ -14,20 +14,20 @@ use near_sdk::{AccountId, NearToken, Promise, env, near, require};
 use near_sdk_contract_tools::ft::{Nep141Burn, Nep141Controller};
 
 use crate::math::{self, Contender};
-use crate::types::{CutRecord, DeleteState, NextCutView, RobotId, RobotStatus};
+use crate::types::{CutRecord, DeleteState, NextCutView, AgentId, AgentStatus};
 use crate::{
     CUT_HISTORY, Contract, ContractExt, GAS_CALLBACK, GAS_SELF_DELETE, MIN_GAS_RUN_CUT, checked,
     events,
 };
 
 impl Contract {
-    fn contenders(&self, ids: &[RobotId]) -> Vec<Contender> {
+    fn contenders(&self, ids: &[AgentId]) -> Vec<Contender> {
         ids.iter()
             .map(|id| {
-                let robot = self.robot(id);
+                let agent = self.agent(id);
                 Contender {
-                    pile: robot.pile,
-                    seq: robot.seq,
+                    pile: agent.pile,
+                    seq: agent.seq,
                 }
             })
             .collect()
@@ -37,12 +37,12 @@ impl Contract {
         self.stage.len() as u32 >= self.params.stage_size
     }
 
-    /// Asks a cut robot's account to delete itself, sending its balance to `beneficiary`.
-    fn request_delete(&self, cut_index: u64, robot_id: RobotId, beneficiary: AccountId) -> Promise {
+    /// Asks a cut agent's account to delete itself, sending its balance to `beneficiary`.
+    fn request_delete(&self, cut_index: u64, agent_id: AgentId, beneficiary: AccountId) -> Promise {
         let args = json!({ "beneficiary": beneficiary })
             .to_string()
             .into_bytes();
-        Promise::new(Self::robot_account(&robot_id))
+        Promise::new(Self::agent_account(&agent_id))
             .function_call(
                 "self_delete".to_string(),
                 args,
@@ -52,7 +52,7 @@ impl Contract {
             .then(
                 Self::ext(env::current_account_id())
                     .with_static_gas(GAS_CALLBACK)
-                    .on_robot_deleted(cut_index, robot_id),
+                    .on_agent_deleted(cut_index, agent_id),
             )
     }
 }
@@ -61,15 +61,15 @@ impl Contract {
 impl Contract {
     /// Runs the due cut. Anyone can call it; it is refused before `get_next_cut().at`.
     ///
-    /// When every seat is taken: the lowest pile is cut (tie: the newer robot), `burn_bps`
+    /// When every seat is taken: the lowest pile is cut (tie: the newer agent), `burn_bps`
     /// of it burns, and the rest plus the fees since the last cut is the prize. The
-    /// savers' share is cut into one equal slice per surviving robot, shared by that
-    /// robot's savers by $CUT saved; the creators' share into equal creator slices; a
-    /// survivor with an empty pile burns its slice. The robot account is deleted with the
+    /// savers' share is cut into one equal slice per surviving agent, shared by that
+    /// agent's savers by $CUT saved; the creators' share into equal creator slices; a
+    /// survivor with an empty pile burns its slice. The agent account is deleted with the
     /// caller as beneficiary (the caller keeps its 0.5 NEAR), the creator gets the rest of
     /// its deposit back, and the biggest bench queue takes the seat.
     ///
-    /// While the stage is not full nobody is cut: the fees are split among the robots on
+    /// While the stage is not full nobody is cut: the fees are split among the agents on
     /// the stage and free seats are filled from the bench.
     pub fn run_cut(&mut self) -> CutRecord {
         let now = env::block_timestamp();
@@ -93,27 +93,27 @@ impl Contract {
         let mut burned: u128 = 0;
 
         // 1. The cut: lowest pile on a full stage.
-        let mut cut: Option<(RobotId, u128, AccountId)> = None;
+        let mut cut: Option<(AgentId, u128, AccountId)> = None;
         if self.stage_is_full() {
             let contenders = self.contenders(&self.stage);
             let position = checked(math::pick_lowest(&contenders));
-            let robot_id = self.stage.remove(position);
+            let agent_id = self.stage.remove(position);
             let burn_bps = self.params.burn_bps;
-            let robot = self.robot_mut(&robot_id);
-            let pile = robot.pile;
+            let agent = self.agent_mut(&agent_id);
+            let pile = agent.pile;
             let (pile_burned, to_prize) = checked(math::burn_part(pile, burn_bps));
-            robot.status = RobotStatus::Deleted;
-            robot.cut_index = Some(index);
-            robot.delete_state = Some(DeleteState::Requested);
-            robot.runner = Some(runner.clone());
-            let creator = robot.creator.clone();
+            agent.status = AgentStatus::Deleted;
+            agent.cut_index = Some(index);
+            agent.delete_state = Some(DeleteState::Requested);
+            agent.runner = Some(runner.clone());
+            let creator = agent.creator.clone();
             burned = checked(burned.checked_add(pile_burned));
             prize = checked(prize.checked_add(to_prize));
             self.total_saved = checked(self.total_saved.checked_sub(pile));
-            cut = Some((robot_id, pile, creator));
+            cut = Some((agent_id, pile, creator));
         }
 
-        // 2. The prize: equal slices per surviving robot.
+        // 2. The prize: equal slices per surviving agent.
         let survivors = self.stage.clone();
         let survivor_count = survivors.len() as u32;
         let mut slice = 0;
@@ -126,15 +126,15 @@ impl Contract {
                 creator_slice = split.creator_slice;
                 paid_prize = prize;
                 self.fees_since_cut = checked(self.fees_since_cut.checked_add(split.dust));
-                for robot_id in &survivors {
-                    let robot = self.robot_mut(robot_id);
-                    let empty = robot.pile == 0;
+                for agent_id in &survivors {
+                    let agent = self.agent_mut(agent_id);
+                    let empty = agent.pile == 0;
                     if !empty {
-                        let increment = checked(math::reward_increment(slice, robot.pile));
-                        robot.reward_per_unit =
-                            checked(robot.reward_per_unit.checked_add(increment));
+                        let increment = checked(math::reward_increment(slice, agent.pile));
+                        agent.reward_per_unit =
+                            checked(agent.reward_per_unit.checked_add(increment));
                     }
-                    let (creator, pile) = (robot.creator.clone(), robot.pile);
+                    let (creator, pile) = (agent.creator.clone(), agent.pile);
                     if empty {
                         burned = checked(burned.checked_add(slice));
                     } else {
@@ -149,7 +149,7 @@ impl Contract {
                     }
                     prize_items.push(events::Prize {
                         cut_index: index,
-                        robot_id: robot_id.clone(),
+                        agent_id: agent_id.clone(),
                         creator,
                         slice: U128(slice),
                         creator_slice: U128(creator_slice),
@@ -173,13 +173,13 @@ impl Contract {
             .unwrap_or_else(|e| env::panic_str(&e.to_string()));
         }
 
-        // 4. The creator of the cut robot gets the rest of its deposit back.
+        // 4. The creator of the cut agent gets the rest of its deposit back.
         let mut creator_refund = NearToken::from_yoctonear(0);
         if let Some((_, _, creator)) = &cut {
             creator_refund = self
                 .params
                 .register_deposit
-                .saturating_sub(self.params.robot_funding);
+                .saturating_sub(self.params.agent_funding);
             self.creator_deposits_held = self
                 .creator_deposits_held
                 .saturating_sub(creator_refund.as_yoctonear());
@@ -197,13 +197,13 @@ impl Contract {
                 break;
             };
             bench.remove(position);
-            let robot_id = self.bench.remove(position);
-            let robot = self.robot_mut(&robot_id);
-            robot.status = RobotStatus::Stage;
-            robot.stage_at = Some(now);
-            let pile = robot.pile;
-            self.stage.push(robot_id.clone());
-            joined.push((robot_id, pile));
+            let agent_id = self.bench.remove(position);
+            let agent = self.agent_mut(&agent_id);
+            agent.status = AgentStatus::Stage;
+            agent.stage_at = Some(now);
+            let pile = agent.pile;
+            self.stage.push(agent_id.clone());
+            joined.push((agent_id, pile));
         }
 
         // 6. Schedule the next cut and keep the record.
@@ -243,8 +243,8 @@ impl Contract {
             "cut",
             &[events::Cut {
                 cut_index: index,
-                robot_id: deleted_id.clone(),
-                robot_account_id: deleted_id.as_deref().map(Self::robot_account),
+                agent_id: deleted_id.clone(),
+                agent_account_id: deleted_id.as_deref().map(Self::agent_account),
                 pile: U128(pile),
                 burned: U128(burned),
                 prize: U128(paid_prize),
@@ -262,72 +262,72 @@ impl Contract {
         if !joined.is_empty() {
             let items: Vec<events::Join> = joined
                 .into_iter()
-                .map(|(robot_id, pile)| events::Join {
+                .map(|(agent_id, pile)| events::Join {
                     cut_index: index,
-                    robot_id,
+                    agent_id,
                     pile: U128(pile),
                 })
                 .collect();
             events::emit("join", &items);
         }
 
-        // 8. Delete the robot account. Everything above is already final.
-        if let Some(robot_id) = deleted_id {
-            self.request_delete(index, robot_id, runner).detach();
+        // 8. Delete the agent account. Everything above is already final.
+        if let Some(agent_id) = deleted_id {
+            self.request_delete(index, agent_id, runner).detach();
         }
         record
     }
 
-    /// Records whether a robot account deletion worked. Never panics.
+    /// Records whether an agent account deletion worked. Never panics.
     #[private]
-    pub fn on_robot_deleted(&mut self, cut_index: u64, robot_id: RobotId) -> bool {
+    pub fn on_agent_deleted(&mut self, cut_index: u64, agent_id: AgentId) -> bool {
         let deleted =
             env::promise_results_count() == 1 && env::promise_result_checked(0, 64).is_ok();
-        let Some(robot) = self.robots.get_mut(&robot_id) else {
+        let Some(agent) = self.agents.get_mut(&agent_id) else {
             return false;
         };
-        robot.delete_state = Some(if deleted {
+        agent.delete_state = Some(if deleted {
             DeleteState::Done
         } else {
             DeleteState::Failed
         });
-        let beneficiary = robot.runner.clone();
+        let beneficiary = agent.runner.clone();
         if deleted {
             if let Some(beneficiary) = beneficiary {
                 events::emit(
                     "delete",
                     &[events::Delete {
                         cut_index,
-                        account_id: Self::robot_account(&robot_id),
-                        robot_id,
+                        account_id: Self::agent_account(&agent_id),
+                        agent_id,
                         beneficiary,
                     }],
                 );
             }
         } else {
             env::log_str(&format!(
-                "Robot {robot_id} account was not deleted; anyone can call retry_delete"
+                "Agent {agent_id} account was not deleted; anyone can call retry_delete"
             ));
         }
         deleted
     }
 
-    /// Asks a cut robot's account to delete itself again, after a failed attempt.
+    /// Asks a cut agent's account to delete itself again, after a failed attempt.
     /// Anyone can call it; the balance still goes to the account that ran the cut.
-    pub fn retry_delete(&mut self, robot_id: RobotId) -> Promise {
+    pub fn retry_delete(&mut self, agent_id: AgentId) -> Promise {
         require!(
             env::prepaid_gas() >= MIN_GAS_RUN_CUT,
             "Attach at least 60 TGas"
         );
-        let robot = self.robot_mut(&robot_id);
+        let agent = self.agent_mut(&agent_id);
         require!(
-            robot.status == RobotStatus::Deleted && robot.delete_state == Some(DeleteState::Failed),
-            "Only a cut robot whose account deletion failed can be retried"
+            agent.status == AgentStatus::Deleted && agent.delete_state == Some(DeleteState::Failed),
+            "Only a cut agent whose account deletion failed can be retried"
         );
-        robot.delete_state = Some(DeleteState::Requested);
-        let cut_index = checked(robot.cut_index);
-        let runner = checked(robot.runner.clone());
-        self.request_delete(cut_index, robot_id, runner)
+        agent.delete_state = Some(DeleteState::Requested);
+        let cut_index = checked(agent.cut_index);
+        let runner = checked(agent.runner.clone());
+        self.request_delete(cut_index, agent_id, runner)
     }
 
     /// The next cut and, if it ran now, who would be cut and what it would pay.

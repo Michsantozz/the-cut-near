@@ -36,11 +36,11 @@ export function proofBadge(status: DirectorProofStatus): { label: string; tone: 
   }
 }
 
-/** Who said it: the Director, or a robot posting in its own voice. */
+/** Who said it: the Director, or an agent posting in its own voice. */
 export const KIND_LABEL: Record<DirectorLineKind, string> = {
   scheduled: "Before the cut",
   "final-hour": "Final hour",
   "after-cut-roast": "Roast",
   "after-cut-receipt": "Receipt",
-  "robot-post": "Robot post",
+  "agent-post": "Agent post",
 };

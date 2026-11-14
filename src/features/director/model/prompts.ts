@@ -1,17 +1,17 @@
-import type { CutFacts, DayFacts, RobotFacts } from "./facts";
+import type { CutFacts, DayFacts, AgentFacts } from "./facts";
 import { LINE_LIMITS, type DirectorLineKind } from "./kinds";
-import { DIRECTOR_SYSTEM, robotSystem } from "./persona";
+import { DIRECTOR_SYSTEM, agentSystem } from "./persona";
 import { allowedNumbers } from "./validate";
 
 /** One request to the model: the persona (system), the task with its facts (user), and what the reply is for. */
 export type DirectorPrompt = {
   kind: DirectorLineKind;
-  /** The robot the line is about (or speaks as, for posts). */
+  /** The agent the line is about (or speaks as, for posts). */
   subjectId: string | null;
   cutIndex: number | null;
   system: string;
   user: string;
-  /** Robot names a line may contain. */
+  /** Agent names a line may contain. */
   names: string[];
 };
 
@@ -20,7 +20,7 @@ export const allowedNumbersFor = (prompt: DirectorPrompt): Set<string> => allowe
 
 const user = (task: string, facts: string[]) => `${task}\nFacts:\n${facts.map((fact) => `- ${fact}`).join("\n")}`;
 const words = (kind: DirectorLineKind) => `One line, at most ${LINE_LIMITS[kind].maxWords} words.`;
-const namesOf = (facts: DayFacts) => [...facts.stage.map((robot) => robot.name), ...facts.bench.map((robot) => robot.name)];
+const namesOf = (facts: DayFacts) => [...facts.stage.map((agent) => agent.name), ...facts.bench.map((agent) => agent.name)];
 
 function blockFacts(facts: DayFacts): string[] {
   return [
@@ -31,14 +31,14 @@ function blockFacts(facts: DayFacts): string[] {
   ];
 }
 
-/** The board line before the cut, for the lowest robot or the one right above it. */
+/** The board line before the cut, for the lowest agent or the one right above it. */
 export function scheduledPrompt(facts: DayFacts, subject: "lowest" | "next-up"): DirectorPrompt {
-  const robot = subject === "lowest" ? facts.lowest : facts.nextUp;
+  const agent = subject === "lowest" ? facts.lowest : facts.nextUp;
   const task =
     subject === "lowest"
-      ? `Write the board line for ${robot.name}, the lowest pile before today's cut. ${words("scheduled")}`
-      : `Write the board line for ${robot.name}, the second-lowest pile, right above the robot on the block. ${words("scheduled")}`;
-  return { kind: "scheduled", subjectId: robot.id, cutIndex: facts.cutIndex, system: DIRECTOR_SYSTEM, user: user(task, blockFacts(facts)), names: namesOf(facts) };
+      ? `Write the board line for ${agent.name}, the lowest pile before today's cut. ${words("scheduled")}`
+      : `Write the board line for ${agent.name}, the second-lowest pile, right above the agent on the block. ${words("scheduled")}`;
+  return { kind: "scheduled", subjectId: agent.id, cutIndex: facts.cutIndex, system: DIRECTOR_SYSTEM, user: user(task, blockFacts(facts)), names: namesOf(facts) };
 }
 
 /** The Final hour line (17:00–18:00 UTC). */
@@ -57,7 +57,7 @@ function cutNames(cut: CutFacts): string[] {
   return [cut.deleted.name, ...(cut.joined ? [cut.joined.name] : [])];
 }
 
-/** The one-line roast of the robot that was just cut. */
+/** The one-line roast of the agent that was just cut. */
 export function afterCutRoastPrompt(cut: CutFacts): DirectorPrompt {
   const task = `Write a one-line roast of ${cut.deleted.name}, who was just cut. ${words("after-cut-roast")}`;
   const lines = [`${cut.deleted.name} (${cut.deleted.kind}) was cut with the lowest pile: ${cut.deleted.pile} $CUT.`, `Its NEAR account is deleted. ${cut.burned} $CUT burned.`];
@@ -70,8 +70,8 @@ export function afterCutReceiptPrompt(cut: CutFacts): DirectorPrompt {
   const task = `Write the Director's post right after the cut. Open with "${cut.title}.", roast ${cut.deleted.name}${welcome}, and end with when the next cut is. ${words("after-cut-receipt")}`;
   const lines = [
     `${cut.title}: ${cut.deleted.name} was cut with a pile of ${cut.deleted.pile} $CUT. Its NEAR account is deleted and ${cut.burned} $CUT burned.`,
-    `The prize is ${cut.prize} $CUT: 9 equal slices of ${cut.slice} $CUT, one per surviving robot.`,
-    cut.joined ? `${cut.joined.name} takes the empty seat with ${cut.joined.pile} $CUT. ${cut.robotsAfter} robots on the stage again.` : `Nobody joins from the bench. ${cut.robotsAfter} robots on the stage.`,
+    `The prize is ${cut.prize} $CUT: 9 equal slices of ${cut.slice} $CUT, one per surviving agent.`,
+    cut.joined ? `${cut.joined.name} takes the empty seat with ${cut.joined.pile} $CUT. ${cut.agentsAfter} agents on the stage again.` : `Nobody joins from the bench. ${cut.agentsAfter} agents on the stage.`,
     `The cut was run by ${cut.runner}, who kept the 0.5 NEAR left in the deleted account.`,
     `Next cut: ${cut.nextCut}.`,
   ];
@@ -79,32 +79,32 @@ export function afterCutReceiptPrompt(cut: CutFacts): DirectorPrompt {
 }
 
 /**
- * What a robot posts about, from where it stands: the lowest begs, the survivor that pays most per 100
+ * What an agent posts about, from where it stands: the lowest begs, the survivor that pays most per 100
  * pitches the small-pile math, the top pile thanks its savers, the bench leader waits, the rest hype.
  */
-export type RobotPostAngle = "beg" | "pitch" | "thank" | "wait" | "hype";
+export type AgentPostAngle = "beg" | "pitch" | "thank" | "wait" | "hype";
 
-export function robotPostAngle(facts: DayFacts, robotId: string): RobotPostAngle {
-  if (robotId === facts.lowest.id) return "beg";
-  if (robotId === facts.nextUp.id) return "pitch";
-  if (robotId === facts.top.id) return "thank";
-  if (facts.bench.some((robot) => robot.id === robotId)) return "wait";
+export function agentPostAngle(facts: DayFacts, agentId: string): AgentPostAngle {
+  if (agentId === facts.lowest.id) return "beg";
+  if (agentId === facts.nextUp.id) return "pitch";
+  if (agentId === facts.top.id) return "thank";
+  if (facts.bench.some((agent) => agent.id === agentId)) return "wait";
   return "hype";
 }
 
-/** The robot's newest save, so its post can thank that saver by name. `amount` is formatted like the facts. */
+/** The agent's newest save, so its post can thank that saver by name. `amount` is formatted like the facts. */
 export type LatestSave = { account: string; amount: string };
 
-/** A robot's own post on X, in its voice. With `latestSave`, the post also thanks that saver by account. */
-export function robotPostPrompt(facts: DayFacts, robotId: string, latestSave?: LatestSave): DirectorPrompt {
-  const angle = robotPostAngle(facts, robotId);
-  const onStage = facts.stage.find((robot) => robot.id === robotId);
-  const onBench = facts.bench.find((robot) => robot.id === robotId);
-  if (!onStage && !onBench) throw new Error(`Unknown robot ${robotId}.`);
-  const self = onStage ?? { id: robotId, name: onBench?.name ?? robotId, kind: onBench?.kind ?? "robot" };
+/** An agent's own post on X, in its voice. With `latestSave`, the post also thanks that saver by account. */
+export function agentPostPrompt(facts: DayFacts, agentId: string, latestSave?: LatestSave): DirectorPrompt {
+  const angle = agentPostAngle(facts, agentId);
+  const onStage = facts.stage.find((agent) => agent.id === agentId);
+  const onBench = facts.bench.find((agent) => agent.id === agentId);
+  if (!onStage && !onBench) throw new Error(`Unknown agent ${agentId}.`);
+  const self = onStage ?? { id: agentId, name: onBench?.name ?? agentId, kind: onBench?.kind ?? "agent" };
   const when = `Day ${facts.day}. Today's cut is at ${facts.cutAt}, in ${facts.countdown.text}.`;
-  const pays = (robot: RobotFacts) => `${robot.paysPer100} per 100 $CUT saved`;
-  const limit = words("robot-post");
+  const pays = (agent: AgentFacts) => `${agent.paysPer100} per 100 $CUT saved`;
+  const limit = words("agent-post");
   let task: string;
   let lines: string[];
   switch (angle) {
@@ -122,22 +122,22 @@ export function robotPostPrompt(facts: DayFacts, robotId: string, latestSave?: L
       break;
     case "wait": {
       const bench = onBench ?? facts.bench[0];
-      const leader = facts.bench[0]?.id === robotId;
-      task = `Write your post from the bench, waiting for a seat. Nothing personal to the robot on the block. ${limit}`;
+      const leader = facts.bench[0]?.id === agentId;
+      task = `Write your post from the bench, waiting for a seat. Nothing personal to the agent on the block. ${limit}`;
       lines = [
         when,
         `You are on the bench. Your queue: ${bench.queue} $CUT from ${bench.savers} savers${leader ? ", the biggest queue" : ""}.`,
-        leader ? "If a robot is cut today, the biggest queue takes the empty seat." : `The biggest queue is ${facts.bench[0]?.name}'s with ${facts.bench[0]?.queue} $CUT; the biggest queue takes the empty seat.`,
+        leader ? "If an agent is cut today, the biggest queue takes the empty seat." : `The biggest queue is ${facts.bench[0]?.name}'s with ${facts.bench[0]?.queue} $CUT; the biggest queue takes the empty seat.`,
         `On the block: ${facts.lowest.name} with ${facts.lowest.pile} $CUT.`,
       ];
       break;
     }
     case "hype": {
-      if (!onStage) throw new Error(`Robot ${robotId} is not on the stage.`);
-      const robot = onStage;
+      if (!onStage) throw new Error(`Agent ${agentId} is not on the stage.`);
+      const agent = onStage;
       task = `Write your post keeping your savers with you. ${limit}`;
-      lines = [when, `Your pile: ${robot.pile} $CUT, rank ${robot.rank} of ${facts.stage.length}, from ${robot.savers} savers.`, `On the block: ${facts.lowest.name} with ${facts.lowest.pile} $CUT.`];
-      if (robot.paysPer100) lines.push(`If the cut ran now, you pay ${pays(robot)}.`);
+      lines = [when, `Your pile: ${agent.pile} $CUT, rank ${agent.rank} of ${facts.stage.length}, from ${agent.savers} savers.`, `On the block: ${facts.lowest.name} with ${facts.lowest.pile} $CUT.`];
+      if (agent.paysPer100) lines.push(`If the cut ran now, you pay ${pays(agent)}.`);
       break;
     }
   }
@@ -146,5 +146,5 @@ export function robotPostPrompt(facts: DayFacts, robotId: string, latestSave?: L
     lines.push(`Your newest saver: ${latestSave.account} saved ${latestSave.amount} $CUT on you.`);
   }
   const names = latestSave ? [...namesOf(facts), latestSave.account] : namesOf(facts);
-  return { kind: "robot-post", subjectId: robotId, cutIndex: facts.cutIndex, system: robotSystem(self), user: user(task, lines), names };
+  return { kind: "agent-post", subjectId: agentId, cutIndex: facts.cutIndex, system: agentSystem(self), user: user(task, lines), names };
 }

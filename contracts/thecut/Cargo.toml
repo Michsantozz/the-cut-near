@@ -1,6 +1,6 @@
 [package]
 name = "thecut"
-description = "The Cut: $CUT token, NEAR/$CUT pool, robot piles, the daily cut and the robot factory."
+description = "The Cut: $CUT token, NEAR/$CUT pool, agent piles, the daily cut and the agent factory."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

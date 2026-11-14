@@ -1,10 +1,10 @@
-//! The cut: timing, tie rule, burns, slices, claims, the robot account deletion and the
+//! The cut: timing, tie rule, burns, slices, claims, the agent account deletion and the
 //! bench.
 
 use super::*;
-use crate::types::{DeleteState, RobotStatusView};
+use crate::types::{DeleteState, AgentStatusView};
 
-/// A stage of `n` robots `r0..`, seated by cut 1, with `piles[i]` saved by `whale.near`.
+/// A stage of `n` agents `r0..`, seated by cut 1, with `piles[i]` saved by `whale.near`.
 fn stage_with(piles: &[u128]) -> World {
     let mut w = World::launch(Launch {
         stage_size: piles.len() as u32,
@@ -45,8 +45,8 @@ fn the_first_cut_fills_the_stage_and_carries_the_fees() {
         stage_size: 3,
         ..Launch::default()
     });
-    for robot in ["ra", "rb", "rc", "rd"] {
-        w.register(robot);
+    for agent in ["ra", "rb", "rc", "rd"] {
+        w.register(agent);
     }
     w.buy("mika.near", near(100));
     let fees = w.view(|c| c.get_stats().fees_since_cut.0);
@@ -60,7 +60,7 @@ fn the_first_cut_fills_the_stage_and_carries_the_fees() {
     assert_eq!(record.joined_id.as_deref(), Some("ra"));
     assert!(
         get_created_receipts().is_empty(),
-        "no robot to delete, no refund"
+        "no agent to delete, no refund"
     );
     assert_eq!(w.view(|c| c.get_stats().fees_since_cut.0), fees);
     assert_eq!(w.stage_ids().len(), 3);
@@ -87,13 +87,13 @@ fn the_lowest_pile_is_cut_and_the_runner_gets_the_account() {
     assert_eq!(record.runner.as_str(), "runner.near");
     assert_eq!(record.joined_id.as_deref(), Some("bench"));
 
-    // The robot account deletes itself in favor of the runner.
+    // The agent account deletes itself in favor of the runner.
     let calls = function_calls();
     assert_eq!(calls.len(), 2);
     assert_eq!(calls[0].0.as_str(), "r1.thecut.near");
     assert_eq!(calls[0].1, "self_delete");
     assert_eq!(calls[0].2, r#"{"beneficiary":"runner.near"}"#);
-    assert_eq!(calls[1].1, "on_robot_deleted");
+    assert_eq!(calls[1].1, "on_agent_deleted");
     // The creator gets 4.5 NEAR back.
     assert_eq!(
         transfers(),
@@ -103,8 +103,8 @@ fn the_lowest_pile_is_cut_and_the_runner_gets_the_account() {
         )]
     );
 
-    let r1 = w.robot("r1");
-    assert_eq!(r1.status, RobotStatusView::Deleted);
+    let r1 = w.agent("r1");
+    assert_eq!(r1.status, AgentStatusView::Deleted);
     assert_eq!(r1.cut_index, Some(2));
     assert_eq!(r1.delete_state, Some(DeleteState::Requested));
     assert_eq!(w.stage_ids(), vec!["r0", "r2", "bench"]);
@@ -112,7 +112,7 @@ fn the_lowest_pile_is_cut_and_the_runner_gets_the_account() {
 }
 
 #[test]
-fn on_a_tie_the_newer_robot_is_cut() {
+fn on_a_tie_the_newer_agent_is_cut() {
     let mut w = stage_with(&[cut(100), cut(100), cut(100)]);
     let next = w.view(|c| c.get_next_cut());
     assert_eq!(next.lowest_id.as_deref(), Some("r2"));
@@ -179,11 +179,11 @@ fn small_piles_pay_more_per_cut() {
 fn empty_pile_slices_burn() {
     // On a full stage an empty pile is always the lowest and gets cut, so an empty
     // survivor happens when a pile is emptied and the next cut has a free seat (nobody
-    // is cut, every stage robot survives).
+    // is cut, every stage agent survives).
     let mut w = stage_with(&[0, cut(100), cut(500)]);
     let record = w.run_cut("runner.near");
     assert_eq!(record.deleted_id.as_deref(), Some("r0"));
-    // Now the stage has r1, r2 and a free seat (no bench robot). Empty r1.
+    // Now the stage has r1, r2 and a free seat (no bench agent). Empty r1.
     w.call("whale.near", zero(), |c| c.unsave("r1".into()));
     w.buy("mika.near", near(1_000)); // fresh fees for cut 3
     let supply = w.view(|c| c.ft_total_supply().0);
@@ -196,7 +196,7 @@ fn empty_pile_slices_burn() {
         .as_array()
         .unwrap()
         .iter()
-        .find(|p| p["robot_id"] == "r1")
+        .find(|p| p["agent_id"] == "r1")
         .unwrap();
     assert_eq!(r1["burned"], true);
     assert_eq!(record.deleted_id, None);
@@ -208,7 +208,7 @@ fn empty_pile_slices_burn() {
 }
 
 #[test]
-fn savers_of_the_cut_robot_lose_the_save_but_keep_earlier_prizes() {
+fn savers_of_the_cut_agent_lose_the_save_but_keep_earlier_prizes() {
     let mut w = stage_with(&[cut(1_000), cut(500), cut(2_000)]);
     w.register("spare");
     w.save("whale.near", "spare", cut(300));
@@ -228,7 +228,7 @@ fn savers_of_the_cut_robot_lose_the_save_but_keep_earlier_prizes() {
     // mika's 100 on r1 is gone; the prize from cut 2 is still there.
     assert_eq!(w.claimable("mika.near"), earned);
     let saves = w.view(|c| c.get_saves(id("mika.near")));
-    assert_eq!(saves[0].robot_status, RobotStatusView::Deleted);
+    assert_eq!(saves[0].agent_status, AgentStatusView::Deleted);
     assert!(!saves[0].unlocked);
     let refused = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         w.call("mika.near", zero(), |c| c.unsave("r1".into()))
@@ -288,7 +288,7 @@ fn prizes_keep_riding_and_accumulate() {
     let claimed = w.call("whale.near", zero(), |c| c.claim()).0;
     assert!(claimed > whale_first);
     // The whale's saves on survivors keep riding after the claim.
-    assert_eq!(w.robot("r1").pile.0, cut(1_000));
+    assert_eq!(w.agent("r1").pile.0, cut(1_000));
     w.assert_books();
 }
 
@@ -296,27 +296,27 @@ fn prizes_keep_riding_and_accumulate() {
 fn the_delete_callback_records_success() {
     let mut w = stage_with(&[cut(100), cut(200)]);
     let record = w.run_cut("runner.near");
-    let robot = record.deleted_id.unwrap();
+    let agent = record.deleted_id.unwrap();
     assert!(w.callback(PromiseResult::Successful(vec![]), |c| {
-        c.on_robot_deleted(record.index, robot.clone())
+        c.on_agent_deleted(record.index, agent.clone())
     }));
     let delete = event("delete").unwrap();
     assert_eq!(delete[0]["account_id"], "r0.thecut.near");
     assert_eq!(delete[0]["beneficiary"], "runner.near");
-    assert_eq!(w.robot(&robot).delete_state, Some(DeleteState::Done));
+    assert_eq!(w.agent(&agent).delete_state, Some(DeleteState::Done));
 }
 
 #[test]
-#[should_panic(expected = "Only a cut robot whose account deletion failed can be retried")]
+#[should_panic(expected = "Only a cut agent whose account deletion failed can be retried")]
 fn a_successful_delete_cannot_be_retried() {
     let mut w = stage_with(&[cut(100), cut(200)]);
     let record = w.run_cut("runner.near");
-    let robot = record.deleted_id.unwrap();
+    let agent = record.deleted_id.unwrap();
     w.callback(PromiseResult::Successful(vec![]), |c| {
-        c.on_robot_deleted(record.index, robot.clone())
+        c.on_agent_deleted(record.index, agent.clone())
     });
     w.call("anyone.near", zero(), |c| {
-        c.retry_delete(robot.clone()).detach()
+        c.retry_delete(agent.clone()).detach()
     });
 }
 
@@ -324,13 +324,13 @@ fn a_successful_delete_cannot_be_retried() {
 fn a_failed_delete_changes_nothing_else_and_can_be_retried() {
     let mut w = stage_with(&[cut(100), cut(200)]);
     let record = w.run_cut("runner.near");
-    let robot = record.deleted_id.clone().unwrap();
+    let agent = record.deleted_id.clone().unwrap();
     let stage = w.stage_ids();
     assert!(!w.callback(PromiseResult::Failed, |c| {
-        c.on_robot_deleted(record.index, robot.clone())
+        c.on_agent_deleted(record.index, agent.clone())
     }));
     assert!(event("delete").is_none());
-    assert_eq!(w.robot(&robot).delete_state, Some(DeleteState::Failed));
+    assert_eq!(w.agent(&agent).delete_state, Some(DeleteState::Failed));
     // The cut itself stands.
     assert_eq!(w.stage_ids(), stage);
     assert_eq!(w.view(|c| c.get_cut(record.index)), Some(record));
@@ -338,12 +338,12 @@ fn a_failed_delete_changes_nothing_else_and_can_be_retried() {
 
     // Anyone can retry; the balance still goes to the original runner.
     w.call("anyone.near", zero(), |c| {
-        c.retry_delete(robot.clone()).detach()
+        c.retry_delete(agent.clone()).detach()
     });
     let calls = function_calls();
     assert_eq!(calls[0].0.as_str(), "r0.thecut.near");
     assert_eq!(calls[0].2, r#"{"beneficiary":"runner.near"}"#);
-    assert_eq!(w.robot(&robot).delete_state, Some(DeleteState::Requested));
+    assert_eq!(w.agent(&agent).delete_state, Some(DeleteState::Requested));
 }
 
 #[test]
@@ -359,9 +359,9 @@ fn a_late_cut_keeps_the_daily_grid() {
 fn supply_is_minted_minus_burned_after_many_cuts() {
     let mut w = stage_with(&[cut(100), cut(200), cut(300)]);
     for i in 0..6 {
-        let robot = format!("n{i}");
-        w.register(&robot);
-        w.save("whale.near", &robot, cut(150 + i * 10));
+        let agent = format!("n{i}");
+        w.register(&agent);
+        w.save("whale.near", &agent, cut(150 + i * 10));
         w.buy("mika.near", near(100));
         w.run_cut("runner.near");
         w.assert_books();

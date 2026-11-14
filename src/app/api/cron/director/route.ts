@@ -7,7 +7,7 @@ export const maxDuration = 120;
 const MOMENTS = ["scheduled", "final-hour"] as const;
 
 /**
- * `?moment=scheduled` at 12:00 UTC (the board lines and robot posts) and `?moment=final-hour` at 17:00 UTC.
+ * `?moment=scheduled` at 12:00 UTC (the board lines and agent posts) and `?moment=final-hour` at 17:00 UTC.
  * The after-cut lines run from `/api/cron/cut`, right after the cut lands.
  */
 export async function GET(request: Request) {

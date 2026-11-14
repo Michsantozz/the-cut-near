@@ -25,7 +25,7 @@ const SAVED = 0.10524;
 export const SCENARIOS: readonly Scenario[] = [
   { key: "steady", name: "Steady", what: "Equal slices pull savers to the bottom; the lowest pile is about 6% of what is saved.", savedShare: SAVED, lowestShare: 0.06, dailyFees: 5_020 },
   { key: "top", name: "Top-heavy", what: "Fans ignore the slices and stack the leaders, like today.", savedShare: SAVED, lowestShare: 23_600 / 1_052_400, dailyFees: 5_020 },
-  { key: "whale", name: "Whale sniper", what: "A whale saves the bottom robot at 17:59; another one falls instead.", savedShare: SAVED, lowestShare: 0.045, dailyFees: 5_020 },
+  { key: "whale", name: "Whale sniper", what: "A whale saves the bottom agent at 17:59; another one falls instead.", savedShare: SAVED, lowestShare: 0.045, dailyFees: 5_020 },
   { key: "sybil", name: "Sybil swarm", what: "5,000 fake accounts with 1 $CUT each.", savedShare: SAVED, lowestShare: 0.06, dailyFees: 5_020 },
   { key: "ghost", name: "Ghost town", what: "Almost nobody saves: 2% of supply.", savedShare: 0.02, lowestShare: 0.05, dailyFees: 400 },
 ];

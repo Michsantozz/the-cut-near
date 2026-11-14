@@ -1,6 +1,6 @@
 import { CUT_DECIMALS, toDecimalText } from "@/shared/lib/amount";
 
-// The Sell screen: only free $CUT can be sold; saved $CUT stays locked in the robot's pile until the cut.
+// The Sell screen: only free $CUT can be sold; saved $CUT stays locked in the agent's pile until the cut.
 
 const TENTH = 10n ** BigInt(CUT_DECIMALS - 1);
 

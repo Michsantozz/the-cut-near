@@ -17,7 +17,7 @@ CREATE TABLE "journal" (
 	"version" text NOT NULL,
 	"event" text NOT NULL,
 	"account_id" text,
-	"robot_id" text,
+	"agent_id" text,
 	"cut_index" integer,
 	"amount" numeric(78, 0),
 	"data" jsonb NOT NULL,
@@ -64,7 +64,7 @@ CREATE INDEX "auth_nonce_expires_idx" ON "auth_nonce" USING btree ("expires_at")
 CREATE UNIQUE INDEX "journal_event_key" ON "journal" USING btree ("receipt_id","log_index","item_index");--> statement-breakpoint
 CREATE INDEX "journal_block_idx" ON "journal" USING btree ("block_height");--> statement-breakpoint
 CREATE INDEX "journal_account_idx" ON "journal" USING btree ("account_id","block_height");--> statement-breakpoint
-CREATE INDEX "journal_robot_idx" ON "journal" USING btree ("robot_id","block_height");--> statement-breakpoint
+CREATE INDEX "journal_agent_idx" ON "journal" USING btree ("agent_id","block_height");--> statement-breakpoint
 CREATE INDEX "journal_event_idx" ON "journal" USING btree ("event","block_height");--> statement-breakpoint
 CREATE INDEX "journal_cut_idx" ON "journal" USING btree ("cut_index");--> statement-breakpoint
 CREATE INDEX "director_lines_kind_created_idx" ON "director_lines" USING btree ("kind","created_at");--> statement-breakpoint

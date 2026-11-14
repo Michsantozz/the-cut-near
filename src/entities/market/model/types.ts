@@ -19,7 +19,7 @@ export type Params = {
   stageSize: number;
   firstCutAt: Date;
   cutIntervalMs: number;
-  robotFunding: bigint;
+  agentFunding: bigint;
   registerDeposit: bigint;
 };
 

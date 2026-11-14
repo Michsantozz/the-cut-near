@@ -22,8 +22,8 @@ describe("extractEvents", () => {
       tx([
         receipt("R1", CONTRACT, [
           "plain log line",
-          event("thecut", "save", [{ account_id: "mika.testnet", robot_id: "melody", amount: "400", cut_index: 1 }]),
-          event("thecut", "prize", [{ cut_index: 1, robot_id: "onyx", creator: "a.testnet", slice: "1", creator_slice: "0", pile: "5", burned: false }, { cut_index: 1, robot_id: "pixie", creator: "b.testnet", slice: "2", creator_slice: "0", pile: "9", burned: false }]),
+          event("thecut", "save", [{ account_id: "mika.testnet", agent_id: "melody", amount: "400", cut_index: 1 }]),
+          event("thecut", "prize", [{ cut_index: 1, agent_id: "onyx", creator: "a.testnet", slice: "1", creator_slice: "0", pile: "5", burned: false }, { cut_index: 1, agent_id: "pixie", creator: "b.testnet", slice: "2", creator_slice: "0", pile: "9", burned: false }]),
         ]),
       ]),
       CONTRACT,
@@ -41,20 +41,20 @@ describe("extractEvents", () => {
       emitter: CONTRACT,
       standard: "thecut",
       version: "1.0.0",
-      robotId: "melody",
+      agentId: "melody",
       cutIndex: 1,
       amount: 400n,
-      data: { account_id: "mika.testnet", robot_id: "melody", amount: "400", cut_index: 1 },
+      data: { account_id: "mika.testnet", agent_id: "melody", amount: "400", cut_index: 1 },
     });
   });
 
-  it("keeps events of robot sub-accounts and NEP-141 events", () => {
-    const rows = extractEvents(tx([receipt("R2", `kiko.${CONTRACT}`, [event("thecut", "delete", { robot_id: "kiko" })]), receipt("R3", CONTRACT, [event("nep141", "ft_burn", [{ owner_id: CONTRACT, amount: "11800" }])])]), CONTRACT);
+  it("keeps events of agent sub-accounts and NEP-141 events", () => {
+    const rows = extractEvents(tx([receipt("R2", `kiko.${CONTRACT}`, [event("thecut", "delete", { agent_id: "kiko" })]), receipt("R3", CONTRACT, [event("nep141", "ft_burn", [{ owner_id: CONTRACT, amount: "11800" }])])]), CONTRACT);
     expect(rows.map((r) => `${r.emitter}:${r.event}`)).toEqual([`kiko.${CONTRACT}:delete`, `${CONTRACT}:ft_burn`]);
   });
 
   it("ignores other emitters, failed receipts and untracked standards", () => {
-    const forged = event("thecut", "prize", [{ cut_index: 1, robot_id: "onyx", creator: "thief.testnet", slice: "1000000" }]);
+    const forged = event("thecut", "prize", [{ cut_index: 1, agent_id: "onyx", creator: "thief.testnet", slice: "1000000" }]);
     const rows = extractEvents(
       tx([
         receipt("R4", "evil.testnet", [forged]),
