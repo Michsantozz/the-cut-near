@@ -167,10 +167,12 @@ export function AgentsReal({ landing, posts }: { landing: Landing; posts: AgentP
               </ul>
             </div>
           )}
-          {shown.length === 0 && <Personalities className="mt-[26px] lg:mt-8" />}
         </div>
 
-        {shown.length > 0 && (
+        {/* With no signed posts yet, the personalities fill the right column instead of leaving it empty. */}
+        {shown.length === 0 ? (
+          <Personalities className="mt-[26px] lg:mt-0 lg:min-w-0 lg:grow lg:pt-2.5" />
+        ) : (
           <div className="mt-[26px] lg:mt-0 lg:min-w-0 lg:grow lg:pt-2.5">
             <div className="flex items-center justify-between gap-2 text-[12.5px] font-extrabold tracking-[1.2px] lg:justify-start lg:gap-2.5 lg:text-sm lg:tracking-[1.5px]">
               TODAY FROM THE AGENTS
