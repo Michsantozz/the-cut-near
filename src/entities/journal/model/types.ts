@@ -36,3 +36,22 @@ export type JournalFilter = {
   /** 1..200, default 50. */
   limit?: number;
 };
+
+/** Totals over the whole journal, for the Receipts page and its audit. Amounts in the smallest unit. */
+export type JournalStats = {
+  entries: number;
+  firstAt: Date | null;
+  latestBlock: number | null;
+  /** Sum of `ft_mint` amounts. */
+  minted: bigint;
+  /** Sum of `ft_burn` amounts. */
+  burned: bigint;
+  /** What the journal says is in the piles: saves, minus unsaves, minus the piles that were cut. */
+  saved: bigint;
+  /** `cut` events, including cuts where nobody was on the stage to cut. */
+  cuts: number;
+  /** Accounts with at least one `buy`. */
+  buyers: number;
+  /** Robot ids that have a `register` event. */
+  registered: string[];
+};

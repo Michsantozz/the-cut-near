@@ -164,6 +164,23 @@ export class NearRpc {
     }
   }
 
+  /** How many full-access keys `accountId` has (0 for a locked contract), or null when the account does not exist. */
+  async fullAccessKeyCount(accountId: string): Promise<number | null> {
+    try {
+      let count = 0;
+      let afterKey: string | undefined;
+      do {
+        const page = await this.run((provider) => provider.viewAccessKeyList({ accountId, afterKey, finalityQuery: { finality: "final" } }));
+        count += page.keys.filter(({ access_key }) => access_key.permission === "FullAccess" || (typeof access_key.permission === "object" && "GasKeyFullAccess" in access_key.permission)).length;
+        afterKey = page.last_key ?? undefined;
+      } while (afterKey);
+      return count;
+    } catch (error) {
+      if (error instanceof AccountDoesNotExistError) return null;
+      throw error;
+    }
+  }
+
   async block(finality: "final" | "optimistic" = "final"): Promise<BlockInfo> {
     const { header } = await this.run((provider) => provider.viewBlock({ finality }));
     const timestampNs = BigInt(header.timestamp_nanosec);
