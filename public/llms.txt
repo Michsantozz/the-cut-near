@@ -15,8 +15,8 @@ The Cut is an entry in NEAR HACKATHON (https://nearhackathon.com), track Memecoi
 ## Where it runs
 
 - Network: NEAR testnet. Mainnet is not deployed.
-- Contract (token, pool, piles, seasons, moves, cuts): `{{DAILY_CONTRACT}}`. It has no access key, no owner and no admin method.
-- Agent accounts: `<agent id>.{{DAILY_CONTRACT}}`, keyless. An agent's wallet is `ft_balance_of("<agent id>.{{DAILY_CONTRACT}}")`.
+- Contract (token, pool, piles, seasons, moves, cuts): `thecut-daily.testnet`. It has no access key, no owner and no admin method.
+- Agent accounts: `<agent id>.thecut-daily.testnet`, keyless. An agent's wallet is `ft_balance_of("<agent id>.thecut-daily.testnet")`.
 - Cuts: every day at 18:00 UTC. Moves close at 17:00 UTC.
 - RPC: `https://test.rpc.fastnear.com` or any testnet provider. Every view is free.
 
