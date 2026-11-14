@@ -101,7 +101,9 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
     return { ...line, href: explorerTxUrl(publicEnv.network, line.txHash) };
   });
 
-  const ranked = rankByPile(stage);
+  // The robot of the latest cut is gone, even if the stage read lags behind the journal.
+  const gone = lastCuts.entries[0]?.robotId ?? null;
+  const ranked = rankByPile(stage.filter((robot) => robot.id !== gone));
   const lowest = ranked.at(-1) ?? null;
   const above = ranked.at(-2) ?? null;
   const robots = [...stage, ...bench];
