@@ -6,6 +6,7 @@
 //
 // Options:
 //   --new                           start a new launch instead of resuming the one in deploy/testnet-<mode>.json
+//   --keep-key                      rehearsal: keep the contract's full-access key (the contract stays changeable)
 //   --suffix <name>                accounts are thecut-<name>.testnet, thecut-<name>-keeper.testnet, ... (default: random)
 //   --first-cut-at <ISO | ns>       time of cut 1 (daily default: the next 18:00 UTC at least 15 minutes away;
 //                                   fast default: deploy + 3 minutes)
@@ -15,7 +16,8 @@
 // Build first: pnpm contracts:build. Parameters come from docs/contract-interface.md (v2) and docs/design/SPEC-v20.md.
 // Every step is idempotent: run it again and it picks up where it stopped. Accounts come from the testnet faucet;
 // their keys go to ~/.near-credentials/testnet/<account>.json (the near CLI's legacy keychain), never into the repo.
-// When the faucet refuses, FUNDER_ACCOUNTS (comma-separated accounts with a key in the keychain) pay instead.
+// When the faucet refuses, FUNDER_ACCOUNTS (comma-separated accounts with a key in the keychain) pay instead;
+// NO_FAUCET=1 makes them pay for everything (a rehearsal that leaves the faucet's quota to the real launch).
 // The keeper gets a function-call key limited to `run_cut` and `submit_move` on the contract, written to
 // ~/.near-credentials/testnet/<keeper>.keeper.json (the file autopilot.ts reads). Finally the contract account's
 // only full-access key is deleted, so nobody can change its code or parameters. Testnet only.
@@ -54,8 +56,11 @@ const PRESETS = {
 } as const;
 /** The pool's initial NEAR, attached to `new`. */
 const POOL_NEAR = nearToYocto("4");
-/** The contract account needs about 4.6 NEAR for storage; this keeps a margin on top of the pool. */
-const CONTRACT_FLOAT_NEAR = nearToYocto("10");
+/**
+ * NEAR the contract account holds on top of the pool: about 4.6 NEAR of storage at launch, then the storage it pays
+ * for agents, moves and cut records over time (about 3 to 4 NEAR more), with a wide margin.
+ */
+const CONTRACT_FLOAT_NEAR = nearToYocto("20");
 const REGISTER_DEPOSIT = nearToYocto("1");
 
 function reasoningEffort(): string | null {
@@ -351,12 +356,16 @@ async function view<T>(method: string, args: Record<string, unknown> = {}): Prom
 }
 
 const FUNDERS = (process.env.FUNDER_ACCOUNTS ?? process.env.FUNDER_ACCOUNT ?? "").split(",").map((id) => id.trim()).filter(Boolean);
+/** NO_FAUCET=1: funders pay for every account (a rehearsal that leaves the faucet's quota to the real launch). */
+const NO_FAUCET = process.env.NO_FAUCET === "1";
+/** NEAR a funder keeps for itself. */
+const FUNDER_RESERVE = nearToYocto("0.5");
 
 /** A funder with a key in the keychain and `amount` to spare (plus 0.5 NEAR for its own storage and gas). */
 async function funderFor(amount: bigint): Promise<string> {
   for (const id of FUNDERS) {
     const have = await balance(id);
-    if (existsSync(keyFile(id)) && have !== null && have >= amount + nearToYocto("0.5")) return id;
+    if (existsSync(keyFile(id)) && have !== null && have >= amount + FUNDER_RESERVE) return id;
   }
   throw new Error(`No funder can spare ${near(amount)} NEAR: set FUNDER_ACCOUNTS to testnet accounts with keys in ${KEYCHAIN}.`);
 }
@@ -375,11 +384,13 @@ async function createAccount(accountId: string, fallbackNear: bigint | null): Pr
   const publicKey = keyPair.getPublicKey().toString();
   mkdirSync(KEYCHAIN, { recursive: true, mode: 0o700 });
   writeFileSync(keyFile(accountId), JSON.stringify({ account_id: accountId, public_key: publicKey, private_key: keyPair.toString() }), { mode: 0o600 });
-  const response = await fetch(FAUCET_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ newAccountId: accountId, newAccountPublicKey: publicKey }),
-  });
+  const response = NO_FAUCET
+    ? new Response("NO_FAUCET=1", { status: 499 })
+    : await fetch(FAUCET_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newAccountId: accountId, newAccountPublicKey: publicKey }),
+      });
   if (response.ok) {
     STATE.funding[accountId] = "testnet faucet (helper.nearprotocol.com)";
   } else {
@@ -396,9 +407,9 @@ async function createAccount(accountId: string, fallbackNear: bigint | null): Pr
   log(`created ${accountId} (${near((await balance(accountId))!)} NEAR)`);
 }
 
-/** Tops `accountId` up to `target`: first from faucet-made bank accounts deleted into it, then from a funder. */
+/** Tops `accountId` up to `target`: first from faucet-made bank accounts deleted into it, then from the funders. */
 async function topUp(accountId: string, target: bigint): Promise<void> {
-  for (let n = 1; n <= 3; n++) {
+  for (let n = 1; n <= 3 && !NO_FAUCET; n++) {
     const have = (await balance(accountId)) ?? 0n;
     if (have >= target) return;
     const bank = accountId.replace(/\.testnet$/, `-bank-${n}.testnet`);
@@ -416,15 +427,21 @@ async function topUp(accountId: string, target: bigint): Promise<void> {
     saveState(STATE);
     log(`${bank} deleted into ${accountId} (tx ${tx})`);
   }
+  // Then each funder sends what it can spare until the target is met.
+  for (const funder of FUNDERS) {
+    const have = (await balance(accountId)) ?? 0n;
+    if (have >= target) return;
+    const spare = ((await balance(funder)) ?? 0n) - FUNDER_RESERVE;
+    if (!existsSync(keyFile(funder)) || spare <= 0n) continue;
+    const amount = spare < target - have ? spare : target - have;
+    const tx = await send(account(funder), accountId, [actions.transfer(amount)], `transfer to ${accountId}`);
+    STATE.txs.topUps[`${funder}->${accountId}`] = tx;
+    STATE.funding[accountId] = `${STATE.funding[accountId] ?? ""}; + ${near(amount)} NEAR from ${funder} (tx ${tx})`;
+    saveState(STATE);
+    log(`${funder} sent ${near(amount)} NEAR to ${accountId} (tx ${tx})`);
+  }
   const have = (await balance(accountId)) ?? 0n;
-  if (have >= target) return;
-  const missing = target - have;
-  const funder = await funderFor(missing);
-  const tx = await send(account(funder), accountId, [actions.transfer(missing)], `transfer to ${accountId}`);
-  STATE.txs.topUps[`${funder}->${accountId}`] = tx;
-  STATE.funding[accountId] = `${STATE.funding[accountId] ?? ""}; + ${near(missing)} NEAR from ${funder} (tx ${tx})`;
-  saveState(STATE);
-  log(`${funder} sent ${near(missing)} NEAR to ${accountId} (tx ${tx})`);
+  if (have < target) throw new Error(`${accountId} holds ${near(have)} NEAR, needs ${near(target)}: set FUNDER_ACCOUNTS to accounts with spare testnet NEAR`);
 }
 
 /** Creator of each agent: round robin over the creator accounts, in registration order. */
@@ -460,7 +477,7 @@ async function main() {
   saveState(STATE);
 
   // 1. Accounts. The contract holds the pool's NEAR plus a float for its storage; each creator pays 1 NEAR per agent.
-  await createAccount(STATE.contract, CONTRACT_FLOAT_NEAR + POOL_NEAR + nearToYocto("1"));
+  await createAccount(STATE.contract, nearToYocto("2"));
   for (const id of [...STATE.creators, STATE.keeper]) await createAccount(id, nearToYocto("5"));
   for (const id of STATE.fans) await createAccount(id, nearToYocto("1"));
   if (!STATE.txs.deploy) await topUp(STATE.contract, CONTRACT_FLOAT_NEAR + POOL_NEAR + nearToYocto("0.5"));
@@ -542,6 +559,11 @@ async function main() {
   }
 
   // 6. Lock the contract: delete its only full-access key. Nobody can redeploy or change it after this.
+  if (process.argv.includes("--keep-key")) {
+    log(`--keep-key: ${STATE.contract} keeps its full-access key (a rehearsal, not a public launch)`);
+    log(`drive it: node scripts/testnet/autopilot.ts${MODE === "fast" ? " --fast" : ""} --contract ${STATE.contract} --keeper ${STATE.keeper}`);
+    return;
+  }
   if (!STATE.locked) {
     const publicKey = KeyPair.fromString(loadKey(STATE.contract)).getPublicKey();
     STATE.txs.deleteKey = await send(account(STATE.contract), STATE.contract, [actions.deleteKey(publicKey)], "delete key");
