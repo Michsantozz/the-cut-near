@@ -43,16 +43,21 @@ function big(data: Record<string, unknown>, key: string): bigint {
 /** A robot's page, or null when no robot has this id. Request-time only. */
 export async function loadRobotProfile(id: string, viewer: string | null): Promise<RobotProfile | null> {
   await connection();
-  const robot = await getRobot(id);
-  if (!robot) return null;
-  const [stage, bench, nextCut, params, saves, history] = await Promise.all([
+  const found = await getRobot(id);
+  if (!found) return null;
+  const [liveStage, bench, nextCut, params, saves, history, cuts] = await Promise.all([
     getStage(),
     getBench(),
     getNextCut(),
     getParams(),
     viewer ? getSaves(viewer) : Promise.resolve([]),
     getJournal({ robotId: id, events: ROBOT_EVENTS, limit: 30 }),
+    getJournal({ events: ["cut"], limit: 3 }),
   ]);
+  // A cut receipt in the journal means the robot is gone, even if the stage read lags behind it.
+  const gone = new Set(cuts.entries.map((entry) => entry.robotId).filter((robotId): robotId is string => robotId !== null));
+  const robot = gone.has(id) && found.status !== "deleted" ? { ...found, status: "deleted" as const } : found;
+  const stage = liveStage.filter((r) => !gone.has(r.id));
   const now = new Date();
   const savedHere = saves.filter((save) => save.robotId === id).reduce((sum, save) => sum + save.amount, 0n);
   const standing = standingOf(robot, stage, bench);
