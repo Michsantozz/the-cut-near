@@ -10,7 +10,7 @@ import { publicEnv } from "@/shared/config/public";
 import { explorerAccountUrl, explorerTxUrl } from "@/shared/near/network";
 
 import { dayStrip, type DayCell } from "../model/days";
-import { ACCOUNT_EVENTS, activityRow, filterRows, groupByDay, mergeNewestFirst, SHARED_EVENTS, type ActivityFilter, type ActivityGroup, type ActivityRow } from "../model/rows";
+import { ACCOUNT_EVENTS, activityRow, filterRows, groupByDay, mergeNewestFirst, type ActivityFilter, type ActivityGroup, type ActivityRow } from "../model/rows";
 
 const ONE_CUT = 10n ** 18n;
 
