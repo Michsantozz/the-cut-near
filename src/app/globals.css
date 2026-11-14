@@ -59,35 +59,20 @@
      next to the board once the board has room for all of its columns. */
   --breakpoint-desk: 85rem;
 
-  /* Robot art motion: a slow breath and sway, and a shiver for the robot on the block. Not in the
-     static design; used only behind motion-safe, so reduced motion keeps the art still. */
-  --animate-idle: idle 4.2s ease-in-out infinite;
-  --animate-shiver: shiver 4.5s ease-in-out infinite;
+  /* Robot art motion: each robot switches between its two poses. Not in the static design; used
+     only behind motion-safe, so reduced motion keeps the first pose. */
+  --animate-pose-a: pose-a 2.8s steps(1) infinite;
+  --animate-pose-b: pose-b 2.8s steps(1) infinite;
 
-  @keyframes idle {
-    0%,
-    100% {
-      transform: translateY(0) rotate(0deg);
-    }
+  @keyframes pose-a {
     50% {
-      transform: translateY(-3px) rotate(1.2deg);
+      opacity: 0;
     }
   }
 
-  @keyframes shiver {
-    0%,
-    86%,
-    100% {
-      transform: translateX(0) rotate(0deg);
-    }
-    89% {
-      transform: translateX(-2px) rotate(-1.5deg);
-    }
-    92% {
-      transform: translateX(2px) rotate(1.5deg);
-    }
-    95% {
-      transform: translateX(-1px) rotate(-0.8deg);
+  @keyframes pose-b {
+    50% {
+      opacity: 1;
     }
   }
 }

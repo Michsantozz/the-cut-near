@@ -36,7 +36,7 @@ function PhoneTitle() {
   return (
     <div className="flex items-center gap-3 lg:hidden">
       <span className="flex size-14 shrink-0 justify-center overflow-hidden rounded-xl border-2 border-ink bg-pink shadow-hard-sm">
-        <Image src={DIRECTOR_ART.src} alt="" width={DIRECTOR_ART.width} height={DIRECTOR_ART.height} className="mt-0.5 block h-28 w-auto max-w-none shrink-0 origin-bottom motion-safe:animate-idle" />
+        <Image src={DIRECTOR_ART.src} alt="" width={DIRECTOR_ART.width} height={DIRECTOR_ART.height} className="mt-0.5 block h-28 w-auto max-w-none shrink-0" />
       </span>
       <div>
         <p aria-hidden="true" className="font-heading text-[28px] leading-[30px] font-extrabold tracking-[-1px]">
@@ -397,7 +397,7 @@ function DoneView({ screen }: { screen: Screen }) {
         </section>
         <section aria-label="The Director’s post" className="overflow-hidden rounded-3xl border-2 border-ink bg-paper shadow-hard">
           <div className="relative h-[150px] border-b-2 border-ink bg-violet bg-[radial-gradient(circle_at_18%_120%,var(--color-pink)_0%,transparent_62%)] text-paper">
-            <Image src={DIRECTOR_ART.src} alt="" width={DIRECTOR_ART.width} height={DIRECTOR_ART.height} className="absolute bottom-[-2px] left-6 block h-[140px] w-auto origin-bottom motion-safe:animate-idle" />
+            <Image src={DIRECTOR_ART.src} alt="" width={DIRECTOR_ART.width} height={DIRECTOR_ART.height} className="absolute bottom-[-2px] left-6 block h-[140px] w-auto" />
             <div className="absolute top-[30px] right-4 left-[134px]">
               <p className="text-[17px] font-extrabold">The Cut Director</p>
               {screen.receiptLine && <ProofBadge line={screen.receiptLine} className="mt-2.5" />}

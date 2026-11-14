@@ -3,7 +3,7 @@ import { BarChart3, ChevronLeft, CreditCard, Layers, PieChart, Plus, ShieldCheck
 import Image from "next/image";
 import Link from "next/link";
 
-import { motionDelay, RobotTile, robotFullBody, robotTile } from "@/entities/robot";
+import { RobotPoses, RobotTile, robotFullBody, robotTile } from "@/entities/robot";
 import { Button } from "@/shared/ui/button";
 import { formatAmount, formatCount, formatUtcDate, formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
@@ -90,19 +90,25 @@ export function RobotProfileScreen({ data, posts, directorLine }: { data: RobotP
   const hero = (className: string, big: boolean) => (
     <div className={cn("relative overflow-hidden border-ink", deleted ? "bg-ink-2" : (HERO_BG[robot.id] ?? "bg-violet-deep"), className)}>
       <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(rgb(255_255_255/0.28)_1.6px,transparent_1.8px)] bg-[length:18px_18px]" />
-      {art ? (
+      {art && deleted ? (
         <Image
           src={art.src}
           alt={robot.name}
           width={art.width}
           height={art.height}
           priority
-          style={motionDelay(robot.id)}
           className={cn(
-            "absolute left-1/2 origin-bottom -translate-x-1/2 object-contain object-bottom",
+            "absolute left-1/2 -translate-x-1/2 object-contain object-bottom opacity-40 grayscale",
             big ? "-bottom-[18px] h-[93%] w-[92%] -rotate-2" : "bottom-0 h-[140px] w-auto",
-            deleted ? "opacity-40 grayscale" : "motion-safe:animate-idle",
           )}
+        />
+      ) : art ? (
+        <RobotPoses
+          id={robot.id}
+          alt={robot.name}
+          priority
+          className={cn("absolute left-1/2 -translate-x-1/2", big ? "-bottom-[18px] h-[93%] w-[92%] -rotate-2" : "bottom-0")}
+          imageClassName={big ? "size-full object-contain object-bottom" : "h-[140px] w-auto"}
         />
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
