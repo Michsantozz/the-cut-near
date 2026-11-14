@@ -13,6 +13,7 @@ export const SAMPLE_LATEST_BLOCK = 186_920_114;
 const cut = (whole: number) => units(whole).toString();
 const cutTenths = (tenths: number) => (units(tenths) / 10n).toString();
 const nearTenths = (tenths: number) => (units(tenths, NEAR_DECIMALS) / 10n).toString();
+const nearThousandths = (thousandths: number) => (units(thousandths, NEAR_DECIMALS) / 1000n).toString();
 const ns = (iso: string) => (BigInt(Date.parse(iso)) * 1_000_000n).toString();
 
 type Item = Record<string, unknown>;
@@ -79,8 +80,9 @@ const register = (id: string): Item => {
   };
 };
 
+/** `nearIn` in thousandths of a NEAR (SPEC-v19 §2: $214.80 and $958.77 at $2.50), `cutOut` and `fee` in tenths of a $CUT. */
 const buy = (account: string, nearIn: number, cutOut: number, fee: number): Log[] => [
-  { event: "buy", items: [{ account_id: account, near_in: nearTenths(nearIn), cut_out: cutTenths(cutOut), fee: cutTenths(fee), cut_index: 1 }] },
+  { event: "buy", items: [{ account_id: account, near_in: nearThousandths(nearIn), cut_out: cutTenths(cutOut), fee: cutTenths(fee), cut_index: 1 }] },
   { event: "fee", items: [{ account_id: account, amount: cutTenths(fee), source: "buy", cut_index: 1 }] },
 ];
 
@@ -139,13 +141,13 @@ const HISTORY: JournalEntry[] = [
     { event: "fee", items: [{ account_id: "lumen.near", amount: cutTenths(196), source: "sell", cut_index: 1 }] },
   ]),
   ...tx("save-bunfan", "2026-11-13T12:58:00Z", [save("bunfan.near", "kiko", 300, 23_600)]),
-  ...tx("buy-pixfan", "2026-11-13T11:30:00Z", buy("pixfan.near", 35_685, 48_000, 485)),
-  ...tx("buy-mika-2", "2026-11-13T09:14:00Z", buy("mika.near", 859, 1_200, 12)),
+  ...tx("buy-pixfan", "2026-11-13T11:30:00Z", buy("pixfan.near", 3_568_500, 48_000, 485)),
+  ...tx("buy-mika-2", "2026-11-13T09:14:00Z", buy("mika.near", 85_920, 1_200, 12)),
   ...tx("register-pixelkit", "2026-11-13T08:02:00Z", [{ event: "register", items: [register("pixelkit")] }]),
   ...tx("register-bloop", "2026-11-12T19:40:00Z", [{ event: "register", items: [register("bloop")] }]),
   // Day 1: launch.
   ...tx("register-chartwise", "2026-11-12T16:12:00Z", [{ event: "register", items: [register("chartwise")] }]),
-  ...tx("buy-mika-1", "2026-11-12T15:20:00Z", buy("mika.near", 3_835, 5_542, 56)),
+  ...tx("buy-mika-1", "2026-11-12T15:20:00Z", buy("mika.near", 383_508, 5_542, 56)),
   ...tx("stage", "2026-11-12T15:01:30Z", [{ event: "join", items: STAGE.map((id) => ({ cut_index: 0, robot_id: id, pile: cut(0) })) }]),
   ...tx("robots", "2026-11-12T15:01:20Z", [{ event: "register", items: STAGE.map(register) }]),
   ...tx("launch", "2026-11-12T15:01:00Z", [
