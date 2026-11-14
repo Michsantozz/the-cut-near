@@ -3,7 +3,7 @@ import { Check, Clock, Scissors, TrendingUp, TriangleAlert, Trophy, Wallet, X, t
 import Link from "next/link";
 
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
-import { formatAmount, formatCount, formatDuration, formatUsd, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
+import { formatAmount, formatCount, formatDuration, formatSignificant, formatUsd, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 import { ConnectButton } from "@/shared/wallet";
 
 import { cutText, whenText, type CutReceipt, type ReceiptTag } from "../model/describe";
@@ -43,6 +43,13 @@ const TAG_STYLE: Record<ReceiptTag, string> = {
 };
 
 const cutWhole = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
+/** A big $CUT amount, short: "2.3M", "940K", "812". */
+const compactCut = (value: bigint) =>
+  value >= 10n ** 24n
+    ? `${formatAmount(value, { decimals: 24, maxFractionDigits: 1 })}M`
+    : value >= 10n ** 21n
+      ? `${formatAmount(value, { decimals: 21, maxFractionDigits: 0 })}K`
+      : cutWhole(value);
 
 export function ReceiptsScreen({ data }: { data: Receipts }) {
   const now = new Date(data.renderedAt);
@@ -120,19 +127,23 @@ type Stat = { label: string; value: string; sub: string; icon: LucideIcon; bg: s
 
 function StatCards({ data, now }: { data: Receipts; now: Date }) {
   const { stats } = data;
-  const price =
-    stats.usdCentsPerNear !== null
-      ? formatUsd((stats.priceYoctoNear * stats.usdCentsPerNear * 2n + 10n ** 24n) / (2n * 10n ** 24n))
-      : `${formatAmount(stats.priceYoctoNear, { decimals: NEAR_DECIMALS, maxFractionDigits: 3 })} NEAR`;
-  const priceSub =
-    stats.usdCentsPerNear !== null
-      ? `${formatAmount(stats.priceYoctoNear, { decimals: NEAR_DECIMALS, maxFractionDigits: 3 })} NEAR · 1 NEAR = ${formatUsd(stats.usdCentsPerNear)}`
+  const nearPrice = `${formatSignificant(stats.priceYoctoNear, { decimals: NEAR_DECIMALS, maxFractionDigits: 3 })} NEAR`;
+  const usdCents = stats.usdCentsPerNear !== null ? (stats.priceYoctoNear * stats.usdCentsPerNear * 2n + 10n ** 24n) / (2n * 10n ** 24n) : 0n;
+  // Under a cent the dollar price reads "$0.00", and under 0.001 NEAR the NEAR price is a row of zeros:
+  // then the card shows how much $CUT one NEAR buys, and the exact price goes underneath.
+  const tiny = usdCents < 1n && stats.priceYoctoNear > 0n && stats.priceYoctoNear < 10n ** 21n;
+  const price = usdCents >= 1n ? formatUsd(usdCents) : tiny ? compactCut(10n ** 42n / stats.priceYoctoNear) : nearPrice;
+  const priceLabel = tiny ? "$CUT PER NEAR" : "$CUT PRICE";
+  const priceSub = tiny
+    ? `${nearPrice} each, from the pool`
+    : stats.usdCentsPerNear !== null
+      ? `${usdCents >= 1n ? `${nearPrice} · ` : ""}1 NEAR = ${formatUsd(stats.usdCentsPerNear)}`
       : "In NEAR, from the pool";
   const day = relativeUtcDay(now, stats.cutAt);
   const lastCut = stats.lastCut;
   const { season } = stats;
   const items: Stat[] = [
-    { label: "$CUT PRICE", value: price, sub: priceSub, icon: TrendingUp, bg: "bg-paper" },
+    { label: priceLabel, value: price, sub: priceSub, icon: TrendingUp, bg: "bg-paper" },
     {
       label: "SEASON POT",
       value: cutWhole(season.pot),

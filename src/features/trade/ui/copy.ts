@@ -1,5 +1,5 @@
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
-import { formatAmount, formatUsd, relativeUtcDay } from "@/shared/ui/format";
+import { formatAmount, formatSignificant, formatUsd, relativeUtcDay } from "@/shared/ui/format";
 
 import { ONE_NEAR, cutToUsdCents, nearToUsdCents } from "../model/money";
 
@@ -9,8 +9,8 @@ export const cutText = (value: bigint) => formatAmount(value, { maxFractionDigit
 /** Whole $CUT: "1,052,400". */
 export const cutWhole = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
 
-/** NEAR: one decimal from 10 NEAR up ("99.9"), up to three below ("0.01"). */
-export const nearText = (yocto: bigint) => formatAmount(yocto, { decimals: NEAR_DECIMALS, maxFractionDigits: yocto >= 10n * ONE_NEAR ? 1 : 3 });
+/** NEAR: one decimal from 10 NEAR up ("99.9"), up to three below ("0.01"), three significant digits under 0.001 ("0.000412"). */
+export const nearText = (yocto: bigint) => formatSignificant(yocto, { decimals: NEAR_DECIMALS, maxFractionDigits: yocto >= 10n * ONE_NEAR ? 1 : 3 });
 
 /** "$2.50" when a NEAR price is known, else the NEAR amount: "1.02 NEAR". */
 export function nearMoney(yocto: bigint, usdCentsPerNear: bigint | null): string {
@@ -22,11 +22,10 @@ export function cutMoney(cut: bigint, yoctoNearPerCut: bigint, usdCentsPerNear: 
   return usdCentsPerNear !== null ? formatUsd(cutToUsdCents(cut, yoctoNearPerCut, usdCentsPerNear)) : `${formatAmount(cut, { maxFractionDigits: 2 })} $CUT`;
 }
 
-/** The price of one $CUT: "$1.84", or "0.736 NEAR" without a NEAR price. */
+/** The price of one $CUT: "$1.84", or "0.0000107 NEAR" without a NEAR price or when it is under a cent. */
 export function priceText(yoctoNearPerCut: bigint, usdCentsPerNear: bigint | null): string {
-  return usdCentsPerNear !== null
-    ? formatUsd(cutToUsdCents(10n ** 18n, yoctoNearPerCut, usdCentsPerNear))
-    : `${formatAmount(yoctoNearPerCut, { decimals: NEAR_DECIMALS, maxFractionDigits: 3 })} NEAR`;
+  const cents = usdCentsPerNear !== null ? cutToUsdCents(10n ** 18n, yoctoNearPerCut, usdCentsPerNear) : 0n;
+  return cents >= 1n ? formatUsd(cents) : `${formatSignificant(yoctoNearPerCut, { decimals: NEAR_DECIMALS, maxFractionDigits: 3 })} NEAR`;
 }
 
 /** "today’s prize", "tomorrow’s prize" or "the next prize", for the cut the fees go to. */

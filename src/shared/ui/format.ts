@@ -34,6 +34,20 @@ export function formatAmount(value: bigint, format: AmountFormat = {}): string {
   return negative && scaled !== 0n ? `-${text}` : text;
 }
 
+/**
+ * Like `formatAmount`, but a value under 1 keeps `significant` digits instead of rounding to "0":
+ * `0.0000107 NEAR` → "0.0000107", while `12.345` with `maxFractionDigits: 2` stays "12.35".
+ */
+export function formatSignificant(value: bigint, format: AmountFormat & { significant?: number } = {}): string {
+  const { decimals = CUT_DECIMALS, maxFractionDigits = 2, significant = 3 } = format;
+  const abs = value < 0n ? -value : value;
+  const unit = 10n ** BigInt(decimals);
+  if (abs === 0n || abs >= unit) return formatAmount(value, { ...format, decimals, maxFractionDigits });
+  const leadingZeros = decimals - abs.toString().length;
+  const digits = Math.min(decimals, Math.max(maxFractionDigits, leadingZeros + significant));
+  return formatAmount(value, { ...format, decimals, maxFractionDigits: digits });
+}
+
 /** US cents → "$1,240.53". */
 export function formatUsd(cents: bigint): string {
   const negative = cents < 0n;

@@ -1,6 +1,6 @@
 import type { JournalEntry } from "@/entities/journal";
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
-import { formatAmount, formatCount, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
+import { formatAmount, formatCount, formatSignificant, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 
 // One journal line as the Receipts page writes it, in a fan's words. Field names follow contracts/thecut/src/events.rs
 // (docs/contract-interface.md "Events"); v1 `fee` and `join` rows still read.
@@ -138,7 +138,7 @@ export function groupEntries(entries: readonly JournalEntry[]): ReceiptGroup[] {
 /** $CUT with up to one decimal: "1,775.4", "400". */
 export const cutText = (value: bigint) => formatAmount(value, { maxFractionDigits: 1 });
 /** NEAR with up to one decimal: "85.9". */
-export const nearText = (value: bigint) => formatAmount(value, { decimals: NEAR_DECIMALS, maxFractionDigits: 1 });
+export const nearText = (value: bigint) => formatSignificant(value, { decimals: NEAR_DECIMALS, maxFractionDigits: 1 });
 
 function str(data: Record<string, unknown>, key: string): string {
   const value = data[key];

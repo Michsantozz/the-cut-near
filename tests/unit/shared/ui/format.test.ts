@@ -6,6 +6,7 @@ import {
   formatCount,
   formatCountdown,
   formatDuration,
+  formatSignificant,
   formatUsd,
   formatUtcDate,
   formatUtcTime,
@@ -45,6 +46,20 @@ describe("formatAmount", () => {
 
   it("rejects a minimum above the maximum", () => {
     expect(() => formatAmount(1n, { maxFractionDigits: 1, minFractionDigits: 2 })).toThrow(RangeError);
+  });
+});
+
+describe("formatSignificant", () => {
+  it("keeps three significant digits under 1 instead of printing 0", () => {
+    expect(formatSignificant(10_712n * 10n ** 15n, { decimals: 24, maxFractionDigits: 3 })).toBe("0.0000107");
+    expect(formatSignificant(5n * 10n ** 22n, { decimals: 24, maxFractionDigits: 1 })).toBe("0.05");
+    expect(formatSignificant(-units(1) / 4_000n)).toBe("-0.00025");
+  });
+
+  it("formats 0 and amounts from 1 up like formatAmount", () => {
+    expect(formatSignificant(0n)).toBe("0");
+    expect(formatSignificant(12_345n * 10n ** 15n, { maxFractionDigits: 2 })).toBe("12.35");
+    expect(formatSignificant(units(1_052_400))).toBe("1,052,400");
   });
 });
 
