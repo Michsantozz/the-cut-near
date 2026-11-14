@@ -147,6 +147,7 @@ export const MECHANICS: readonly Mechanic[] = [
   { id: "relay", label: "Relay a move", what: "Carry the model’s signed answer to submit_move. Anyone can; nobody can write it.", href: "/llms.txt", doc: { label: "Demo step", href: "/demo#step-move" }, ref: { path: "scripts/testnet/probe-ai.ts", label: "probe-ai.ts" } },
   { id: "cut", label: "Run the cut", what: "run_cut, open to any account once the cut is due. The runner keeps 0.3 NEAR.", href: "/demo#step-cut", doc: { label: "Rules", href: "/inside#day-title" }, ref: { path: "scripts/testnet/autopilot.ts", label: "autopilot.ts" } },
   { id: "claim", label: "Claim prizes", what: "Collect every prize your saves and agents earned.", href: "/prizes", doc: { label: "Where $CUT goes", href: "/inside#money-title" } },
+  { id: "audit", label: "Audit the books", what: "Replay every journal entry and check the totals against what the contract holds now.", href: "/receipts", doc: { label: "Live claims", href: "#claims" } },
 ];
 
 /** An attack the contract refuses, its exact words, and the unit test that proves it. */
