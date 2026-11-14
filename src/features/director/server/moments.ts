@@ -2,7 +2,7 @@ import "server-only";
 import { getCut, getNextCut } from "@/entities/cut/server";
 import { getParams } from "@/entities/market/server";
 import { getBench, getStage } from "@/entities/robot/server";
-import type { CutRecord } from "@/entities/cut";
+import { isDeletingCut, type DeletingCut } from "@/entities/cut";
 import { nearAiClientFromEnv, readAiEnv } from "@/shared/ai";
 import { createHardwareVerifier } from "@/shared/ai/verify/server";
 import { buildCutFacts, buildDayFacts } from "../model/facts";
@@ -41,10 +41,11 @@ export function directorDepsFromEnv(): DirectorDeps {
   };
 }
 
-async function latestCut(fromIndex: number): Promise<CutRecord | null> {
+/** The latest cut that deleted a robot. Cuts that only seated bench robots give the Director nothing to say. */
+async function latestDeletingCut(fromIndex: number): Promise<DeletingCut | null> {
   for (let index = fromIndex; index >= 1; index--) {
     const cut = await getCut(index);
-    if (cut) return cut;
+    if (cut && isDeletingCut(cut)) return cut;
   }
   return null;
 }
@@ -53,8 +54,9 @@ async function latestCut(fromIndex: number): Promise<CutRecord | null> {
 export async function momentPrompts(moment: DirectorMoment, options: { now?: Date; cutIndex?: number } = {}): Promise<DirectorPrompt[]> {
   const [stage, bench, nextCut, params] = await Promise.all([getStage(), getBench(), getNextCut(), getParams()]);
   if (moment === "after-cut") {
-    const cut = options.cutIndex !== undefined ? await getCut(options.cutIndex) : await latestCut(nextCut.index);
+    const cut = options.cutIndex !== undefined ? await getCut(options.cutIndex) : await latestDeletingCut(nextCut.index);
     if (!cut) throw new Error("No cut has run yet.");
+    if (!isDeletingCut(cut)) return [];
     const facts = buildCutFacts({ cut, robots: [...stage, ...bench], params });
     return [afterCutRoastPrompt(facts), afterCutReceiptPrompt(facts)];
   }

@@ -1,4 +1,4 @@
-import { sliceIfCut, type CutRecord, type NextCut, type SplitParams } from "@/entities/cut";
+import { sliceIfCut, type DeletingCut, type NextCut, type SplitParams } from "@/entities/cut";
 import type { Params } from "@/entities/market";
 import { rankByPile, type Robot } from "@/entities/robot";
 import { countdownParts, formatCut, formatRatio, utcClock } from "./format";
@@ -117,7 +117,7 @@ export type CutFacts = {
 };
 
 export type CutInput = {
-  cut: CutRecord;
+  cut: DeletingCut;
   /** Every robot the cut names (stage before the cut and bench), for names and the joining queue. */
   robots: Robot[];
   params: Pick<Params, "stageSize" | "cutIntervalMs">;

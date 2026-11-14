@@ -28,11 +28,11 @@ After deploy and `new`, every full-access key on the main account is deleted. No
 | `burn_bps` | 5000 (half the cut pile burns) | same |
 | `savers_bps` | 9500 (95% of the prize to savers, 5% to creators) | same |
 | `stage_size` | 10 | same |
-| `first_cut_at` | first 18:00 UTC at least 24 h after launch | launch + 2 min |
+| `first_cut_at` | first 18:00 UTC at least 24 h after launch | launch + 5 min (time to register and seed) |
 | `cut_interval` | 86,400 s | 120 s |
 | `robot_funding` | 0.5 NEAR (left in the robot account; the cut runner receives it) | same |
-| `register_deposit` | 5 NEAR (0.5 funds the robot account, 4.5 back when it leaves) | same |
-| `pool_cut_reserve` / `pool_near_reserve` | initial liquidity, set in `new` | small |
+| `register_deposit` | 5 NEAR (0.5 funds the robot account, 4.5 back when it leaves) | 1 NEAR, so faucet accounts can register |
+| `pool_cut_reserve` / `pool_near_reserve` | initial liquidity, set in `new` | 10,000,000 $CUT / 4 NEAR |
 
 ## Robots
 

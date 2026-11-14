@@ -2,7 +2,8 @@
 export type NextCut = {
   index: number;
   at: Date;
-  lowestId: string;
+  /** Null while the stage is not full: the cut then only seats bench robots. */
+  lowestId: string | null;
   /** $CUT the lowest robot needs to pass the next one. */
   gapToNext: bigint;
   prizeSoFar: bigint;
@@ -12,7 +13,8 @@ export type NextCut = {
 export type CutRecord = {
   index: number;
   at: Date;
-  deletedId: string;
+  /** Null for a cut that only seated bench robots (the stage was not full). */
+  deletedId: string | null;
   pile: bigint;
   burned: bigint;
   prize: bigint;
@@ -22,3 +24,10 @@ export type CutRecord = {
   joinedId: string | null;
   runner: string;
 };
+
+/** A cut that deleted a robot. The first cuts after launch only seat bench robots and delete nobody. */
+export type DeletingCut = CutRecord & { deletedId: string };
+
+export function isDeletingCut(cut: CutRecord): cut is DeletingCut {
+  return cut.deletedId !== null;
+}

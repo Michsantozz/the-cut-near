@@ -2,6 +2,7 @@ import "server-only";
 
 import { connection } from "next/server";
 
+import { isDeletingCut, type DeletingCut } from "@/entities/cut";
 import { getCut, getNextCut } from "@/entities/cut/server";
 import { getParams, getTotalSupply } from "@/entities/market/server";
 import { rankByPile, type Robot } from "@/entities/robot";
@@ -74,7 +75,7 @@ export async function loadDirectorScreen(): Promise<DirectorScreen> {
 
   const lastRecord = nextCut.index > 1 ? await getCut(nextCut.index - 1) : null;
   const robots = [...stage, ...bench];
-  const lastCut = lastRecord && isSameUtcDay(now, lastRecord.at) ? describeCut(lastRecord, robots, supply, params.stageSize) : null;
+  const lastCut = lastRecord && isDeletingCut(lastRecord) && isSameUtcDay(now, lastRecord.at) ? describeCut(lastRecord, robots, supply, params.stageSize) : null;
 
   const burnIfCut = lowest ? (lowest.pile * BigInt(params.burnBps)) / BPS : 0n;
   const feed = linesForFeed(lines, nextCut.index);
@@ -102,7 +103,7 @@ export async function loadDirectorScreen(): Promise<DirectorScreen> {
 }
 
 function describeCut(
-  cut: NonNullable<Awaited<ReturnType<typeof getCut>>>,
+  cut: DeletingCut,
   robots: Robot[],
   supplyNow: bigint,
   stageSize: number,

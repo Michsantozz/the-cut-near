@@ -78,7 +78,8 @@ export const quoteViewSchema = z.object({ amount_out: u128, fee: u128 }).transfo
 export type QuoteView = z.output<typeof quoteViewSchema>;
 
 export const nextCutViewSchema = z
-  .object({ index: u64Index, at: timestampNs, lowest_id: z.string().min(1), gap_to_next: u128, prize_so_far: u128 })
+  // `lowest_id` is null while the stage is not full: then a cut only seats bench robots and deletes nobody.
+  .object({ index: u64Index, at: timestampNs, lowest_id: z.string().min(1).nullable(), gap_to_next: u128, prize_so_far: u128 })
   .transform((n) => ({ index: n.index, at: n.at, lowestId: n.lowest_id, gapToNext: n.gap_to_next, prizeSoFar: n.prize_so_far }));
 export type NextCutView = z.output<typeof nextCutViewSchema>;
 
@@ -86,7 +87,8 @@ export const cutRecordViewSchema = z
   .object({
     index: u64Index,
     at: timestampNs,
-    deleted_id: z.string().min(1),
+    /** Null for a cut that ran with the stage not full: it only seated bench robots. */
+    deleted_id: z.string().min(1).nullable(),
     pile: u128,
     burned: u128,
     prize: u128,

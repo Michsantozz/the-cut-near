@@ -1,5 +1,5 @@
 import { units } from "@/shared/lib/amount";
-import type { CutRecord, NextCut } from "../model/types";
+import type { DeletingCut, NextCut } from "../model/types";
 
 /** Sample "now" of the design: Fri Nov 13 2026, 13:48 UTC, 4h 12m before the first cut. */
 export const SAMPLE_NOW = new Date("2026-11-13T13:48:00Z");
@@ -13,7 +13,7 @@ export const SAMPLE_NEXT_CUT: NextCut = {
 };
 
 /** The sample cut as it runs at 18:00 (SPEC-v19 §2). Slice and creator slice are rounded to 0.1 $CUT. */
-export const SAMPLE_FIRST_CUT: CutRecord = {
+export const SAMPLE_FIRST_CUT: DeletingCut = {
   index: 1,
   at: new Date("2026-11-13T18:00:00Z"),
   deletedId: "kiko",

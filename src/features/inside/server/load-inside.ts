@@ -2,7 +2,7 @@ import "server-only";
 
 import { connection } from "next/server";
 
-import { paysPer100, sliceIfCut, type CutRecord } from "@/entities/cut";
+import { isDeletingCut, paysPer100, sliceIfCut, type CutRecord, type DeletingCut } from "@/entities/cut";
 import { getCut, getNextCut } from "@/entities/cut/server";
 import type { Params } from "@/entities/market";
 import { getParams, getTotalSupply } from "@/entities/market/server";
@@ -11,7 +11,7 @@ import { getBench, getStage } from "@/entities/robot/server";
 
 export type LivePile = { robot: Robot; isLowest: boolean; paysPer100: bigint | null };
 
-export type PastCut = CutRecord & { deletedName: string; joinedName: string | null };
+export type PastCut = DeletingCut & { deletedName: string; joinedName: string | null };
 
 export type Inside = {
   /** Request time in ms: when the piles were read. */
@@ -72,6 +72,6 @@ export async function loadInside(): Promise<Inside> {
     creatorSlice: (prize - (prize * BigInt(params.saversBps)) / BPS) / survivors,
     bench: rankByPile(bench),
     burned: params.totalSupply - supply,
-    pastCuts: records.map((cut) => ({ ...cut, deletedName: nameOf(cut.deletedId), joinedName: cut.joinedId ? nameOf(cut.joinedId) : null })),
+    pastCuts: records.filter(isDeletingCut).map((cut) => ({ ...cut, deletedName: nameOf(cut.deletedId), joinedName: cut.joinedId ? nameOf(cut.joinedId) : null })),
   };
 }

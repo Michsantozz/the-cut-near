@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isDeletingCut } from "@/entities/cut";
 import { getCut } from "@/entities/cut/server";
 import { getRobot } from "@/entities/robot/server";
 
@@ -16,7 +17,8 @@ export type CutShare = {
 export async function loadCutShare(index: number): Promise<CutShare | null> {
   if (!Number.isSafeInteger(index) || index < 1) return null;
   const cut = await getCut(index);
-  if (!cut) return null;
+  // A cut that only seated bench robots has nothing to share.
+  if (!cut || !isDeletingCut(cut)) return null;
   const [deleted, joined] = await Promise.all([getRobot(cut.deletedId), cut.joinedId ? getRobot(cut.joinedId) : null]);
   return {
     index: cut.index,
