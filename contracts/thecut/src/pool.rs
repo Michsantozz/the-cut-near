@@ -1,9 +1,9 @@
 //! The NEAR/$CUT pool: `buy`, `sell` and their quotes.
 //!
 //! Constant product (`near_reserve * cut_reserve` never decreases). The fee is always
-//! taken in $CUT (from the output on a buy, from the input on a sell) and credited to the
-//! next prize. There is no way to add or remove liquidity: the reserves only move by
-//! trades, so nobody can pull the pool.
+//! taken in $CUT (from the output on a buy, from the input on a sell): `pot_bps` of it goes
+//! to the season pot, the rest to the next day prize. There is no way to add or remove
+//! liquidity: the reserves only move by trades, so nobody can pull the pool.
 
 use near_sdk::json_types::U128;
 use near_sdk::{NearToken, Promise, env, near, require};
@@ -11,6 +11,16 @@ use near_sdk_contract_tools::ft::Nep145Controller;
 
 use crate::types::{PoolView, QuoteView};
 use crate::{Contract, ContractExt, checked, events, math};
+
+impl Contract {
+    /// Splits a trade fee between the season pot and the next day prize. Returns the pot part.
+    fn collect_fee(&mut self, fee: u128) -> u128 {
+        let (to_pot, to_prize) = checked(math::fee_split(fee, self.params.pot_bps));
+        self.season.pot = checked(self.season.pot.checked_add(to_pot));
+        self.fees_since_cut = checked(self.fees_since_cut.checked_add(to_prize));
+        to_pot
+    }
+}
 
 #[near]
 impl Contract {
@@ -54,25 +64,17 @@ impl Contract {
 
         self.pool.near_reserve = checked(self.pool.near_reserve.checked_add(near_in));
         self.pool.cut_reserve = checked(self.pool.cut_reserve.checked_sub(quote.gross_out));
-        self.fees_since_cut = checked(self.fees_since_cut.checked_add(quote.fee));
+        let to_pot = self.collect_fee(quote.fee);
         self.send_cut(&buyer, quote.amount_out, "buy");
 
         events::emit(
             "buy",
             &[events::Buy {
-                account_id: buyer.clone(),
+                account_id: buyer,
                 near_in: U128(near_in),
                 cut_out: U128(quote.amount_out),
                 fee: U128(quote.fee),
-                cut_index: self.next_cut_index,
-            }],
-        );
-        events::emit(
-            "fee",
-            &[events::Fee {
-                account_id: buyer,
-                amount: U128(quote.fee),
-                source: "buy",
+                to_pot: U128(to_pot),
                 cut_index: self.next_cut_index,
             }],
         );
@@ -102,7 +104,7 @@ impl Contract {
         self.take_cut(&seller, cut_in.0, "sell");
         self.pool.cut_reserve = checked(self.pool.cut_reserve.checked_add(quote.net_in));
         self.pool.near_reserve = checked(self.pool.near_reserve.checked_sub(quote.near_out));
-        self.fees_since_cut = checked(self.fees_since_cut.checked_add(quote.fee));
+        let to_pot = self.collect_fee(quote.fee);
         Promise::new(seller.clone())
             .transfer(NearToken::from_yoctonear(quote.near_out))
             .detach();
@@ -110,19 +112,11 @@ impl Contract {
         events::emit(
             "sell",
             &[events::Sell {
-                account_id: seller.clone(),
+                account_id: seller,
                 cut_in,
                 near_out: U128(quote.near_out),
                 fee: U128(quote.fee),
-                cut_index: self.next_cut_index,
-            }],
-        );
-        events::emit(
-            "fee",
-            &[events::Fee {
-                account_id: seller,
-                amount: U128(quote.fee),
-                source: "sell",
+                to_pot: U128(to_pot),
                 cut_index: self.next_cut_index,
             }],
         );

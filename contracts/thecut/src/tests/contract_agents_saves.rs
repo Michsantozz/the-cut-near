@@ -2,25 +2,53 @@
 
 use super::*;
 use crate::types::AgentStatusView;
-use crate::{MIN_SAVE, AGENT_WASM};
+use crate::{AGENT_WASM, MIN_SAVE};
 
-#[test]
-fn register_creates_a_keyless_agent_account_on_the_bench() {
-    let mut w = World::daily();
+fn register_kiko(w: &mut World, deposit: NearToken, personality: &str, charter: &str, seed: u128) {
     let creator = creator_of("kiko");
-    let promise_made = w.call(creator.as_str(), near(6), |c| {
+    w.holds("kiko.thecut.near");
+    w.call(creator.as_str(), deposit, |c| {
         c.register_agent(
             "kiko".into(),
             "Kiko Bun".into(),
-            "VTuber".into(),
+            "Never cut twice".into(),
             "@KikoBunCut".into(),
+            personality.into(),
+            charter.into(),
+            U128(seed),
         )
         .detach();
     });
-    let _ = promise_made;
+}
+
+#[test]
+fn register_creates_a_keyless_agent_account_with_a_wallet() {
+    let mut w = World::daily();
+    let creator = creator_of("kiko");
+    let bought = w.buy(creator.as_str(), near(250));
+    register_kiko(
+        &mut w,
+        near(2),
+        "traitor",
+        "Loyal to nobody.\nLoves chaos.",
+        cut(1_200),
+    );
+    let receipts = get_created_receipts();
     // The excess 1 NEAR comes back right away.
     assert!(transfers().contains(&(creator.clone(), near(1).as_yoctonear())));
-    let receipts = get_created_receipts();
+    // The seed moved into the agent account's $CUT balance at once.
+    let seed = events()
+        .into_iter()
+        .find(|(_, e, d)| e == "ft_transfer" && d[0]["memo"] == "seed")
+        .unwrap();
+    assert_eq!(seed.2[0]["old_owner_id"], creator.as_str());
+    assert_eq!(seed.2[0]["new_owner_id"], "kiko.thecut.near");
+    assert_eq!(w.balance(creator.as_str()), bought - cut(1_200));
+    assert_eq!(w.wallet("kiko"), cut(1_200));
+    assert!(
+        w.view(|c| c.storage_balance_of(id("kiko.thecut.near")))
+            .is_some()
+    );
     let agent_receipt = receipts
         .iter()
         .find(|r| r.receiver_id.as_str() == "kiko.thecut.near")
@@ -28,7 +56,7 @@ fn register_creates_a_keyless_agent_account_on_the_bench() {
     let actions = &agent_receipt.actions;
     assert!(matches!(actions[0], MockAction::CreateAccount { .. }));
     assert!(
-        matches!(actions[1], MockAction::Transfer { deposit, .. } if deposit == NearToken::from_millinear(500))
+        matches!(actions[1], MockAction::Transfer { deposit, .. } if deposit == NearToken::from_millinear(300))
     );
     assert!(
         matches!(&actions[2], MockAction::DeployContract { code, .. } if code.as_slice() == AGENT_WASM)
@@ -48,55 +76,132 @@ fn register_creates_a_keyless_agent_account_on_the_bench() {
     assert!(w.bench_ids().is_empty());
 
     assert!(w.callback(PromiseResult::Successful(vec![]), |c| {
-        c.on_agent_created("kiko".into())
+        c.on_agent_created("kiko".into(), U128(cut(1_200)))
     }));
     let register = event("register").unwrap();
     assert_eq!(register[0]["agent_id"], "kiko");
     assert_eq!(register[0]["account_id"], "kiko.thecut.near");
     assert_eq!(register[0]["creator"], creator.as_str());
+    assert_eq!(register[0]["personality"], "traitor");
+    assert_eq!(register[0]["seed"], cut(1_200).to_string());
     let kiko = w.agent("kiko");
     assert_eq!(kiko.status, AgentStatusView::Bench);
     assert_eq!(kiko.account_id.as_str(), "kiko.thecut.near");
     assert_eq!(
         (
             kiko.name.as_str(),
-            kiko.kind.as_str(),
-            kiko.x_handle.as_str()
+            kiko.tagline.as_str(),
+            kiko.x_handle.as_str(),
+            kiko.personality.as_str(),
+            kiko.charter.as_str()
         ),
-        ("Kiko Bun", "VTuber", "@KikoBunCut")
+        (
+            "Kiko Bun",
+            "Never cut twice",
+            "@KikoBunCut",
+            "traitor",
+            "Loyal to nobody.\nLoves chaos."
+        )
     );
+    assert_eq!(kiko.wallet.0, cut(1_200));
+    assert_eq!((kiko.heir, kiko.pacts.len(), kiko.moved), (None, 0, false));
     assert_eq!(kiko.joined_at.0, LAUNCH);
     assert_eq!(w.bench_ids(), vec!["kiko".to_string()]);
     assert_eq!(
         w.view(|c| c.get_stats().creator_deposits_held),
-        NearToken::from_millinear(4_500)
+        NearToken::from_millinear(700)
     );
+    w.assert_books();
 }
 
 #[test]
-fn failed_creation_refunds_the_deposit_and_frees_the_id() {
+fn failed_creation_refunds_the_seed_and_the_deposit_and_frees_the_id() {
     let mut w = World::daily();
     let creator = creator_of("kiko");
-    w.call(creator.as_str(), near(5), |c| {
-        c.register_agent("kiko".into(), "Kiko".into(), "VTuber".into(), "".into())
-            .detach();
-    });
-    assert!(!w.callback(PromiseResult::Failed, |c| c.on_agent_created("kiko".into())));
-    assert_eq!(transfers(), vec![(creator, near(5).as_yoctonear())]);
+    let bought = w.buy(creator.as_str(), near(250));
+    register_kiko(&mut w, near(1), "miser", "", cut(1_000));
+    assert!(!w.callback(PromiseResult::Failed, |c| {
+        c.on_agent_created("kiko".into(), U128(cut(1_000)))
+    }));
+    assert_eq!(transfers(), vec![(creator.clone(), near(1).as_yoctonear())]);
+    assert_eq!(w.balance(creator.as_str()), bought);
+    assert_eq!(w.wallet("kiko"), 0);
+    assert!(
+        w.view(|c| c.storage_balance_of(id("kiko.thecut.near")))
+            .is_none()
+    );
     assert!(w.view(|c| c.get_agent("kiko".into())).is_none());
+    w.assert_books();
     // The id can be used again.
     w.register("kiko");
     assert_eq!(w.bench_ids(), vec!["kiko".to_string()]);
 }
 
 #[test]
-#[should_panic(expected = "Attach 5.00 NEAR to register an agent")]
+#[should_panic(expected = "Attach 1.00 NEAR to register an agent")]
 fn register_needs_the_deposit() {
     let mut w = World::daily();
-    w.call("creator.near", near(4), |c| {
-        c.register_agent("kiko".into(), "Kiko".into(), "VTuber".into(), "".into())
-            .detach();
-    });
+    w.buy(creator_of("kiko").as_str(), near(250));
+    register_kiko(
+        &mut w,
+        NearToken::from_millinear(999),
+        "miser",
+        "",
+        cut(1_000),
+    );
+}
+
+#[test]
+#[should_panic(expected = "seed must be at least 1000000000000000000000 units")]
+fn register_needs_the_minimum_seed() {
+    let mut w = World::daily();
+    w.buy(creator_of("kiko").as_str(), near(250));
+    register_kiko(&mut w, near(1), "miser", "", cut(999));
+}
+
+#[test]
+#[should_panic(expected = "Not enough $CUT for the seed")]
+fn register_needs_the_seed_in_hand() {
+    let mut w = World::daily();
+    w.buy(creator_of("kiko").as_str(), near(10));
+    register_kiko(&mut w, near(1), "miser", "", cut(1_000));
+}
+
+#[test]
+#[should_panic(expected = "Unknown personality")]
+fn register_needs_a_known_personality() {
+    let mut w = World::daily();
+    w.buy(creator_of("kiko").as_str(), near(250));
+    register_kiko(&mut w, near(1), "saint", "", cut(1_000));
+}
+
+#[test]
+#[should_panic(expected = "charter can be at most 600 bytes")]
+fn charters_are_short() {
+    let mut w = World::daily();
+    w.buy(creator_of("kiko").as_str(), near(250));
+    register_kiko(&mut w, near(1), "miser", &"a".repeat(601), cut(1_000));
+}
+
+#[test]
+#[should_panic(expected = "charter cannot contain control characters other than newlines")]
+fn charters_keep_only_newlines() {
+    let mut w = World::daily();
+    w.buy(creator_of("kiko").as_str(), near(250));
+    register_kiko(&mut w, near(1), "miser", "tab\there", cut(1_000));
+}
+
+#[test]
+fn the_personality_table_is_public() {
+    let mut w = World::daily();
+    let table = w.view(|c| c.get_personalities());
+    let ids: Vec<&str> = table.iter().map(|p| p.id.as_str()).collect();
+    assert_eq!(ids, vec!["miser", "gambler", "traitor", "generous"]);
+    assert_eq!(table[0].spend_bps, 500);
+    assert_eq!(
+        table[3].prompt_line,
+        "You spend up to 40% a day and you can never attack."
+    );
 }
 
 #[test]
@@ -118,9 +223,18 @@ fn register_validates_the_id() {
 fn agent_ids_are_never_reused() {
     let mut w = World::daily();
     w.register("kiko");
-    w.call("someone.near", near(5), |c| {
-        c.register_agent("kiko".into(), "Kiko 2".into(), "VTuber".into(), "".into())
-            .detach();
+    w.buy("someone.near", near(250));
+    w.call("someone.near", near(1), |c| {
+        c.register_agent(
+            "kiko".into(),
+            "Kiko 2".into(),
+            "".into(),
+            "".into(),
+            "miser".into(),
+            "".into(),
+            U128(cut(1_000)),
+        )
+        .detach();
     });
 }
 
@@ -128,9 +242,18 @@ fn agent_ids_are_never_reused() {
 #[should_panic(expected = "name cannot be empty")]
 fn register_needs_a_name() {
     let mut w = World::daily();
-    w.call("creator.near", near(5), |c| {
-        c.register_agent("kiko".into(), " ".into(), "VTuber".into(), "".into())
-            .detach();
+    w.buy("creator.near", near(250));
+    w.call("creator.near", near(1), |c| {
+        c.register_agent(
+            "kiko".into(),
+            " ".into(),
+            "".into(),
+            "".into(),
+            "miser".into(),
+            "".into(),
+            U128(cut(1_000)),
+        )
+        .detach();
     });
 }
 
@@ -158,9 +281,10 @@ fn save_locks_until_the_next_cut_and_unsave_returns_it() {
     }));
     assert!(locked.is_err());
 
-    // Cut 1 seats both agents (the stage was empty), then the save unlocks.
+    // Cut 1 runs (two agents are too few for a season: they stay on the bench), then the
+    // save unlocks.
     w.run_cut("runner.near");
-    assert_eq!(w.agent("melody").status, AgentStatusView::Stage);
+    assert_eq!(w.agent("melody").status, AgentStatusView::Bench);
     assert!(w.view(|c| c.get_saves(id("mika.near")))[0].unlocked);
     let back = w.call("mika.near", zero(), |c| c.unsave("melody".into()));
     assert_eq!(back.0, cut(400));
@@ -286,6 +410,7 @@ fn saves_are_paid_by_the_saver_storage_balance() {
 fn bench_queue_that_did_not_get_in_unlocks_after_the_cut() {
     let mut w = World::launch(Launch {
         stage_size: 2,
+        min_season: 2,
         ..Launch::default()
     });
     for agent in ["ra", "rb", "rc"] {
@@ -296,12 +421,9 @@ fn bench_queue_that_did_not_get_in_unlocks_after_the_cut() {
     w.save("mika.near", "rb", cut(20));
     w.save("mika.near", "ra", cut(10));
     let record = w.run_cut("runner.near");
-    assert_eq!(
-        record.deleted_id, None,
-        "the stage was empty, nobody is cut"
-    );
+    assert_eq!(record.deleted_id, None, "a season starts, nobody is cut");
     // The biggest queues take the seats, whatever the registration order.
-    assert_eq!(record.joined_ids, vec!["rc".to_string(), "rb".to_string()]);
+    assert_eq!(record.seated_ids, vec!["rc".to_string(), "rb".to_string()]);
     assert_eq!(w.bench_ids(), vec!["ra".to_string()]);
     // ra's queue was locked for cut 1, which ran: it can come back.
     assert_eq!(

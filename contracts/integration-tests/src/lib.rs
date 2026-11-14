@@ -1,17 +1,41 @@
 //! Helpers for the sandbox tests: a local NEAR node with The Cut deployed on
-//! `thecut.sandbox`, funded test accounts, and thin wrappers around `near-api` calls.
+//! `thecut.sandbox`, funded test accounts, a test model key that signs moves, and thin
+//! wrappers around `near-api` calls.
 
 use std::sync::{Arc, Mutex};
 
 use anyhow::{Context, Result, anyhow};
+use ed25519_dalek::{Signer as _, SigningKey};
 use near_api::types::transaction::result::ExecutionSuccess;
 use near_api::{Account, AccountId, Contract, NearGas, NearToken, NetworkConfig, Signer};
 use near_sandbox::Sandbox;
 use near_sandbox::config::DEFAULT_GENESIS_ACCOUNT_PRIVATE_KEY;
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 
 pub const ONE_CUT: u128 = 1_000_000_000_000_000_000;
 pub const SEC: u64 = 1_000_000_000;
+pub const MODEL_ID: &str = "z-ai/glm-5.3-flash";
+
+/// The model's TEE key in these tests: its public key is the launch's only model signer.
+pub fn model_key() -> SigningKey {
+    SigningKey::from_bytes(&[7u8; 32])
+}
+
+/// Lowercase hex of `bytes`.
+pub fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// The model's signature (hex) over `"<model_id>:<sha256(request)>:<sha256(response)>"`.
+pub fn sign(request: &str, response: &str) -> String {
+    let text = format!(
+        "{MODEL_ID}:{}:{}",
+        hex(&Sha256::digest(request.as_bytes())),
+        hex(&Sha256::digest(response.as_bytes()))
+    );
+    hex(&model_key().sign(text.as_bytes()).to_bytes())
+}
 
 /// Builds `thecut` (which embeds the committed agent wasm) with `cargo near`.
 pub fn build_thecut() -> Result<Vec<u8>> {
@@ -36,8 +60,10 @@ pub struct World {
 /// Launch parameters for the sandbox.
 pub struct Launch {
     pub stage_size: u32,
+    pub min_season: u32,
     pub first_cut_in_secs: u64,
     pub cut_interval_secs: u64,
+    pub move_lead_secs: u64,
     pub pool_near: NearToken,
 }
 
@@ -69,13 +95,23 @@ impl World {
                 "new",
                 json!({
                     "fee_bps": 100,
+                    "pot_bps": 5000,
                     "burn_bps": 5000,
-                    "savers_bps": 9500,
+                    "savers_bps": 9000,
+                    "agents_bps": 500,
                     "stage_size": launch.stage_size,
+                    "min_season": launch.min_season,
                     "first_cut_at": first_cut_at.to_string(),
                     "cut_interval": (launch.cut_interval_secs * SEC).to_string(),
-                    "agent_funding": NearToken::from_millinear(500),
-                    "register_deposit": NearToken::from_near(5),
+                    "move_lead": (launch.move_lead_secs * SEC).to_string(),
+                    "think_fee": (10 * ONE_CUT).to_string(),
+                    "min_seed": (1_000 * ONE_CUT).to_string(),
+                    "agent_funding": NearToken::from_millinear(300),
+                    "register_deposit": NearToken::from_near(1),
+                    "model_id": MODEL_ID,
+                    "model_signers": [hex(model_key().verifying_key().as_bytes())],
+                    "max_tokens": 1200,
+                    "reasoning_effort": "low",
                 }),
             )?
             .deposit(launch.pool_near)
@@ -193,6 +229,16 @@ impl World {
             .fetch_from(&self.network)
             .await
             .is_ok()
+    }
+
+    /// Bytes of state the account stakes NEAR for (code included).
+    pub async fn storage_usage(&self, id: &AccountId) -> Result<u64> {
+        Ok(Account(id.clone())
+            .view()
+            .fetch_from(&self.network)
+            .await?
+            .data
+            .storage_usage)
     }
 
     pub async fn access_key_count(&self, id: &AccountId) -> Result<usize> {

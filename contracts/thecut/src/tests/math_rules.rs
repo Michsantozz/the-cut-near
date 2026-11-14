@@ -1,5 +1,5 @@
-//! Pure math: pool, fee, burn, equal slices (with the SPEC sample numbers), the reward
-//! accumulator, the tie rule and the schedule.
+//! Pure math: pool, fee split, burn, equal slices, the per-pile cap, the reward
+//! accumulator, the score, the tie rule and the schedule.
 
 use super::cut;
 use crate::math::*;
@@ -65,47 +65,49 @@ fn zero_fee_and_tiny_amounts() {
     assert_eq!((q.fee, q.amount_out), (0, cut(5)));
 }
 
-/// SPEC-v19 §2: "Kiko Bun 23,600 → 11,800 burned. Prize = 11,800 + 5,020 fees = 16,820.
-/// 95% = 15,979 to savers → 9 slices of 1,775.4. 5% = 841 → 93.4 per creator.
-/// mika: 400 of Melody-9's 112,300 × 1,775.4 = 6.32 $CUT."
 #[test]
-fn spec_sample_cut_numbers() {
+fn fees_split_between_the_pot_and_the_day_prize() {
+    assert_eq!(fee_split(cut(100), 5_000), Some((cut(50), cut(50))));
+    assert_eq!(fee_split(101, 5_000), Some((50, 51)));
+    assert_eq!(fee_split(cut(7), 0), Some((0, cut(7))));
+}
+
+#[test]
+fn the_day_prize_splits_three_ways() {
     let (burned, to_prize) = burn_part(cut(23_600), 5_000).unwrap();
-    assert_eq!(burned, cut(11_800));
-    assert_eq!(to_prize, cut(11_800));
-
+    assert_eq!((burned, to_prize), (cut(11_800), cut(11_800)));
     let prize = to_prize + cut(5_020);
-    assert_eq!(prize, cut(16_820));
-
-    let split = split_prize(prize, 9_500, 9).unwrap();
-    assert_eq!(split.savers_total, cut(15_979));
+    let split = split_prize(prize, 9_000, 500, 9).unwrap();
+    assert_eq!(split.savers_total, cut(15_138));
+    assert_eq!(split.agents_total, cut(841));
     assert_eq!(split.creators_total, cut(841));
-    assert_eq!(split.slice, cut(15_979) / 9);
-    assert_eq!(split.slice * 10 / crate::ONE_CUT, 17_754); // 1,775.4
-    assert_eq!(split.creator_slice * 10 / crate::ONE_CUT, 934); // 93.4
+    assert_eq!(split.slice, cut(15_138) / 9);
+    assert_eq!(split.agent_slice, cut(841) / 9);
     assert_eq!(
-        split.slice * 9 + split.creator_slice * 9 + split.dust,
+        (split.slice + split.agent_slice + split.creator_slice) * 9 + split.dust,
         prize
     );
+    assert!(split.dust < 27);
+    assert_eq!(split_prize(cut(1), 9_000, 500, 0), None);
+}
 
-    // mika's share of Melody-9's slice.
-    let increment = reward_increment(split.slice, cut(112_300)).unwrap();
-    let mika = pending_reward(cut(400), increment, 0).unwrap();
-    assert_eq!(mika * 100 / crate::ONE_CUT, 632); // 6.32
-    let exact = split.slice * 400 / 112_300;
-    assert!(
-        exact - mika <= 1,
-        "accumulator rounding stays within one unit"
+#[test]
+fn payouts_are_capped_at_the_pile() {
+    // The 0.1 $CUT sniper: a 1,000 $CUT slice on a 0.1 $CUT pile pays 0.1, the rest burns.
+    assert_eq!(
+        cap_to_pile(cut(1_000), cut(1) / 10),
+        (cut(1) / 10, cut(1_000) - cut(1) / 10)
     );
+    assert_eq!(cap_to_pile(cut(5), cut(100)), (cut(5), 0));
+    assert_eq!(cap_to_pile(cut(5), 0), (0, cut(5)));
+    assert_eq!(spend_cap(cut(990), 500), Some(cut(495) / 10));
+}
 
-    // "Pays per 100 $CUT saved, if the cut ran now".
-    let pays_per_100 = |pile: u128| split.slice * 100 * 100 / pile;
-    assert_eq!(pays_per_100(cut(182_400)), 97); // Pixie Volt 0.97
-    assert_eq!(pays_per_100(cut(112_300)), 158); // Melody-9 1.58
-    assert_eq!(pays_per_100(cut(61_800)), 287); // Onyx Moon 2.87
-
-    // Supply after the cut.
-    assert_eq!(cut(10_000_000) - burned, cut(9_988_200));
+#[test]
+fn score_is_pile_minus_boos_minus_damage() {
+    assert_eq!(score(cut(100), cut(30), cut(20)), Some(cut(50) as i128));
+    assert_eq!(score(cut(10), cut(30), 0), Some(-(cut(20) as i128)));
+    assert_eq!(score(u128::MAX, 0, 0), None);
 }
 
 #[test]
@@ -137,57 +139,55 @@ fn accumulator_never_pays_more_than_the_slice() {
 
 #[test]
 fn split_carries_rounding_dust() {
-    let split = split_prize(cut(100) + 7, 9_500, 9).unwrap();
+    let split = split_prize(cut(100) + 7, 9_000, 500, 9).unwrap();
     assert_eq!(
-        split.slice * 9 + split.creator_slice * 9 + split.dust,
+        (split.slice + split.agent_slice + split.creator_slice) * 9 + split.dust,
         cut(100) + 7
     );
-    assert!(split.dust < 18);
-    assert_eq!(split_prize(cut(1), 9_500, 0), None);
+    assert!(split.dust < 27);
 }
 
 #[test]
 fn tie_rule_cuts_the_newer_agent() {
     let agents = [
-        Contender { pile: 50, seq: 1 },
-        Contender { pile: 10, seq: 2 },
-        Contender { pile: 10, seq: 5 },
-        Contender { pile: 10, seq: 3 },
+        Contender { score: 50, seq: 1 },
+        Contender { score: 10, seq: 2 },
+        Contender { score: 10, seq: 5 },
+        Contender { score: -3, seq: 0 },
+        Contender { score: 10, seq: 3 },
     ];
-    assert_eq!(pick_lowest(&agents), Some(2));
+    assert_eq!(pick_lowest(&agents), Some(3));
+    let agents = &agents[..3];
+    assert_eq!(pick_lowest(agents), Some(2));
     assert_eq!(pick_lowest(&[]), None);
 }
 
 #[test]
 fn biggest_queue_joins_and_older_wins_a_tie() {
     let bench = [
-        Contender { pile: 5, seq: 9 },
-        Contender { pile: 88, seq: 7 },
-        Contender { pile: 88, seq: 4 },
-        Contender { pile: 31, seq: 1 },
+        Contender { score: 5, seq: 9 },
+        Contender { score: 88, seq: 7 },
+        Contender { score: 88, seq: 4 },
+        Contender { score: 31, seq: 1 },
     ];
     assert_eq!(pick_biggest(&bench), Some(2));
     assert_eq!(pick_biggest(&[]), None);
 }
 
 #[test]
-fn gap_to_next_matches_the_rescue_line() {
-    // "Lift Kiko past Onyx Moon (38,201 $CUT)": Kiko is newer, so a tie still cuts it.
+fn gap_to_next_uses_the_score() {
     let kiko = Contender {
-        pile: cut(23_600),
+        score: cut(23_600) as i128 - cut(30_000) as i128,
         seq: 10,
     };
     let onyx = Contender {
-        pile: cut(61_800),
+        score: cut(61_800) as i128,
         seq: 9,
     };
-    assert_eq!(gap_to_next(kiko, onyx), cut(38_200) + 1);
-    // An older agent only needs to tie.
-    let old = Contender {
-        pile: cut(23_600),
-        seq: 1,
-    };
-    assert_eq!(gap_to_next(old, onyx), cut(38_200));
+    // Kiko is newer, so a tie still cuts it: it needs one unit more than the difference.
+    assert_eq!(gap_to_next(kiko, onyx), cut(68_200) + 1);
+    let old = Contender { seq: 1, ..kiko };
+    assert_eq!(gap_to_next(old, onyx), cut(68_200));
 }
 
 #[test]

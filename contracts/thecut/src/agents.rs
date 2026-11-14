@@ -2,18 +2,22 @@
 //!
 //! `register_agent` creates `<id>.<this account>`, funds it with `agent_funding`, deploys
 //! the `agent` contract and calls its `new({ owner })`, all in one batch, so the account
-//! never has an access key. The agent stays `Pending` (invisible in views, cannot be saved)
-//! until the callback confirms the batch; then it sits on the bench. If the batch failed,
-//! the record is removed and the whole deposit goes back to the creator.
+//! never has an access key. In the same call it registers that account with the $CUT
+//! ledger (paid from the deposit) and moves the creator's seed into its balance: the
+//! agent's wallet. The agent stays `Pending` (invisible in views, cannot be saved) until
+//! the callback confirms the batch; then it sits on the bench. If the batch failed, the
+//! wallet goes back to the creator with the whole deposit and the id is free again.
 
 use near_sdk::json_types::{U64, U128};
 use near_sdk::serde_json::json;
 use near_sdk::{NearToken, Promise, env, near, require};
+use near_sdk_contract_tools::ft::{Nep141Controller, Nep145Controller};
 
+use crate::personality;
 use crate::types::{Agent, AgentId, AgentStatus, AgentStatusView, AgentView};
 use crate::{
-    Contract, ContractExt, GAS_CALLBACK, GAS_AGENT_INIT, MAX_BENCH, MAX_TEXT, MAX_X_HANDLE,
-    MIN_GAS_REGISTER, AGENT_WASM, checked, events,
+    AGENT_WASM, Contract, ContractExt, GAS_AGENT_INIT, GAS_CALLBACK, MAX_BENCH, MAX_CHARTER,
+    MAX_TEXT, MAX_X_HANDLE, MIN_GAS_REGISTER, STORAGE_MIN, checked, events, math,
 };
 
 /// Checks an agent id: 2 to 32 characters of `a-z`, `0-9`, `-` and `_`, starting and
@@ -56,6 +60,18 @@ fn validate_text(value: &str, field: &str, max: usize, required: bool) {
     );
 }
 
+/// A charter may span several lines: newlines are its only allowed control characters.
+fn validate_charter(charter: &str) {
+    require!(
+        charter.len() <= MAX_CHARTER,
+        format!("charter can be at most {MAX_CHARTER} bytes")
+    );
+    require!(
+        !charter.chars().any(|c| c.is_control() && c != '\n'),
+        "charter cannot contain control characters other than newlines"
+    );
+}
+
 impl Contract {
     pub(crate) fn agent_view(&self, id: &str, agent: &Agent) -> Option<AgentView> {
         let status = match agent.status {
@@ -63,27 +79,41 @@ impl Contract {
             AgentStatus::Bench => AgentStatusView::Bench,
             AgentStatus::Stage => AgentStatusView::Stage,
             AgentStatus::Deleted => AgentStatusView::Deleted,
+            AgentStatus::Champion => AgentStatusView::Champion,
         };
+        let account_id = Self::agent_account(id);
         Some(AgentView {
             id: id.to_string(),
-            account_id: Self::agent_account(id),
+            wallet: U128(self.balance_of(&account_id)),
+            account_id,
             name: agent.name.clone(),
-            kind: agent.kind.clone(),
+            tagline: agent.tagline.clone(),
             x_handle: agent.x_handle.clone(),
+            personality: agent.personality.clone(),
+            charter: agent.charter.clone(),
             creator: agent.creator.clone(),
             status,
             pile: U128(agent.pile),
             savers: agent.savers,
+            heir: agent.heir.clone(),
+            pacts: agent.pacts.clone(),
+            boos: U128(agent.boos),
+            damage: U128(agent.damage),
+            bounty: U128(agent.bounty),
+            score: math::score(agent.pile, agent.boos, agent.damage)
+                .unwrap_or(i128::MIN)
+                .into(),
+            moved: agent.status == AgentStatus::Stage && agent.moved_for == self.next_cut_index,
             joined_at: U64(agent.joined_at),
             seq: agent.seq,
             stage_at: agent.stage_at.map(U64),
+            season: agent.season,
             cut_index: agent.cut_index,
             delete_state: agent.delete_state,
         })
     }
 
-    /// Agents in `ids`, highest pile first; on equal piles the older agent first (so the
-    /// last row is the one the cut would delete).
+    /// Agents in `ids`, highest pile first; on equal piles the older agent first.
     fn sorted_views(&self, ids: &[AgentId]) -> Vec<AgentView> {
         let mut views: Vec<AgentView> = ids
             .iter()
@@ -97,16 +127,25 @@ impl Contract {
 #[near]
 impl Contract {
     /// Registers an agent: creates `<id>.<this account>` with the `agent` contract and no
-    /// access keys, funds it with `agent_funding`, and puts it on the bench.
-    /// Attach `register_deposit` (5 NEAR); `register_deposit - agent_funding` (4.5 NEAR)
-    /// comes back to the creator when the agent is cut. Any extra deposit is refunded now.
+    /// access keys, funds it with `agent_funding`, moves `seed` $CUT units from the caller
+    /// into its wallet, and puts it on the bench.
+    ///
+    /// Attach `register_deposit`; `register_deposit - agent_funding` comes back to the
+    /// creator when the agent is cut or crowned. Any extra deposit is refunded now. The seed
+    /// never comes back (unless the account creation fails). `personality` is one of the ids
+    /// of `get_personalities`; the charter (at most 600 bytes) is the agent's character in
+    /// the creator's words. Name, personality and charter never change.
     #[payable]
+    #[allow(clippy::too_many_arguments)]
     pub fn register_agent(
         &mut self,
         id: String,
         name: String,
-        kind: String,
+        tagline: String,
         x_handle: String,
+        personality: String,
+        charter: String,
+        seed: U128,
     ) -> Promise {
         let creator = env::predecessor_account_id();
         let deposit = env::attached_deposit();
@@ -123,8 +162,26 @@ impl Contract {
             env::panic_str(message);
         }
         validate_text(&name, "name", MAX_TEXT, true);
-        validate_text(&kind, "kind", MAX_TEXT, true);
+        validate_text(&tagline, "tagline", MAX_TEXT, false);
         validate_text(&x_handle, "x_handle", MAX_X_HANDLE, false);
+        validate_charter(&charter);
+        require!(
+            personality::find(&personality).is_some(),
+            "Unknown personality: pick one of the ids of get_personalities"
+        );
+        let min_seed = self.params.min_seed.0;
+        require!(
+            seed.0 >= min_seed,
+            format!("seed must be at least {min_seed} units of $CUT")
+        );
+        let balance = self.balance_of(&creator);
+        require!(
+            balance >= seed.0,
+            format!(
+                "Not enough $CUT for the seed: you have {balance} units, this needs {}",
+                seed.0
+            )
+        );
         let account_id = Self::agent_account(&id);
         require!(
             !self.agents.contains_key(&id),
@@ -132,21 +189,30 @@ impl Contract {
         );
         require!(
             self.bench.len() + (self.pending_agents as usize) < MAX_BENCH,
-            "The bench is full: wait for the next cut"
+            "The bench is full: wait for the next season"
         );
 
         let agent = Agent {
             seq: self.next_agent_seq,
             name,
-            kind,
+            tagline,
             x_handle,
+            personality,
+            charter,
             creator: creator.clone(),
             status: AgentStatus::Pending,
             pile: 0,
             savers: 0,
             joined_at: env::block_timestamp(),
             stage_at: None,
+            season: None,
             reward_per_unit: 0,
+            heir: None,
+            pacts: Vec::new(),
+            boos: 0,
+            damage: 0,
+            bounty: 0,
+            moved_for: 0,
             cut_index: None,
             delete_state: None,
             runner: None,
@@ -154,6 +220,11 @@ impl Contract {
         self.next_agent_seq = checked(self.next_agent_seq.checked_add(1));
         self.pending_agents = checked(self.pending_agents.checked_add(1));
         self.agents.insert(id.clone(), agent);
+
+        // The wallet: a $CUT registration paid from the deposit, then the seed.
+        self.deposit_to_storage_account(&account_id, STORAGE_MIN)
+            .unwrap_or_else(|e| env::panic_str(&e.to_string()));
+        self.move_cut(&creator, &account_id, seed.0, "seed");
 
         let excess = deposit.saturating_sub(required);
         if !excess.is_zero() {
@@ -176,13 +247,13 @@ impl Contract {
             .then(
                 Self::ext(env::current_account_id())
                     .with_static_gas(GAS_CALLBACK)
-                    .on_agent_created(id),
+                    .on_agent_created(id, seed),
             )
     }
 
     /// Confirms or rolls back a registration. Never panics.
     #[private]
-    pub fn on_agent_created(&mut self, id: AgentId) -> bool {
+    pub fn on_agent_created(&mut self, id: AgentId, seed: U128) -> bool {
         let created =
             env::promise_results_count() == 1 && env::promise_result_checked(0, 64).is_ok();
         let Some(agent) = self.agents.get(&id) else {
@@ -194,6 +265,7 @@ impl Contract {
         let creator = agent.creator.clone();
         self.pending_agents = self.pending_agents.saturating_sub(1);
         let deposit = self.params.register_deposit;
+        let account_id = Self::agent_account(&id);
 
         if created {
             let held = deposit.saturating_sub(self.params.agent_funding);
@@ -202,30 +274,36 @@ impl Contract {
                 .saturating_add(held.as_yoctonear());
             let agent = self.agent_mut(&id);
             agent.status = AgentStatus::Bench;
-            let (name, kind, x_handle) = (
-                agent.name.clone(),
-                agent.kind.clone(),
-                agent.x_handle.clone(),
-            );
-            self.bench.push(id.clone());
-            events::emit(
-                "register",
-                &[events::Register {
-                    account_id: Self::agent_account(&id),
-                    agent_id: id,
-                    creator,
-                    name,
-                    kind,
-                    x_handle,
-                    deposit,
-                }],
-            );
+            let event = events::Register {
+                agent_id: id.clone(),
+                account_id,
+                creator,
+                name: agent.name.clone(),
+                tagline: agent.tagline.clone(),
+                x_handle: agent.x_handle.clone(),
+                personality: agent.personality.clone(),
+                seed,
+                deposit,
+            };
+            self.bench.push(id);
+            events::emit("register", &[event]);
         } else {
             // The batch failed as a whole: the account does not exist and its funding came
-            // back to this contract. Free the id and refund the whole deposit.
+            // back to this contract. Give the wallet back, free the id, refund the deposit.
+            let wallet = self.balance_of(&account_id);
+            if self.get_storage_balance(&creator).is_ok() {
+                self.move_cut(&account_id, &creator, wallet, "registration failed");
+            } else {
+                self.burn_cut(
+                    &account_id,
+                    wallet,
+                    "registration failed, creator unregistered",
+                );
+            }
+            self.close_wallet(&account_id);
             self.agents.remove(&id);
             env::log_str(&format!(
-                "Agent {id} could not be created; the deposit goes back to {creator}"
+                "Agent {id} could not be created; the seed and the deposit go back to {creator}"
             ));
             Promise::new(creator).transfer(deposit).detach();
         }
@@ -242,7 +320,7 @@ impl Contract {
         self.sorted_views(&self.bench)
     }
 
-    /// One agent (stage, bench or deleted). `null` if unknown or not confirmed yet.
+    /// One agent (stage, bench, deleted or champion). `null` if unknown or not confirmed yet.
     pub fn get_agent(&self, id: AgentId) -> Option<AgentView> {
         self.agents
             .get(&id)
