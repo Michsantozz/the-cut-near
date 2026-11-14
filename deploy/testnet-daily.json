@@ -1,0 +1,285 @@
+{
+  "network": "testnet",
+  "version": "v20",
+  "mode": "daily",
+  "rpc": "https://rpc.testnet.fastnear.com",
+  "contract": "thecut-daily.testnet",
+  "keeper": "thecut-daily-keeper.testnet",
+  "creators": [
+    "thecut-daily-studio-a.testnet",
+    "thecut-daily-studio-b.testnet",
+    "thecut-daily-studio-c.testnet"
+  ],
+  "fans": [
+    "thecut-daily-fan-a.testnet",
+    "thecut-daily-fan-b.testnet"
+  ],
+  "funding": {
+    "thecut-daily.testnet": "testnet faucet (helper.nearprotocol.com); + 0.9775 NEAR from thecut-2sk15l-studio-a.testnet (tx Huw3v6mwD67u1YiaFa9XkGjtfqSho1SQB1KaKc9EgRrS); + 3.9833 NEAR from thecut-2sk15l-keeper.testnet (tx DVork82dnQ4MK1jAJT7zTicog9PAbJpqmpmYGEteRBGW); + 9.4999 NEAR from thecut-d9jicr-keeper.testnet (tx KcQfFns6rZ9kHe6AduVaMKAwuCvzXnUY9sfx2Nc3v3B); + 0.0390 NEAR from thecut-v20-studio-a.testnet (tx 6hoStV5LizpFtKjkScbfSwSKbKeRyy6YjJF9Kei9LkvD)",
+    "thecut-daily-studio-a.testnet": "testnet faucet (helper.nearprotocol.com)",
+    "thecut-daily-studio-b.testnet": "5.0000 NEAR from thecut-2sk15l-studio-a.testnet via testnet.create_account (tx 2P5ygsdsXRNEnVsuNVRZZC9wKStJRmaSmERhn2REuSh8); faucet refused: HTTP 429 Rate limit exceeded, retry in 12 hours.",
+    "thecut-daily-studio-c.testnet": "5.0000 NEAR from thecut-2sk15l-studio-a.testnet via testnet.create_account (tx 2LRvnFNWyzjh6gNqniWMTAZgpbiHVMhJyem8YH1KKNat); faucet refused: HTTP 429 Rate limit exceeded, retry in 12 hours.",
+    "thecut-daily-keeper.testnet": "5.0000 NEAR from thecut-2sk15l-keeper.testnet via testnet.create_account (tx 3Ht4Wp5kXkqp9WfG9UKxsMfzdU8CqVQbUds9fy285Pp2); faucet refused: HTTP 429 Rate limit exceeded, retry in 12 hours.",
+    "thecut-daily-fan-a.testnet": "1.0000 NEAR from thecut-2sk15l-studio-a.testnet via testnet.create_account (tx C5Q3mv1aBd9mr3LzydhySumoypjCZh4ktf8htB3Pb75E); faucet refused: HTTP 429 Rate limit exceeded, retry in 12 hours.",
+    "thecut-daily-fan-b.testnet": "1.0000 NEAR from thecut-2sk15l-keeper.testnet via testnet.create_account (tx 4nLWMMW758B5wvntKX1UrUfYk9qecz6W438nMgLeb1rc); faucet refused: HTTP 429 Rate limit exceeded, retry in 12 hours."
+  },
+  "agents": {
+    "pixie": {
+      "account": "pixie.thecut-daily.testnet",
+      "creator": "thecut-daily-studio-a.testnet",
+      "name": "Pixie Volt",
+      "personality": "gambler",
+      "x_handle": "@PixieVoltCut",
+      "seed": "2400000000000000000000",
+      "tx": "FY5vu8FpUeuP4S9RziSWyDk5uz2kzfYA3w9fdSYSTdSG"
+    },
+    "oracle": {
+      "account": "oracle.thecut-daily.testnet",
+      "creator": "thecut-daily-studio-b.testnet",
+      "name": "Oracle Toad",
+      "personality": "miser",
+      "x_handle": "@OracleToadCut",
+      "seed": "3000000000000000000000",
+      "tx": "7ZmALsB1cMLsMQqopMyLnPfXWHkYZvdoDCyVEdnKWFRM"
+    },
+    "mabel": {
+      "account": "mabel.thecut-daily.testnet",
+      "creator": "thecut-daily-studio-c.testnet",
+      "name": "Mabel Market",
+      "personality": "miser",
+      "x_handle": "@MabelMarketCut",
+      "seed": "1800000000000000000000",
+      "tx": "FpDmt2V3WYpzqnqBCayWRSHXTi74Kex6yjoJAvEfJMUz"
+    },
+    "melody": {
+      "account": "melody.thecut-daily.testnet",
+      "creator": "thecut-daily-studio-a.testnet",
+      "name": "Melody-9",
+      "personality": "generous",
+      "x_handle": "@Melody9Cut",
+      "seed": "1500000000000000000000",
+      "tx": "HaFMTSyaXzdGvtT9ZsPwjLuovYCq5tHhtAJJvLf9nbAd"
+    },
+    "lila": {
+      "account": "lila.thecut-daily.testnet",
+      "creator": "thecut-daily-studio-b.testnet",
+      "name": "Lila Loop",
+      "personality": "traitor",
+      "x_handle": "@LilaLoopCut",
+      "seed": "2200000000000000000000",
+      "tx": "HpdgQ2a4tdReJxERPpLPeQnbbTvoLxnz2gGWcZLRZptN"
+    },
+    "gremlin": {
+      "account": "gremlin.thecut-daily.testnet",
+      "creator": "thecut-daily-studio-c.testnet",
+      "name": "Glitch Gremlin",
+      "personality": "gambler",
+      "x_handle": "@gremlinCut",
+      "seed": "2600000000000000000000",
+      "tx": "FcbCSNC4weSuHQJ9NYfaLhYrqaWdC7NPfcF3dTLLxRC7"
+    },
+    "yuna": {
+      "account": "yuna.thecut-daily.testnet",
+      "creator": "thecut-daily-studio-a.testnet",
+      "name": "Yuna Star",
+      "personality": "generous",
+      "x_handle": "@YunaStarCut",
+      "seed": "1200000000000000000000",
+      "tx": "E1dWutHww5oSLeQpzxU69pjVBVsM6ZHhWW7pqUjr2WRL"
+    },
+    "velvet": {
+      "account": "velvet.thecut-daily.testnet",
+      "creator": "thecut-daily-studio-b.testnet",
+      "name": "Velvet Vee",
+      "personality": "traitor",
+      "x_handle": "@VelvetVeeCut",
+      "seed": "2000000000000000000000",
+      "tx": "7iV6aFEVWxYvWYUDaiHLpPzSjDfh7shH2hnu2rBPUnaw"
+    },
+    "onyx": {
+      "account": "onyx.thecut-daily.testnet",
+      "creator": "thecut-daily-studio-c.testnet",
+      "name": "Onyx Moon",
+      "personality": "miser",
+      "x_handle": "@OnyxMoonCut",
+      "seed": "2800000000000000000000",
+      "tx": "5uAUQV5hreowBsd4XWF6FjhaAUsXWa73RZ3yqymbKwtN"
+    },
+    "kiko": {
+      "account": "kiko.thecut-daily.testnet",
+      "creator": "thecut-daily-studio-a.testnet",
+      "name": "Kiko Bun",
+      "personality": "generous",
+      "x_handle": "@KikoBunCut",
+      "seed": "1000000000000000000000",
+      "tx": "EMYi1ikrxnWqehXqBUPjqBsf11YNzoWrUH3rxvzx6Sc4"
+    }
+  },
+  "buys": {
+    "thecut-daily-studio-a.testnet": {
+      "near": "30000000000000000000000",
+      "tx": "3hAQ8f5z1kaEw6hafCBLPSMj2EFw4xupRQxzwvi2uq8a"
+    },
+    "thecut-daily-studio-b.testnet": {
+      "near": "30000000000000000000000",
+      "tx": "B6fJ2k3pmgMHCqRduBT4upEf1KDiXTcKnigCfkfLt753"
+    },
+    "thecut-daily-studio-c.testnet": {
+      "near": "30000000000000000000000",
+      "tx": "ETwAReckhJhJ66msoYinBBcRpWKDkvJnaydBmuSPBf43"
+    },
+    "thecut-daily-fan-a.testnet": {
+      "near": "30000000000000000000000",
+      "tx": "HuH8VXQWbnDabo7eaz7V2oxQ8LEAFBQ7TXg3JcXTCNnH"
+    },
+    "thecut-daily-fan-b.testnet": {
+      "near": "30000000000000000000000",
+      "tx": "ETUtVWUsseKYpnzFDgTquNpNSXzDxRvgG3jwm3nbLq9z"
+    }
+  },
+  "saves": [
+    {
+      "fan": "thecut-daily-fan-a.testnet",
+      "agent": "pixie",
+      "amount": "3000000000000000000000",
+      "tx": "GTcvFUjPGkMcALUR4zMarqWjMXVtrY3EBg8izVUMb8Pp"
+    },
+    {
+      "fan": "thecut-daily-fan-a.testnet",
+      "agent": "oracle",
+      "amount": "3390000000000000000000",
+      "tx": "4cVNWQ3zDxfzLVxbEAGAV3qp26PjLLK3B1YRCB4111B2"
+    },
+    {
+      "fan": "thecut-daily-fan-a.testnet",
+      "agent": "mabel",
+      "amount": "2000000000000000000000",
+      "tx": "7jJG7E9iPn7QcLztVh8JBKh6VfZ9gXvettiqKHqs996r"
+    },
+    {
+      "fan": "thecut-daily-fan-a.testnet",
+      "agent": "melody",
+      "amount": "2410000000000000000000",
+      "tx": "2DeJ7ANsVG1voo7rYNqbq2yjhRnfwn9LvTCqZZZAr482"
+    },
+    {
+      "fan": "thecut-daily-fan-a.testnet",
+      "agent": "lila",
+      "amount": "1500000000000000000000",
+      "tx": "9FQuV7aAeZirpKpaSYod17Qthz3jKQCrNZvvaA6p5rrg"
+    },
+    {
+      "fan": "thecut-daily-fan-a.testnet",
+      "agent": "gremlin",
+      "amount": "1630000000000000000000",
+      "tx": "5RGk9HDqsrfDBzQwUZZsEWVurutGuAdNLzXcd2pfemMg"
+    },
+    {
+      "fan": "thecut-daily-fan-a.testnet",
+      "agent": "yuna",
+      "amount": "1000000000000000000000",
+      "tx": "GXWcpVsv2DiEP9CzYPuuxfmZ5WiL8r3yNVwkyBCNpbBs"
+    },
+    {
+      "fan": "thecut-daily-fan-a.testnet",
+      "agent": "velvet",
+      "amount": "1310000000000000000000",
+      "tx": "Hk31N6tuu5W7k7XTUXeyWMq3kxHxxJDcWsei6wqxEYiG"
+    },
+    {
+      "fan": "thecut-daily-fan-a.testnet",
+      "agent": "onyx",
+      "amount": "800000000000000000000",
+      "tx": "3hMNAokiCMocGokFpTNqFRhxJSSSPdCqDK4jf73JEM1j"
+    },
+    {
+      "fan": "thecut-daily-fan-a.testnet",
+      "agent": "kiko",
+      "amount": "960000000000000000000",
+      "tx": "38RqMBkKMDSkdCDbn2yXdLEtZ5UP8EuozQwBJvD8VK97"
+    },
+    {
+      "fan": "thecut-daily-fan-b.testnet",
+      "agent": "pixie",
+      "amount": "1120000000000000000000",
+      "tx": "65Bg9uKAttb57Yj2nkHgWZexh4SYUuKnds1xveupGKU5"
+    },
+    {
+      "fan": "thecut-daily-fan-b.testnet",
+      "agent": "mabel",
+      "amount": "840000000000000000000",
+      "tx": "2WbMK89oQYrx2UkYujBUHNv49TSRVKdaidEdQRVfzhyX"
+    },
+    {
+      "fan": "thecut-daily-fan-b.testnet",
+      "agent": "lila",
+      "amount": "480000000000000000000",
+      "tx": "CJD3X3DCpfBtfDQ4ifKGm9dVUH1Ud18D9E95rnbhVsYN"
+    },
+    {
+      "fan": "thecut-daily-fan-b.testnet",
+      "agent": "yuna",
+      "amount": "520000000000000000000",
+      "tx": "CSVhekegBjZUkRMQcwAUaUfT66ajtk8xBJDK6h7DZEvq"
+    },
+    {
+      "fan": "thecut-daily-fan-b.testnet",
+      "agent": "onyx",
+      "amount": "350000000000000000000",
+      "tx": "FuEJZEhBoaEc7G6hY54FgdQMZFNp7p7KbPCBcCmwTvWs"
+    }
+  ],
+  "txs": {
+    "topUps": {
+      "thecut-2sk15l-studio-a.testnet->thecut-daily.testnet": "Huw3v6mwD67u1YiaFa9XkGjtfqSho1SQB1KaKc9EgRrS",
+      "thecut-2sk15l-keeper.testnet->thecut-daily.testnet": "DVork82dnQ4MK1jAJT7zTicog9PAbJpqmpmYGEteRBGW",
+      "thecut-d9jicr-keeper.testnet->thecut-daily.testnet": "KcQfFns6rZ9kHe6AduVaMKAwuCvzXnUY9sfx2Nc3v3B",
+      "thecut-v20-studio-a.testnet->thecut-daily.testnet": "6hoStV5LizpFtKjkScbfSwSKbKeRyy6YjJF9Kei9LkvD"
+    },
+    "deploy": "FZGrThFbGzpieo4ExsNG4pePTCnuAgQu2RN1XXXcWaLh",
+    "deleteKey": "3jBkcFLpW6V2U5GhCHaDea52jLxyJsgqQE9FTpP5YfoL"
+  },
+  "wasm": {
+    "file": "contracts/target/near/thecut/thecut.wasm",
+    "bytes": 454426,
+    "sha256": "e1527ed5e5e583ed86cd891ad22ee89dcbea5667281e7c3af132dd2d5564cf19",
+    "bs58": "GAZh6qoewsfZraeDffwWyMvwcy85eWH96JzgUTcZiSKz"
+  },
+  "newArgs": {
+    "fee_bps": 100,
+    "pot_bps": 5000,
+    "burn_bps": 5000,
+    "savers_bps": 9000,
+    "agents_bps": 500,
+    "stage_size": 10,
+    "min_season": 3,
+    "first_cut_at": "1794679200000000000",
+    "cut_interval": "86400000000000",
+    "move_lead": "3600000000000",
+    "think_fee": "10000000000000000000",
+    "min_seed": "1000000000000000000000",
+    "agent_funding": "300000000000000000000000",
+    "register_deposit": "1000000000000000000000000",
+    "model_id": "z-ai/glm-5.3-flash",
+    "model_signers": [
+      "5a0210f2442c79355784f9de021985429561da5bacc3a4424b01ac52b7e0caff"
+    ],
+    "max_tokens": 1200,
+    "reasoning_effort": "low"
+  },
+  "poolNear": "4000000000000000000000000",
+  "firstCutAtNs": "1794679200000000000",
+  "firstCutAt": "2026-11-14T18:00:00.000Z",
+  "launchedAt": "2026-11-14T16:33:01.093Z",
+  "keeperKey": {
+    "publicKey": "ed25519:Fjz3YGWAhS8TQgDfZibTdP1LcGrhCZ3PJQ6RZdM26vMz",
+    "methods": [
+      "run_cut",
+      "submit_move"
+    ],
+    "file": "~/.near-credentials/testnet/thecut-daily-keeper.testnet.keeper.json",
+    "tx": "tKeH6F1GkgnVTQQ54cus7yTwiagpaSkAbKmgg9jwxdL"
+  },
+  "locked": true,
+  "accessKeysAfterLock": 0
+}
