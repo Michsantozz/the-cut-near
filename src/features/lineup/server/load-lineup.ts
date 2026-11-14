@@ -3,7 +3,7 @@ import "server-only";
 import { connection } from "next/server";
 
 import { getNextCut } from "@/entities/cut/server";
-import { getParams, getPool } from "@/entities/market/server";
+import { getBalance, getParams, getPool, getUsdCentsPerNear } from "@/entities/market/server";
 import type { Robot } from "@/entities/robot";
 import { getBench, getStage } from "@/entities/robot/server";
 import type { Save } from "@/entities/save";
@@ -11,7 +11,6 @@ import { getSaves } from "@/entities/save/server";
 
 import { boardOrders, buildBoard, dayOfCut, rankBench, type Board, type SortKey } from "../model/board";
 import { summarizeSaves, valueInUsdCents, type SavedOn } from "../model/holdings";
-import { getHoldings } from "./holdings";
 
 export type LineupMember = {
   accountId: string;
@@ -78,9 +77,11 @@ export async function loadMemberCard(accountId: string): Promise<MemberCardData>
   };
 }
 
+/** Balance is everything the account holds: free $CUT (`ft_balance_of`) plus its saves, which sit in the contract. */
 async function loadMember(accountId: string) {
-  const [saves, holdings] = await Promise.all([getSaves(accountId), getHoldings(accountId)]);
-  return { accountId, saves, ...holdings };
+  const [saves, free, usdCentsPerNear] = await Promise.all([getSaves(accountId), getBalance(accountId), getUsdCentsPerNear()]);
+  const balance = free + saves.reduce((sum, save) => sum + save.amount, 0n);
+  return { accountId, saves, balance, usdCentsPerNear };
 }
 
 function summarizeMemberSaves(saves: Save[], robots: Robot[]) {
