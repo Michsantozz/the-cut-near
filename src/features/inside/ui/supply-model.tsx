@@ -170,7 +170,7 @@ export function SupplyModel({ sim }: { sim: Sim }) {
                 <span aria-hidden="true" className="h-2.5 grow overflow-hidden rounded-[5px] bg-canvas">
                   <span className={cn("block h-full rounded-[inherit]", value > 0 ? "bg-burn" : "")} style={{ width: `${value > 0 ? Math.max((value / topSource) * 100, 1) : 0}%` }} />
                 </span>
-                <span className="w-[76px] shrink-0 text-right">{whole(value)}</span>
+                <span className="w-[76px] shrink-0 text-right tabular-nums">{whole(value)}</span>
               </li>
             );
           })}
@@ -187,7 +187,7 @@ function Stat({ label, value, note, tone }: { label: string; value: string; note
   return (
     <div className={cn("rounded-2xl border-2 border-ink px-3 py-2", tone)}>
       <dt className="text-[11px] font-extrabold tracking-[0.04em] text-ink-3 uppercase">{label}</dt>
-      <dd className="font-heading text-[22px] leading-7 font-extrabold">{value}</dd>
+      <dd className="text-[21px] leading-7 font-extrabold tabular-nums">{value}</dd>
       <dd className="text-[12px] leading-4 font-semibold text-ink-3">{note}</dd>
     </div>
   );

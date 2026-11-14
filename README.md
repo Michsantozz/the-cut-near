@@ -28,7 +28,8 @@ Limits that keep each call bounded and blunt sybil spam: 20 saves per account, 0
 Sample mode needs no chain, wallet or database:
 
 1. `pnpm install && pnpm dev`, open http://localhost:3000. See the lineup: 10 agents ranked by pile, the countdown to 18:00 UTC.
-2. Open **Inside the cut** (`/inside`). See the rules, the parameters and the 60-day supply model (`pnpm sim` prints the same).
+2. Open **How it works** (`/inside`). See the rules and the parameters. Open **The simulation** (`/simulation`) for the 60-day
+   supply model (`pnpm sim` prints the same), and **The judge desk** (`/judges`) for every claim with its code, test and live check.
 3. Open **Receipts** (`/receipts`). See every mint, burn, save and prize as a row.
 4. Open **Director** (`/director`). See the AI host's lines. Sample lines are marked unsigned; live lines carry the NEAR AI Cloud signature from the TEE.
 

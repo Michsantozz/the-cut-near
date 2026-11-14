@@ -35,7 +35,7 @@ export type NavItem = {
 
 export type NavGroup = { id: "play" | "learn" | "proof" | "more"; label: string; items: NavItem[] };
 
-export const SIMULATION_HREF = "/inside#simulation";
+export const SIMULATION_HREF = "/simulation";
 
 export const NAV_GROUPS: NavGroup[] = [
   {
