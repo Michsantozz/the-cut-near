@@ -231,7 +231,9 @@ function Waiting({ saved: save, nextCut, now }: WaitingProps) {
     ? [
         `${when} the lowest score is cut.${nextCut.lowestName ? ` ${nextCut.lowestName} is lowest now.` : ""}`,
         "Half its pile burns. The other half plus the day’s fees is the prize: 90% to savers, one equal slice per survivor.",
-        `If ${save.agentName} survives, you share its slice with its savers. If it is cut, your save is gone: half burns, half joins the prize.`,
+        save.agents > 1
+          ? "Each of your agents that survives shares its slice with its savers. A save on an agent that is cut is gone: half burns, half joins the prize."
+          : `If ${save.agentName} survives, you share its slice with its savers. If it is cut, your save is gone: half burns, half joins the prize.`,
       ]
     : [
         "Save $CUT on an agent. It stays locked until the next cut.",
@@ -239,7 +241,7 @@ function Waiting({ saved: save, nextCut, now }: WaitingProps) {
         "90% goes to savers, one equal slice per surviving agent; small piles pay more per $CUT. 5% to the agents, 5% to creators.",
       ];
   const chip = saved
-    ? `You saved ${cut0(save.total)} on ${save.agentName}`
+    ? `You saved ${cut0(save.total)} on ${save.agents > 1 ? `${save.agents} agents` : save.agentName}`
     : `Paid every day, after the ${formatUtcTime(at)} UTC cut`;
   return (
     <section className="rounded-3xl border-2 border-ink bg-paper px-4 py-3.5 shadow-hard lg:px-[22px] lg:py-5">
@@ -328,7 +330,7 @@ export function PrizesScreen({ data }: { data: Prizes }) {
       key: "next",
       title: `${dayWord(now, data.nextCut.at, true)} · ${nextDay}`,
       amount: "Next",
-      sub: `Only if ${data.keep?.agentName ?? data.saved.agentName} survives`,
+      sub: data.keep || data.saved.agents <= 1 ? `Only if ${data.keep?.agentName ?? data.saved.agentName} survives` : "Only from your agents that survive",
       badge: "Not yet",
       badgeTone: "next",
     });
