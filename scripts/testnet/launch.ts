@@ -6,6 +6,7 @@
 //
 // Options:
 //   --new                           start a new launch instead of resuming the one in deploy/testnet-<mode>.json
+//   --float <near>                  NEAR the contract holds above the pool before deploy (default 20)
 //   --keep-key                      rehearsal: keep the contract's full-access key (the contract stays changeable)
 //   --suffix <name>                accounts are thecut-<name>.testnet, thecut-<name>-keeper.testnet, ... (default: random)
 //   --first-cut-at <ISO | ns>       time of cut 1 (daily default: the next 18:00 UTC at least 15 minutes away;
@@ -60,7 +61,7 @@ const POOL_NEAR = nearToYocto("4");
  * NEAR the contract account holds on top of the pool: about 4.6 NEAR of storage at launch, then the storage it pays
  * for agents, moves and cut records over time (about 3 to 4 NEAR more), with a wide margin.
  */
-const CONTRACT_FLOAT_NEAR = nearToYocto("20");
+const CONTRACT_FLOAT_NEAR = nearToYocto((arg("float") ?? "20") as `${number}`);
 const REGISTER_DEPOSIT = nearToYocto("1");
 
 function reasoningEffort(): string | null {
