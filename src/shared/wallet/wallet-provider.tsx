@@ -4,7 +4,10 @@ import { NearProvider, useNearWallet, type NearContextValue } from "near-connect
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
 
+import { publicEnv } from "@/shared/config/public";
+
 import { ConnectSheet } from "./connect-sheet";
+import { toActions, type ContractCall } from "./contract-call";
 import { NEAR_NETWORK } from "./network";
 import { readViewer, viewerCookie } from "./viewer";
 import { WalletContext, type WalletContextValue, type WalletOption, type WalletStatus } from "./wallet-context";
@@ -47,6 +50,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     await nearRef.current?.signOut();
   }, []);
 
+  const callContract = useCallback(async (calls: readonly ContractCall[]) => {
+    const near = nearRef.current;
+    if (!near?.signedAccountId) throw new Error("Connect a wallet first");
+    const outcome = await near.signAndSendTransaction({ receiverId: publicEnv.contractId, actions: toActions(calls) });
+    const failure = [outcome.transaction_outcome, ...outcome.receipts_outcome].find(({ outcome: o }) => typeof o.status === "object" && "Failure" in o.status);
+    if (failure) throw new Error(`The contract refused the call (receipt ${failure.id})`);
+    if (typeof outcome.status === "object" && "Failure" in outcome.status) throw new Error("The contract refused the call");
+    return { txHash: outcome.transaction_outcome.id };
+  }, []);
+
   const value = useMemo<WalletContextValue>(
     () => ({
       network: NEAR_NETWORK,
@@ -56,8 +69,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       connect,
       disconnect,
       openConnect: () => setSheetOpen(true),
+      callContract,
     }),
-    [session, wallets, connect, disconnect],
+    [session, wallets, connect, disconnect, callContract],
   );
 
   return (

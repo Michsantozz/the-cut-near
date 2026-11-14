@@ -2,6 +2,7 @@
 
 import { createContext, useContext } from "react";
 
+import type { ContractCall } from "./contract-call";
 import type { NearNetwork } from "./network";
 
 export type WalletStatus = "loading" | "signed-out" | "signed-in";
@@ -20,6 +21,11 @@ export type WalletContextValue = {
   disconnect: () => Promise<void>;
   /** Opens the "Connect a NEAR wallet" sheet. */
   openConnect: () => void;
+  /**
+   * Signs and sends one transaction to the cut contract with these calls, in order, from the connected wallet.
+   * Resolves with the transaction hash once it is executed; rejects when the user cancels or any call fails.
+   */
+  callContract: (calls: readonly ContractCall[]) => Promise<{ txHash: string }>;
 };
 
 export const WalletContext = createContext<WalletContextValue | null>(null);
