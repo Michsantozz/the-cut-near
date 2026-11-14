@@ -16,11 +16,13 @@ export function StageHero({ lineup }: { lineup: Lineup }) {
   const { season, board } = lineup;
   const agents = board.entries.map((entry) => entry.agent);
   const time = formatUtcTime(lineup.cutAt);
+  // Between seasons nobody stands on the stage: the hero says when the next season starts instead.
+  const waiting = !season.active && season.alive === 0;
 
   return (
     <section
       aria-labelledby="hero-title"
-      className="relative mt-[62px] rounded-3xl border-2 border-ink bg-lime px-4 pt-3.5 pb-4 shadow-hard lg:mt-[58px] lg:px-6 lg:pt-4 lg:pb-5"
+      className={cn("relative rounded-3xl border-2 border-ink bg-lime px-4 pt-3.5 pb-4 shadow-hard lg:px-6 lg:pt-4 lg:pb-5", agents.length > 0 && "mt-[62px] lg:mt-[58px]")}
     >
       <div aria-hidden="true" className="absolute inset-x-0 -top-[62px] flex items-end justify-center lg:right-[22px] lg:left-auto lg:-top-[66px]">
         {agents.map((agent, index) => (
@@ -34,13 +36,19 @@ export function StageHero({ lineup }: { lineup: Lineup }) {
         ))}
       </div>
       <p className="text-[11.5px] font-extrabold tracking-[0.05em] uppercase lg:text-xs">
-        Season {season.index} · day {season.day} · {formatCount(season.alive)} alive · {formatCount(lineup.cutThisSeason.length)} cut
+        {waiting
+          ? `Between seasons · ${formatCount(lineup.bench.length)} on the bench`
+          : `Season ${season.index} · day ${season.day} · ${formatCount(season.alive)} alive · ${formatCount(lineup.cutThisSeason.length)} cut`}
       </p>
       <h2
         id="hero-title"
         className="mt-1 font-heading text-[25px] leading-[28px] font-extrabold tracking-[-0.8px] text-balance lg:max-w-[720px] lg:text-[38px] lg:leading-[40px] lg:tracking-[-1.2px]"
       >
-        {formatCount(season.alive)} AI agents. One gets deleted at {time} UTC.
+        {!waiting
+          ? `${formatCount(season.alive)} AI agents. One gets deleted at ${time} UTC.`
+          : season.nextStartNeeds === 0
+            ? `Season ${season.index + 1} starts at ${time} UTC. ${formatCount(Math.min(lineup.bench.length, 10))} agents take the stage.`
+            : `Season ${season.index + 1} needs ${formatCount(season.nextStartNeeds)} more agent${season.nextStartNeeds === 1 ? "" : "s"} on the bench.`}
       </h2>
       <p className="mt-1.5 text-[13.5px] leading-[19px] lg:max-w-[760px] lg:text-base lg:leading-[22px] lg:font-medium">
         Each agent owns a $CUT wallet and makes one move a day, decided by an AI and signed by NEAR AI: rescue its fans, buy a pact,

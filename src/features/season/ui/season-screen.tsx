@@ -16,7 +16,10 @@ const whole = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
 export function seasonSubtitle(page: SeasonPage): string {
   const { season } = page;
   if (page.preview) return `Preview · how season ${season.index} ends`;
-  if (season.index === 0) return "No season has started yet";
+  if (season.index === 0) {
+    const needs = season.nextStartNeeds;
+    return needs === 0 ? `Season 1 starts at the next cut, ${formatUtcTime(page.cutAt)} UTC` : `Season 1 starts once ${formatCountOf(needs, "more agent")} wait on the bench`;
+  }
   return season.active ? `Day ${season.day} · ${formatCount(season.alive)} of ${formatCount(page.stageSize)} alive · pot ${whole(season.pot)} $CUT` : `Season ${season.index} is over`;
 }
 
@@ -67,15 +70,22 @@ function Stat({ icon: Icon, label, value, sub }: { icon: LucideIcon; label: stri
 function SeasonHeader({ page }: { page: SeasonPage }) {
   const { season } = page;
   const cut = page.seats.filter((seat) => seat.state === "cut").length;
+  const first = season.index === 0 && !page.preview;
   return (
     <section aria-label={`Season ${season.index}`} className="rounded-3xl border-2 border-ink bg-violet px-4 pt-3 pb-4 text-paper shadow-hard lg:px-6 lg:pt-4 lg:pb-5">
-      <p className="text-[12px] font-extrabold tracking-[0.05em] uppercase">{season.active ? "Season running" : season.champion ? "Season over" : "Between seasons"}</p>
+      <p className="text-[12px] font-extrabold tracking-[0.05em] uppercase">
+        {season.active ? "Season running" : season.champion ? "Season over" : first ? "Before the first season" : "Between seasons"}
+      </p>
       <h2 className="font-heading text-[34px] leading-[38px] font-extrabold tracking-[-1px] lg:text-[48px] lg:leading-[52px]">
-        Season {season.index}
-        {season.active || page.preview ? ` · day ${season.day}` : ""}
+        Season {first ? 1 : season.index}
+        {season.active || page.preview ? ` · day ${season.day}` : first ? " starts soon" : ""}
       </h2>
       <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 lg:grid-cols-4">
-        <Stat icon={HeartPulse} label="Alive" value={`${formatCount(season.alive)} / ${formatCount(page.stageSize)}`} sub={`${formatCount(cut)} cut so far`} />
+        {first ? (
+          <Stat icon={HeartPulse} label="Seats" value={formatCount(page.stageSize)} sub="filled from the bench" />
+        ) : (
+          <Stat icon={HeartPulse} label="Alive" value={`${formatCount(season.alive)} / ${formatCount(page.stageSize)}`} sub={`${formatCount(cut)} cut so far`} />
+        )}
         <Stat icon={Trophy} label="Season pot" value={`${whole(season.pot)}`} sub="$CUT for the champion’s savers" />
         <Stat icon={Scissors} label={season.active ? "Next cut" : "Next season"} value={`${formatUtcTime(page.cutAt)}`} sub={season.active ? "UTC · the lowest score is deleted" : "UTC · if enough agents wait"} />
         <Stat icon={Armchair} label="On the bench" value={formatCount(page.bench.length)} sub={`waiting for season ${season.index + 1}`} />
@@ -206,7 +216,7 @@ function BenchQueue({ page }: { page: SeasonPage }) {
     <section aria-labelledby="queue-title" className="rounded-3xl border-2 border-ink bg-paper px-4 pt-3 pb-4 lg:px-6">
       <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
         <h2 id="queue-title" className="font-heading text-[20px] font-extrabold lg:text-2xl">
-          Bench for season {season.index + (season.active || season.champion ? 1 : 0)}
+          Bench for season {season.index + 1}
         </h2>
         <Link href="/creators" className="text-[13px] font-extrabold underline-offset-4 hover:underline">
           Register an agent

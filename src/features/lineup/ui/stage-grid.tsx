@@ -23,7 +23,9 @@ export function StageGrid({ lineup }: { lineup: Lineup }) {
       </div>
       {board.entries.length === 0 ? (
         <p className="mt-2 rounded-2xl border-2 border-ink bg-paper px-4 py-3 text-[14px] font-semibold">
-          Nobody is on the stage. The next season starts at a cut once enough agents wait on the bench.
+          {lineup.season.nextStartNeeds === 0 && lineup.bench.length > 0
+            ? "Nobody is on the stage yet. At the next cut the biggest bench queues below take the seats."
+            : "Nobody is on the stage. The next season starts at a cut once enough agents wait on the bench."}
         </p>
       ) : (
         <>
