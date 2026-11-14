@@ -14,7 +14,7 @@ import { useNow } from "@/shared/ui/use-now";
 import { useWallet } from "@/shared/wallet";
 
 import { minOut, sellCalls, SLIPPAGE_BPS } from "../model/calls";
-import { classifyTxError, type TxFailure } from "../model/errors";
+import { classifyTxError, failedTxHash, type TxFailure } from "../model/errors";
 import { cutToUsdCents, spotPrice } from "../model/money";
 import { cutToInput, defaultSell, sellShare, SELL_PRESETS } from "../model/sell";
 import { quoteSellAction } from "../server/actions";
@@ -29,7 +29,7 @@ type Step =
   | { kind: "moved"; quote: Quote; was: Quote }
   | { kind: "pending"; cutIn: bigint; quote: Quote }
   | { kind: "success"; cutIn: bigint; quote: Quote; txHash: string }
-  | { kind: "failed"; reason: TxFailure };
+  | { kind: "failed"; reason: TxFailure; txHash: string | null };
 
 const SHARE_WORDS: Record<number, string> = { 25: "a quarter of", 50: "half of", 75: "three quarters of", 100: "all of" };
 
@@ -65,7 +65,7 @@ export function SellScreen({ data }: { data: SellData }) {
       router.refresh();
     } catch (error) {
       const reason = classifyTxError(error);
-      setStep(reason === "cancelled" ? { kind: "amount", note: "Cancelled in the wallet. Nothing moved." } : { kind: "failed", reason });
+      setStep(reason === "cancelled" ? { kind: "amount", note: "Cancelled in the wallet. Nothing moved." } : { kind: "failed", reason, txHash: failedTxHash(error) });
     }
   }
 
@@ -136,6 +136,7 @@ export function SellScreen({ data }: { data: SellData }) {
     return (
       <TradeFrame title="Sell $CUT" nav={{ kind: "close" }} hideHeader>
         <FailedStep
+          txHash={step.txHash}
           title="The sale didn't go through."
           body={
             step.reason === "slippage"

@@ -15,7 +15,7 @@ import { useWallet } from "@/shared/wallet";
 
 import { BUY_PRESETS, buyInputToNear, buyUnit, DEFAULT_BUY, editAmount, groupTyped, maxBuyNear, nearToBuyInput } from "../model/buy";
 import { buyCalls, minOut, SLIPPAGE_BPS } from "../model/calls";
-import { classifyTxError, type TxFailure } from "../model/errors";
+import { classifyTxError, failedTxHash, type TxFailure } from "../model/errors";
 import { spotPrice, tradePrice } from "../model/money";
 import { quoteBuyAction } from "../server/actions";
 import type { BuyData } from "../server/load";
@@ -31,7 +31,7 @@ type Step =
   | { kind: "moved"; quote: Quote }
   | { kind: "pending"; quote: Quote }
   | { kind: "success"; quote: Quote; txHash: string }
-  | { kind: "failed"; reason: TxFailure };
+  | { kind: "failed"; reason: TxFailure; txHash: string | null };
 
 /** Buy $CUT with NEAR in The Cut's pool (Buy.dc.html / DeskBuy.dc.html). */
 export function BuyScreen({ data }: { data: BuyData }) {
@@ -75,7 +75,7 @@ export function BuyScreen({ data }: { data: BuyData }) {
       router.refresh();
     } catch (error) {
       const reason = classifyTxError(error);
-      setStep(reason === "cancelled" ? { kind: "review", note: "Cancelled in the wallet. Nothing moved." } : { kind: "failed", reason });
+      setStep(reason === "cancelled" ? { kind: "review", note: "Cancelled in the wallet. Nothing moved." } : { kind: "failed", reason, txHash: failedTxHash(error) });
     }
   }
 
@@ -100,6 +100,7 @@ export function BuyScreen({ data }: { data: BuyData }) {
     return (
       <TradeFrame title="Buy $CUT" nav={{ kind: "close" }} hideHeader>
         <FailedStep
+          txHash={step.txHash}
           title="The purchase didn't go through"
           body={
             step.reason === "slippage"

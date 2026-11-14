@@ -14,7 +14,7 @@ import { useNow } from "@/shared/ui/use-now";
 import { useWallet } from "@/shared/wallet";
 
 import { saveCalls, storageTopUp, unsaveCalls } from "../model/calls";
-import { classifyTxError } from "../model/errors";
+import { classifyTxError, failedTxHash } from "../model/errors";
 import { cutToUsdCents, spotPrice } from "../model/money";
 import { defaultSave, ordinal, SAVE_STORAGE, saveProblem, shareIfCutNow, type SaveChoice } from "../model/save";
 import { cutToInput } from "../model/sell";
@@ -28,7 +28,7 @@ type Step =
   | { kind: "pick"; note?: string }
   | { kind: "pending"; action: "save" | "unsave"; robot: SaveChoice; amount: bigint }
   | { kind: "success"; action: "save" | "unsave"; robot: SaveChoice; amount: bigint; txHash: string }
-  | { kind: "failed"; action: "save" | "unsave" };
+  | { kind: "failed"; action: "save" | "unsave"; txHash: string | null };
 
 // The design's color behind each robot (Lineup.dc.html).
 const ROBOT_BG: Record<string, string> = {
@@ -83,7 +83,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
       setStep({ kind: "success", action, robot: picked, amount: value, txHash });
       router.refresh();
     } catch (error) {
-      setStep(classifyTxError(error) === "cancelled" ? { kind: "pick", note: "Cancelled in the wallet. Nothing moved." } : { kind: "failed", action });
+      setStep(classifyTxError(error) === "cancelled" ? { kind: "pick", note: "Cancelled in the wallet. Nothing moved." } : { kind: "failed", action, txHash: failedTxHash(error) });
     }
   }
 
@@ -136,6 +136,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
     return (
       <TradeFrame title="Save a robot" nav={{ kind: "close" }} hideHeader>
         <FailedStep
+          txHash={step.txHash}
           title={step.action === "save" ? "The save didn't go through." : "Your save is still locked in."}
           body={
             step.action === "save"

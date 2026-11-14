@@ -75,7 +75,21 @@ function Coin({ label, sub, className }: { label: string; sub: string; className
 }
 
 /** The transaction did not go through: what happened, what it cost, and the way back. */
-export function FailedStep({ title, body, rows, actions }: { title: string; body: string; rows: { label: string; value: ReactNode }[]; actions: ReactNode }) {
+export function FailedStep({
+  title,
+  body,
+  rows,
+  actions,
+  txHash = null,
+}: {
+  title: string;
+  body: string;
+  rows: { label: string; value: ReactNode }[];
+  actions: ReactNode;
+  /** The refused transaction, when it reached the chain. */
+  txHash?: string | null;
+}) {
+  if (txHash) rows = [...rows, { label: "Transaction", value: <TxLink txHash={txHash} /> }];
   return (
     <div role="alert" className="flex grow flex-col pt-[72px] lg:pt-2">
       <span aria-hidden="true" className="flex size-[72px] items-center justify-center rounded-2xl border-2 border-ink bg-orange font-heading text-3xl font-extrabold shadow-hard">

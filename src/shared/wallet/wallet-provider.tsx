@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { publicEnv } from "@/shared/config/public";
 
 import { ConnectSheet } from "./connect-sheet";
-import type { ContractCall } from "./contract-call";
+import { ContractCallError, type ContractCall } from "./contract-call";
 import { toActions } from "./to-actions";
 import { NEAR_NETWORK } from "./network";
 import { readViewer, viewerCookie } from "./viewer";
@@ -55,10 +55,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const near = nearRef.current;
     if (!near?.signedAccountId) throw new Error("Connect a wallet first");
     const outcome = await near.signAndSendTransaction({ receiverId: publicEnv.contractId, actions: toActions(calls) });
-    const failure = [outcome.transaction_outcome, ...outcome.receipts_outcome].find(({ outcome: o }) => typeof o.status === "object" && "Failure" in o.status);
-    if (failure) throw new Error(`The contract refused the call (receipt ${failure.id})`);
-    if (typeof outcome.status === "object" && "Failure" in outcome.status) throw new Error("The contract refused the call");
-    return { txHash: outcome.transaction_outcome.id };
+    const txHash = outcome.transaction_outcome.id;
+    const failed = [outcome.status, ...[outcome.transaction_outcome, ...outcome.receipts_outcome].map(({ outcome: o }) => o.status)].find(
+      (status) => typeof status === "object" && "Failure" in status,
+    );
+    // The failure is a nested ActionError; its JSON carries the contract's panic text (e.g. "Slippage: …").
+    if (failed) throw new ContractCallError(`The contract refused the call: ${JSON.stringify((failed as { Failure: unknown }).Failure)}`, txHash);
+    return { txHash };
   }, []);
 
   const value = useMemo<WalletContextValue>(
