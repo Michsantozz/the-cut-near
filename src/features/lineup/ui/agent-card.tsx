@@ -65,7 +65,7 @@ export function AgentCard({
         </Link>
         <div className="min-w-0 grow">
           <h3 id={`agent-${agent.id}`} className="flex items-center gap-1.5 font-heading text-[19px] leading-6 font-extrabold">
-            <Link href={`/agents/${agent.id}`} className="truncate rounded-xs outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50">
+            <Link href={`/agents/${agent.id}`} className="truncate rounded-xs outline-none hover:underline max-sm:-my-2.5 max-sm:py-2.5 focus-visible:ring-3 focus-visible:ring-ring/50">
               {agent.name}
             </Link>
             {saved !== null && (

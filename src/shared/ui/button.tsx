@@ -4,8 +4,9 @@ import { cn } from "cn"
 import { Slot } from "radix-ui"
 
 // Buttons of the design: 2px ink border, heavy Inter label, optional hard shadow that "presses" on click.
+// On touch screens every button gets a 44px tall hit area (TAP_AREA), however small it looks.
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center gap-2 border-2 border-ink font-extrabold whitespace-nowrap transition-[transform,box-shadow,background-color] outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button relative pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:top-1/2 pointer-coarse:after:h-[max(100%,44px)] pointer-coarse:after:-translate-y-1/2 pointer-coarse:after:content-[''] inline-flex shrink-0 items-center justify-center gap-2 border-2 border-ink font-extrabold whitespace-nowrap transition-[transform,box-shadow,background-color] outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {

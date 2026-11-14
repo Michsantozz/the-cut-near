@@ -4,12 +4,13 @@ import type { ReactNode } from "react";
 
 import { publicEnv } from "@/shared/config/public";
 import { explorerAccountUrl } from "@/shared/near/network";
+import { TAP_AREA } from "@/shared/ui/tap-area";
 
 import { GITHUB_URL, NAV_GROUPS, repoFileHref, SIMULATION_HREF } from "./nav";
 
 type FooterLink = { label: string; href: string | null; external?: boolean; file?: boolean; note?: string };
 
-const linkClass = "inline-flex items-center gap-1 rounded-sm text-[13.5px] leading-5 font-semibold text-ink-2 outline-none hover:text-ink hover:underline hover:underline-offset-2 focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-3.5";
+const linkClass = `${TAP_AREA} inline-flex items-center gap-1 rounded-sm text-[13.5px] leading-5 font-semibold text-ink-2 outline-none hover:text-ink hover:underline hover:underline-offset-2 focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-3.5`;
 
 function FooterItem({ link }: { link: FooterLink }) {
   if (!link.href) {
@@ -43,7 +44,7 @@ function Column({ title, links, children }: { title: string; links?: FooterLink[
   return (
     <section aria-label={title} className="min-w-0">
       <h2 className="text-[11px] font-extrabold tracking-[0.08em] text-ink-3 uppercase">{title}</h2>
-      <ul className="mt-1.5 flex flex-col gap-1">
+      <ul className="mt-1.5 flex flex-col gap-3 lg:gap-1">
         {links?.map((link) => (
           <li key={link.label} className="min-w-0 break-words">
             <FooterItem link={link} />
