@@ -303,6 +303,28 @@ fn survivors_get_the_agents_share_and_creators_claim_theirs() {
 }
 
 #[test]
+fn claim_clears_a_save_on_a_cut_agent_even_with_no_prize() {
+    let mut w = stage_with(&[cut(1_000), cut(2_000), cut(3_000)]);
+    w.buy("mika.near", near(1_000));
+    w.save("mika.near", "r0", cut(1));
+    // r0 is the lowest: mika's save on it is lost and earned nothing.
+    assert_eq!(w.run_cut("runner.near").deleted_id.as_deref(), Some("r0"));
+    assert_eq!(w.claimable("mika.near"), 0);
+    let available =
+        |w: &mut World| w.view(|c| c.storage_balance_of(id("mika.near")).unwrap().available);
+    let before = available(&mut w);
+    let claimed = w.call("mika.near", zero(), |c| c.claim()).0;
+    assert_eq!(claimed, 0);
+    assert!(event("claim").is_none(), "nothing paid, no claim event");
+    assert!(w.view(|c| c.get_saves(id("mika.near"))).is_empty());
+    assert!(
+        available(&mut w) > before,
+        "the record's storage is released"
+    );
+    w.assert_books();
+}
+
+#[test]
 #[should_panic(expected = "Nothing to claim")]
 fn claiming_nothing_fails() {
     let mut w = World::daily();

@@ -149,6 +149,10 @@ pub struct Agent {
     pub bounty: u128,
     /// Index of the cut its last move was for (0 = never moved).
     pub moved_for: u64,
+    /// Its wallet when the last brief was built. A move's cap uses the lower of this and
+    /// the wallet at submit time, so $CUT credited during the day (a gift that an
+    /// `ft_transfer_call` may still refund) never raises that day's cap.
+    pub wallet_at_cut: u128,
     /// Index of the cut that deleted or crowned it.
     pub cut_index: Option<u64>,
     /// Account deletion progress, once cut.

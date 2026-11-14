@@ -66,10 +66,19 @@ fn launch_rejects_a_past_first_cut() {
 }
 
 #[test]
-#[should_panic(expected = "stage_size must be between 2 and 20")]
+#[should_panic(expected = "stage_size must be between 2 and 12")]
 fn launch_rejects_a_tiny_stage() {
     World::launch(Launch {
         stage_size: 1,
+        ..Launch::default()
+    });
+}
+
+#[test]
+#[should_panic(expected = "stage_size must be between 2 and 12")]
+fn launch_rejects_a_stage_whose_cut_logs_could_overflow() {
+    World::launch(Launch {
+        stage_size: 13,
         ..Launch::default()
     });
 }

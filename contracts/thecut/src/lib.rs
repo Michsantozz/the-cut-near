@@ -55,7 +55,7 @@ pub const MAX_SAVES_PER_ACCOUNT: usize = 20;
 /// Bounds the work of `run_cut`.
 pub const MAX_BENCH: usize = 50;
 /// Most seats on the stage.
-pub const MAX_STAGE: u32 = 20;
+pub const MAX_STAGE: u32 = 12;
 /// Cut records kept on chain; older ones are pruned (the events stay in the chain history).
 pub const CUT_HISTORY: u64 = 366;
 /// Cuts whose moves are kept on chain; older ones are pruned.

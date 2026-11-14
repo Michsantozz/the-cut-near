@@ -356,12 +356,21 @@ struct BriefMove<'a> {
     kind: MoveKind,
     target: Option<&'a str>,
     amount: String,
-    reason: &'a str,
 }
 
 impl Contract {
+    /// Records every stage agent's wallet for the day's spend caps. Called right before the
+    /// brief is built, so the brief shows the same wallets.
+    pub(crate) fn snapshot_wallets(&mut self) {
+        for id in self.stage.clone() {
+            let wallet = self.balance_of(&Self::agent_account(&id));
+            self.agent_mut(&id).wallet_at_cut = wallet;
+        }
+    }
+
     /// The board for the next cut: the stage by pile (highest first), the last cut and its
-    /// moves. `last_cut` is `None` on day 1. Amounts are whole $CUT.
+    /// moves (without their reasons: agents never read each other's speech, so one agent's
+    /// words cannot steer another). `last_cut` is `None` on day 1. Amounts are whole $CUT.
     pub(crate) fn build_brief(
         &self,
         last_cut: Option<&CutRecord>,
@@ -377,7 +386,7 @@ impl Contract {
                 name: &agent.name,
                 personality: &agent.personality,
                 pile: whole(agent.pile),
-                wallet: whole(self.balance_of(&Self::agent_account(id))),
+                wallet: whole(agent.wallet_at_cut),
                 pacts: &agent.pacts,
                 heir: agent.heir.as_deref(),
             })
@@ -403,7 +412,6 @@ impl Contract {
                     kind: m.kind,
                     target: m.target.as_deref(),
                     amount: whole(m.amount),
-                    reason: &m.reason,
                 })
                 .collect(),
         };
@@ -527,7 +535,8 @@ impl Contract {
         );
         let answer = read_answer(&response);
 
-        // The think fee, then the personality's limit on what is left.
+        // The think fee, then the personality's limit on what is left of the lower of the
+        // wallet now and the wallet at the last cut.
         let account = Self::agent_account(&agent_id);
         let wallet = self.balance_of(&account);
         let think_fee = self.params.think_fee.0;
@@ -540,7 +549,8 @@ impl Contract {
         self.burn_cut(&account, think_fee, "think fee");
         let agent = self.agent(&agent_id);
         let personality = checked(personality::find(&agent.personality));
-        let cap = checked(math::spend_cap(wallet - think_fee, personality.spend_bps));
+        let base = wallet.min(agent.wallet_at_cut).saturating_sub(think_fee);
+        let cap = checked(math::spend_cap(base, personality.spend_bps));
         let decision = decide(
             answer.parsed.as_ref(),
             &agent_id,

@@ -245,6 +245,7 @@ impl Contract {
 
         let start = env::storage_usage();
         let mut total: u128 = 0;
+        let mut cleared = false;
         let agent_ids = self
             .saver_agents
             .get(&account_id)
@@ -262,6 +263,7 @@ impl Contract {
             if deleted {
                 self.saves.remove(&key);
                 self.remove_saver_agent(&account_id, &agent_id);
+                cleared = true;
             } else if let Some(record) = self.saves.get_mut(&key) {
                 record.owed = 0;
                 record.reward_snapshot = acc_now;
@@ -273,16 +275,20 @@ impl Contract {
         if let Some(slices) = self.creator_claimable.remove(&account_id) {
             total = checked(total.checked_add(slices));
         }
-        require!(total > 0, "Nothing to claim");
-        self.prizes_outstanding = checked(self.prizes_outstanding.checked_sub(total));
-        self.send_cut(&account_id, total, "claim");
-        events::emit(
-            "claim",
-            &[events::Claim {
-                account_id,
-                amount: U128(total),
-            }],
-        );
+        // Clearing dead records is enough to succeed: a save on an agent cut with no prize
+        // would otherwise stay forever and count toward the account's save limit.
+        require!(total > 0 || cleared, "Nothing to claim");
+        if total > 0 {
+            self.prizes_outstanding = checked(self.prizes_outstanding.checked_sub(total));
+            self.send_cut(&account_id, total, "claim");
+            events::emit(
+                "claim",
+                &[events::Claim {
+                    account_id,
+                    amount: U128(total),
+                }],
+            );
+        }
         U128(total)
     }
 

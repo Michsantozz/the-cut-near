@@ -349,7 +349,7 @@ impl World {
             .detach()
         });
         let created = self.callback(PromiseResult::Successful(vec![]), |c| {
-            c.on_agent_created(agent.to_string(), U128(cut(1_000)))
+            c.on_agent_created(agent.to_string(), U128(cut(1_000)), false)
         });
         assert!(created);
         self.holds(&agent_account(agent));
