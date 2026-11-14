@@ -1,0 +1,16 @@
+[package]
+name = "integration-tests"
+description = "Sandbox tests for The Cut contracts: a local NEAR node, real accounts and time travel."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+near-api = "0.8"
+near-sandbox = "0.4"
+cargo-near-build = "0.11"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1"
+anyhow = "1"
