@@ -1,7 +1,7 @@
 import "server-only";
 import { dataSource } from "@/shared/config/data-source";
 import { getDb } from "@/shared/db";
-import { SAMPLE_LINES } from "../model/sample";
+import { sampleDirectorLines } from "../model/sample";
 import { memoryDirectorStore, type DirectorStore } from "./store";
 import { drizzleDirectorStore } from "./store-drizzle";
 
@@ -16,5 +16,5 @@ export function defaultDirectorStore(): DirectorStore {
   return store;
 }
 
-/** Sample lines of the design, served in sample mode next to anything generated into memory. */
-export const sampleLines = () => (dataSource() === "sample" ? SAMPLE_LINES : []);
+/** Sample lines of the v20 sample world, served in sample mode next to anything generated into memory. */
+export const sampleLines = (now: Date = new Date()) => (dataSource() === "sample" ? sampleDirectorLines(now) : []);

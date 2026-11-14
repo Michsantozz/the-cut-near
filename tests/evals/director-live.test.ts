@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { V19_BENCH, V19_NEXT_CUT, V19_NOW, V19_PARAMS, V19_STAGE } from "../fixtures/v19-day";
+import { SAMPLE_BENCH, SAMPLE_STAGE } from "@/entities/agent/api/sample";
+import { sampleNextCut } from "@/entities/cut/api/sample";
+import { sampleMoves } from "@/entities/move/api/sample";
+import { SAMPLE_SEASON } from "@/entities/season/api/sample";
 import { createNearAiClient, nearAiClientFromEnv, readAiEnv } from "@/shared/ai";
 import { collectAttestation, createHardwareVerifier } from "@/shared/ai/verify/server";
-import { units } from "@/shared/lib/amount";
 import { buildDayFacts } from "@/features/director/model/facts";
 import { scheduledPrompt } from "@/features/director/model/prompts";
 import { DirectorSession, getDirectorLineProof, memoryDirectorStore } from "@/features/director/server";
@@ -43,7 +45,9 @@ describe.skipIf(!withKey)("NEAR AI Cloud signed line, live", () => {
       reasoningEffort: env.NEAR_AI_REASONING_EFFORT === "none" ? undefined : env.NEAR_AI_REASONING_EFFORT,
       maxAttempts: 3,
     });
-    const facts = buildDayFacts({ stage: V19_STAGE, bench: V19_BENCH, nextCut: V19_NEXT_CUT, params: V19_PARAMS, now: V19_NOW, fees: units(5_020) });
+    // The SPEC-v20 sample world's cut line: Yuna Star, two hours before cut #5.
+    const now = new Date("2026-11-14T16:00:00Z");
+    const facts = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: sampleNextCut(now), season: SAMPLE_SEASON, now, moves: sampleMoves(5, now) });
     const line = await session.generate(scheduledPrompt(facts, "lowest"));
     console.info(`[live] ${line.text} | ${line.chatId} | ${line.proof?.status} (${line.proof?.signatureKind})`);
 

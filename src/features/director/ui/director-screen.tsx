@@ -27,7 +27,7 @@ export function DirectorScreen({ screen }: { screen: Screen }) {
       {screen.state === "ready" && <ReadyView screen={screen} />}
       {screen.state === "done" && <DoneView screen={screen} />}
       {screen.state === "scheduled" && <ScheduledView screen={screen} />}
-      <LinesFeed lines={screen.feed} stage={screen.stage} />
+      <LinesFeed lines={screen.feed} names={screen.names} />
     </div>
   );
 }
@@ -91,8 +91,8 @@ function ScheduledView({ screen }: { screen: Screen }) {
             {formatUtcDate(screen.cutAt).replace(",", "")} · {time}
           </p>
           <p className="text-[13px] leading-[18px] text-line-3 lg:mt-1.5 lg:w-[470px] lg:text-[15.5px] lg:leading-[23px]">
-            Every day at {time} the lowest pile is cut.
-            <span className="hidden lg:inline"> Its account is deleted, half its pile burns, and the rest is split into 9 equal slices, one per surviving agent.</span>
+            Every day at {time} the lowest score is cut.
+            <span className="hidden lg:inline"> Its account is deleted, half its pile burns, its wallet goes to its heir, and the last agent standing is the champion.</span>
           </p>
         </div>
       </section>
@@ -117,7 +117,7 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
     ...(next ? [{ agent: next, tag: "NEXT UP", tone: "bg-canvas", tagTone: "bg-paper text-ink" }] : []),
   ];
   const lines = rows.map((row) => screen.blockLines[row.agent.id]).filter((line): line is DirectorLineView => line !== null && line !== undefined);
-  const percent = next && next.pile > 0n ? Math.min(100, Math.max(3, Number((lowest.pile * 100n) / next.pile))) : 100;
+  const percent = next && next.score > 0n ? Math.min(100, Math.max(3, Number(((lowest.score > 0n ? lowest.score : 0n) * 100n) / next.score))) : 100;
   const day = relativeUtcDay(new Date(screen.renderedAt), screen.cutAt);
 
   return (
@@ -126,7 +126,7 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
         <h2 id="block-title" className="font-heading text-lg font-extrabold lg:text-2xl">
           On the block
         </h2>
-        <p className="hidden text-[13.5px] font-semibold text-ink-3 lg:block">the two lowest piles now</p>
+        <p className="hidden text-[13.5px] font-semibold text-ink-3 lg:block">the two lowest scores now</p>
         {lines[0] && <ProofBadge line={lines[0]} className="ml-auto" />}
       </div>
       <ul className="mt-2 grid gap-2 lg:mt-3 lg:grid-cols-2 lg:gap-3.5">
@@ -142,17 +142,14 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
                   <AgentTile id={agent.id} name={agent.name} className="size-11 rounded-lg lg:size-[60px] lg:rounded-xl" />
                   <span className="min-w-0 grow">
                     <span className="flex items-center gap-1.5 lg:block">
-                      <span className={cn("inline-block rounded-full border-[1.5px] border-ink px-2 text-[11px] leading-[17px] font-extrabold tracking-[0.04em]", tagTone)}>{tag}</span>
+                      <span className={cn("inline-block rounded-full border-[1.5px] border-ink px-2 text-[11px] leading-[17px] font-extrabold tracking-[0.04em] whitespace-nowrap", tagTone)}>{tag}</span>
                       <span className="text-[15px] font-extrabold whitespace-nowrap lg:mt-[3px] lg:block lg:text-lg">{agent.name}</span>
                     </span>
                     {line && <span className="mt-0.5 block text-[13px] leading-[17px] text-ink-2 lg:hidden">“{line.text}”</span>}
                   </span>
                   <span className="text-right leading-none">
-                    <span className="block font-heading text-[19px] font-extrabold whitespace-nowrap lg:text-[28px]">{cut(agent.pile)}</span>
-                    <span className="mt-1 block text-xs font-bold text-ink-3">
-                      <span className="lg:hidden">pile</span>
-                      <span className="hidden lg:inline">$CUT pile</span>
-                    </span>
+                    <span className="block font-heading text-[19px] font-extrabold whitespace-nowrap lg:text-[28px]">{cut(agent.score)}</span>
+                    <span className="mt-1 block text-xs font-bold text-ink-3">score</span>
                   </span>
                 </span>
                 {line && <span className="mt-3 hidden text-[14.5px] leading-[21px] text-ink-2 lg:block">“{line.text}”</span>}
@@ -175,7 +172,7 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
             <p className="text-xs font-bold text-ink-3 lg:text-[13px] lg:font-semibold">
               <span className="lg:hidden">$CUT</span>
               <span className="hidden lg:inline">
-                piles only grow until {formatUtcTime(screen.cutAt)} UTC{day ? ` ${day}` : ""}
+                saves and boos count until {formatUtcTime(screen.cutAt)} UTC{day ? ` ${day}` : ""}
               </span>
             </p>
           </div>
@@ -184,11 +181,11 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
           </div>
           <div className="mt-1.5 hidden justify-between text-[12.5px] font-bold lg:flex">
             <span>
-              {lowest.name} · {cut(lowest.pile)}
+              {lowest.name} · {cut(lowest.score)}
             </span>
             <span className="text-ink-3">gap {cut(screen.gap)}</span>
             <span>
-              {next.name} · {cut(next.pile)}
+              {next.name} · {cut(next.score)}
             </span>
           </div>
         </>
@@ -219,9 +216,9 @@ function GuessCard({ closesAt }: { closesAt: string }) {
 }
 
 const CUT_STEPS = [
-  { title: "Deleted", sub: "Its NEAR account is gone", desk: "The lowest pile’s NEAR account is gone for good", tone: "bg-orange", icon: Trash2 },
-  { title: "Half burns", sub: "Out of the supply forever", desk: "Half its pile leaves the supply forever", tone: "bg-[#ffd84d]", icon: Flame },
-  { title: "Half + fees", sub: "9 equal slices, one per survivor", desk: "The prize, in 9 equal slices, one per surviving agent", tone: "bg-lime", icon: Gift },
+  { title: "Deleted", sub: "Its NEAR account is gone", desk: "The lowest score’s NEAR account is gone for good", tone: "bg-orange", icon: Trash2 },
+  { title: "Half burns", sub: "Out of the supply forever", desk: "Half its pile leaves the supply forever; its wallet goes to its heir", tone: "bg-[#ffd84d]", icon: Flame },
+  { title: "Half + fees", sub: "A slice per survivor, up to its pile", desk: "The day prize: an equal slice per surviving agent, never more than its pile", tone: "bg-lime", icon: Gift },
 ];
 
 function HowTheCutWorks() {
@@ -264,17 +261,19 @@ function HowTheCutWorks() {
   );
 }
 
+/** Where to read more: the agent on the cut line (its score parts and moves), the rules, and this season's cuts. */
 function InsideLinks({ lowest }: { lowest: Agent | null }) {
   const links = [
-    { label: lowest ? `Why ${lowest.name}` : "Why this agent", href: "/inside?tab=why", tone: "bg-violet", icon: Lightbulb },
-    { label: "House rules", href: "/inside?tab=rules", tone: "bg-orange", icon: Shield },
-    { label: "Past cuts", href: "/inside?tab=cuts", tone: "bg-lime", icon: Clock },
+    // First name only: "Why Yuna" fits the phone's three-across buttons.
+    { label: lowest ? `Why ${lowest.name.split(" ")[0]}` : "Why the score decides", href: lowest ? `/agents/${lowest.id}` : "/inside", tone: "bg-violet", icon: Lightbulb },
+    { label: "House rules", href: "/inside", tone: "bg-orange", icon: Shield },
+    { label: "Past cuts", href: "/season", tone: "bg-lime", icon: Clock },
   ];
   return (
     <nav aria-label="Inside the cut" className="grid grid-cols-3 gap-2 lg:grid-cols-1 lg:gap-2.5">
       {links.map((link) => (
         <Link
-          key={link.href}
+          key={link.label}
           href={link.href}
           className="flex h-[46px] items-center gap-2 rounded-2xl border-2 border-ink bg-paper px-2 shadow-hard-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:h-[52px] lg:gap-3 lg:px-3.5"
         >
@@ -290,15 +289,15 @@ function InsideLinks({ lowest }: { lowest: Agent | null }) {
 }
 
 function ReadyView({ screen }: { screen: Screen }) {
-  const { lowest, seatTaker } = screen;
+  const { lowest, heir } = screen;
   const time = formatUtcTime(screen.cutAt);
   const willDo = [
-    lowest && `Delete ${lowest.accountId}, the lowest pile`,
+    lowest && `Delete ${lowest.accountId}, the lowest score`,
     lowest && `Burn ${cut(screen.burnIfCut)} $CUT, half of its pile`,
-    `Pay ${cut(screen.prizeIfCut)} $CUT in 9 equal slices`,
-    seatTaker && `Seat ${seatTaker.name}, the biggest queue`,
+    lowest && (heir ? `Send its wallet to its heir, ${heir.name}` : "Burn its wallet: no living heir"),
+    `Pay the ${cut(screen.prizeIfCut)} $CUT day prize to the survivors`,
   ].filter((item): item is string => Boolean(item));
-  const cantDo = ["Pick a different agent", `Run it before ${time}:00 UTC`, "Touch a pile or change the split"];
+  const cantDo = ["Pick a different agent", `Run it before ${time}:00 UTC`, "Touch a score or change the split"];
 
   return (
     <>
@@ -321,7 +320,7 @@ function ReadyView({ screen }: { screen: Screen }) {
           <div className="mt-5 flex flex-wrap items-start gap-3 lg:mt-[30px]">
             <RunCutButton label={`Run the cut · keep ${near(screen.agentFunding)} NEAR`} />
             <Button asChild variant="outline" size="xl" className="h-[58px] rounded-2xl">
-              <Link href="/inside?tab=rules">Read the house rules</Link>
+              <Link href="/inside">Read the house rules</Link>
             </Button>
           </div>
         </div>
@@ -437,7 +436,7 @@ function DoneView({ screen }: { screen: Screen }) {
                 <span className="absolute top-1.5 left-1.5 rounded-full border-[1.5px] border-ink bg-lime px-[7px] text-[10.5px] leading-[17px] font-extrabold">NEW</span>
               )}
               <p className="mt-[7px] truncate text-[12.5px] font-bold">{agent.name}</p>
-              <p className="text-[11.5px] font-semibold whitespace-nowrap text-ink-3">{cut(agent.pile)}</p>
+              <p className="text-[11.5px] font-semibold whitespace-nowrap text-ink-3">{cut(agent.score)}</p>
             </li>
           ))}
         </ul>
@@ -447,9 +446,9 @@ function DoneView({ screen }: { screen: Screen }) {
 }
 
 /** Every line the Director (and the agents) signed, each with its proof. */
-function LinesFeed({ lines, stage }: { lines: DirectorLineView[]; stage: Agent[] }) {
+function LinesFeed({ lines, names }: { lines: DirectorLineView[]; names: Record<string, string> }) {
   if (lines.length === 0) return null;
-  const nameOf = (id: string | null) => (id ? (stage.find((agent) => agent.id === id)?.name ?? id) : null);
+  const nameOf = (id: string | null) => (id ? (names[id] ?? id) : null);
 
   return (
     <section aria-labelledby="lines-title" className="rounded-3xl border-2 border-ink bg-paper px-4 pt-3.5 pb-2 lg:px-[22px] lg:pt-4">

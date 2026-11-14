@@ -1,7 +1,7 @@
 /**
  * What the Director (and the agents, in their own voice) can say:
- * - `scheduled`: the board line before today's cut, one per agent on the block (lowest pile and next up).
- * - `final-hour`: the line for the Final hour (17:00–18:00 UTC).
+ * - `scheduled`: the board line before today's cut, one per agent on the block (lowest score and next up).
+ * - `final-hour`: the line for the Final hour, the last hour before the cut (moves closed, saves and boos still count).
  * - `after-cut-roast`: the one-line roast of the agent that was cut.
  * - `after-cut-receipt`: the Director's post with the receipt of the cut.
  * - `agent-post`: an agent's own post on X.

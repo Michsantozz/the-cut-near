@@ -5,8 +5,8 @@ import { connection } from "next/server";
 import { isDeletingCut, type DeletingCut } from "@/entities/cut";
 import { getCut, getNextCut } from "@/entities/cut/server";
 import { getParams, getTotalSupply } from "@/entities/market/server";
-import { rankByPile, type Agent } from "@/entities/agent";
-import { getBench, getStage } from "@/entities/agent/server";
+import { rankByScore, type Agent } from "@/entities/agent";
+import { getAgents, getBench, getStage } from "@/entities/agent/server";
 import { isSameUtcDay } from "@/shared/ui/format";
 
 import { directorState, linesForFeed, type DirectorState } from "../model/screen";
@@ -33,18 +33,21 @@ export type DirectorScreen = {
   state: DirectorState;
   cutAt: Date;
   cutIndex: number;
-  /** The agent the cut takes if nothing moves, and the one right above it. */
+  /** The agent the cut takes if nothing changes (lowest score), and the one right above it. */
   lowest: Agent | null;
   next: Agent | null;
   gap: bigint;
   fees: bigint;
-  /** What the button does if pressed now: half the lowest pile burns, the rest plus fees is the prize. */
+  /** What the button does if pressed now: half the lowest agent's pile burns, the rest plus fees is the day prize. */
   burnIfCut: bigint;
   prizeIfCut: bigint;
-  /** The bench agent that takes the seat. */
-  seatTaker: Agent | null;
+  /** The stage agent that gets the lowest agent's wallet if it is cut; null: the wallet burns. */
+  heir: Agent | null;
   agentFunding: bigint;
+  /** Highest score first. */
   stage: Agent[];
+  /** Names of every agent a line or the receipt mentions, cut ones included. */
+  names: Record<string, string>;
   /** The last cut, shown as the receipt on the day it ran. */
   lastCut: DirectorScreenCut | null;
   /** The Director's line about each agent on the block, and the receipt of the last cut. */
@@ -68,14 +71,15 @@ export async function loadDirectorScreen(): Promise<DirectorScreen> {
     getTotalSupply(),
     getDirectorLines({ limit: 40 }),
   ]);
-  const ranked = rankByPile(stage);
+  const ranked = rankByScore(stage);
   const lowest = ranked.find((agent) => agent.id === nextCut.lowestId) ?? ranked.at(-1) ?? null;
   const next = lowest ? (ranked[ranked.indexOf(lowest) - 1] ?? null) : null;
-  const benchRanked = rankByPile(bench);
 
   const lastRecord = nextCut.index > 1 ? await getCut(nextCut.index - 1) : null;
-  const agents = [...stage, ...bench];
-  const lastCut = lastRecord && isDeletingCut(lastRecord) && isSameUtcDay(now, lastRecord.at) ? describeCut(lastRecord, agents, supply, params.stageSize) : null;
+  const known = new Set([...stage, ...bench].map((agent) => agent.id));
+  const missing = [...new Set([...lines.map((line) => line.subjectId), lastRecord?.deletedId ?? null])].filter((id): id is string => id !== null && !known.has(id));
+  const agents = [...stage, ...bench, ...(await getAgents(missing))];
+  const lastCut = lastRecord && isDeletingCut(lastRecord) && isSameUtcDay(now, lastRecord.at) ? describeCut(lastRecord, agents, supply, stage.length) : null;
 
   const burnIfCut = lowest ? (lowest.pile * BigInt(params.burnBps)) / BPS : 0n;
   const feed = linesForFeed(lines, nextCut.index);
@@ -92,9 +96,10 @@ export async function loadDirectorScreen(): Promise<DirectorScreen> {
     fees: nextCut.prizeSoFar,
     burnIfCut,
     prizeIfCut: lowest ? lowest.pile - burnIfCut + nextCut.prizeSoFar : 0n,
-    seatTaker: benchRanked[0] ?? null,
+    heir: lowest?.heir ? (ranked.find((agent) => agent.id === lowest.heir && agent.id !== lowest.id) ?? null) : null,
     agentFunding: params.agentFunding,
     stage: ranked,
+    names: Object.fromEntries(agents.map((agent) => [agent.id, agent.name])),
     lastCut,
     blockLines: { [lowest?.id ?? ""]: lineAbout(lowest?.id), [next?.id ?? ""]: lineAbout(next?.id) },
     receiptLine: lastCut ? (feed.find((line) => line.kind === "after-cut-receipt" && line.cutIndex === lastCut.index) ?? null) : null,
@@ -106,7 +111,7 @@ function describeCut(
   cut: DeletingCut,
   agents: Agent[],
   supplyNow: bigint,
-  stageSize: number,
+  survivors: number,
 ): DirectorScreenCut {
   const name = (id: string) => agents.find((agent) => agent.id === id)?.name ?? id;
   const joined = cut.joinedId ? agents.find((agent) => agent.id === cut.joinedId) : undefined;
@@ -118,7 +123,7 @@ function describeCut(
     burned: cut.burned,
     prize: cut.prize,
     slice: cut.slice,
-    survivors: stageSize - 1,
+    survivors,
     joined: joined ? { id: joined.id, name: joined.name, pile: joined.pile } : null,
     runner: cut.runner,
     // Shown on the day of the cut, when this burn is the last one.

@@ -1,14 +1,14 @@
 import "server-only";
 import { getCut, getNextCut } from "@/entities/cut/server";
 import { getParams } from "@/entities/market/server";
-import { getBench, getStage } from "@/entities/agent/server";
+import { getAgents, getBench, getStage } from "@/entities/agent/server";
 import { isDeletingCut, type DeletingCut } from "@/entities/cut";
 import { getJournal } from "@/entities/journal/server";
+import { getMoves } from "@/entities/move/server";
+import { getSeason } from "@/entities/season/server";
 import { nearAiClientFromEnv, readAiEnv } from "@/shared/ai";
 import { createHardwareVerifier } from "@/shared/ai/verify/server";
-import { isLive } from "@/shared/config/data-source";
 import { ContractViewError } from "@/shared/near/errors";
-import { movesContract } from "@/shared/near/moves";
 import { buildCutFacts, buildDayFacts, type DayMove } from "../model/facts";
 import { formatCut } from "../model/format";
 import { afterCutReceiptPrompt, afterCutRoastPrompt, finalHourPrompt, agentPostPrompt, scheduledPrompt, type DirectorPrompt, type LatestSave } from "../model/prompts";
@@ -17,11 +17,15 @@ import { defaultDirectorStore } from "./runtime";
 
 /**
  * When the Director speaks:
- * - `scheduled`: before the cut: the board lines for the two lowest piles, plus a post on X from every
- *   agent on the stage and the bench leader (the lowest begs, the next up pitches its slice, the top
- *   pile thanks, the bench leader waits, the rest hype), each thanking its newest saver of the day.
- * - `final-hour`: at 17:00 UTC.
+ * - `scheduled`: before the cut: the board lines for the two lowest scores, plus a post on X from every
+ *   agent on the stage and the bench leader (the one on the cut line begs, the next up watches its back, the
+ *   highest score thanks, the bench leader waits for the next season, the rest hype), each thanking its newest
+ *   saver of the day.
+ * - `final-hour`: the last hour before the cut, once moves are closed.
  * - `after-cut`: right after the cut: the roast and the receipt post.
+ *
+ * With no season running (or fewer than two agents on the stage) nobody is on the cut line, so the scheduled and
+ * final-hour moments have nothing to say.
  */
 export type DirectorMoment = "scheduled" | "final-hour" | "after-cut";
 
@@ -56,11 +60,10 @@ async function latestDeletingCut(fromIndex: number): Promise<DeletingCut | null>
   return null;
 }
 
-/** The signed moves made for a cut so far. None with sample data, or on a contract without `get_moves` (before v20). */
+/** The signed moves made for a cut so far: the sample world's moves, or none on a contract without `get_moves` (before v20). */
 async function movesFor(cutIndex: number): Promise<DayMove[]> {
-  if (!isLive()) return [];
   try {
-    return await movesContract().getMoves(cutIndex);
+    return await getMoves(cutIndex);
   } catch (error) {
     if (error instanceof ContractViewError) return [];
     throw error;
@@ -69,15 +72,20 @@ async function movesFor(cutIndex: number): Promise<DayMove[]> {
 
 /** The prompts of a moment, from the entities' data. */
 export async function momentPrompts(moment: DirectorMoment, options: { now?: Date; cutIndex?: number } = {}): Promise<DirectorPrompt[]> {
-  const [stage, bench, nextCut, params] = await Promise.all([getStage(), getBench(), getNextCut(), getParams()]);
+  const [stage, bench, nextCut, params, season] = await Promise.all([getStage(), getBench(), getNextCut(), getParams(), getSeason()]);
   if (moment === "after-cut") {
     const cut = options.cutIndex !== undefined ? await getCut(options.cutIndex) : await latestDeletingCut(nextCut.index);
     if (!cut) throw new Error("No cut has run yet.");
     if (!isDeletingCut(cut)) return [];
-    const facts = buildCutFacts({ cut, agents: [...stage, ...bench], params });
+    const named = await getAgents([cut.deletedId, ...(cut.inheritedBy ? [cut.inheritedBy] : []), ...(cut.championId ? [cut.championId] : [])]);
+    const latest = cut.index === nextCut.index - 1;
+    // Season day of the cut, as the season page counts it: the season started `season.day` cuts before the next one.
+    const day = season.active ? cut.index - (nextCut.index - season.day) : null;
+    const facts = buildCutFacts({ cut, agents: [...named, ...stage, ...bench], params, day, survivors: latest ? stage.length : null });
     return [afterCutRoastPrompt(facts), afterCutReceiptPrompt(facts)];
   }
-  const facts = buildDayFacts({ stage, bench, nextCut, params, now: options.now ?? new Date(), moves: await movesFor(nextCut.index) });
+  if (!season.active || stage.length < 2) return [];
+  const facts = buildDayFacts({ stage, bench, nextCut, season, now: options.now ?? new Date(), moves: await movesFor(nextCut.index) });
   if (moment === "final-hour") return [finalHourPrompt(facts)];
   // The two lowest first: if the model fails midway, the agents that need it most have posted.
   const urgent = [facts.lowest.id, facts.nextUp.id];

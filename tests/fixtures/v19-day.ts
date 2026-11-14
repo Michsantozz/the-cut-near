@@ -3,9 +3,9 @@ import type { DeletingCut, NextCut } from "@/entities/cut";
 import type { Params } from "@/entities/market";
 import { NEAR_DECIMALS, units } from "@/shared/lib/amount";
 
-// The v19 design day (docs/design/SPEC-v19.md §2), frozen for the Director's tests: day 2, Fri Nov 13 2026,
-// 13:48 UTC, ten agents ranked by pile, Kiko lowest. The app's sample world moved on to SPEC-v20; these tests
-// check the Director's facts and prompts on a fixed world, so they keep their own.
+// The v19 design day (docs/design/SPEC-v19.md §2), frozen: day 2, Fri Nov 13 2026, 13:48 UTC, ten agents ranked by
+// pile, Kiko lowest. Its rules are retired (SPEC-v20); only the Director's formatting tests still read its numbers.
+// Rule and prompt tests use the v20 sample world (`src/entities/*/api/sample.ts`).
 
 export const V19_NOW = new Date("2026-11-13T13:48:00Z");
 

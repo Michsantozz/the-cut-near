@@ -42,7 +42,7 @@ function sampleView(line: SampleLine): DirectorLineView {
 
 /**
  * The latest Director lines with their proof status, newest first, for the UI. Only lines whose proof is
- * `verified` or `partial` are listed. With DATA_SOURCE=sample the design's lines follow, marked `unsigned`.
+ * `verified` or `partial` are listed. With DATA_SOURCE=sample the sample world's lines follow, marked `unsigned`.
  */
 export async function getDirectorLines(query: DirectorLinesQuery = {}): Promise<DirectorLineView[]> {
   const limit = Math.min(Math.max(query.limit ?? 20, 1), 100);
@@ -76,7 +76,7 @@ function userPromptOf(requestBody: string): string | null {
  */
 export async function getDirectorLineProof(id: string, options: { store?: DirectorStore; now?: Date } = {}): Promise<DirectorProofBundle | null> {
   const now = options.now ?? new Date();
-  const sample = (options.store ? [] : sampleLines()).find((line) => line.id === id);
+  const sample = (options.store ? [] : sampleLines(now)).find((line) => line.id === id);
   if (sample) {
     return {
       version: 1,
@@ -94,7 +94,7 @@ export async function getDirectorLineProof(id: string, options: { store?: Direct
       links: { verifier: null, teeExplorer: LINKS.teeExplorer, docs: LINKS.responseSignatures },
       generatedAt: sample.createdAt,
       checkedAt: now.toISOString(),
-      note: "Design sample data (DATA_SOURCE=sample): no model wrote this line, so there is nothing to verify.",
+      note: "Sample world data (DATA_SOURCE=sample): no model wrote this line, so there is nothing to verify.",
     };
   }
 
