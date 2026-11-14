@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { Check, Clock, Scissors, TrendingUp, TriangleAlert, Trophy, Wallet, X, type LucideIcon } from "lucide-react";
+import { Check, ChevronDown, Clock, Scissors, TrendingUp, TriangleAlert, Trophy, Wallet, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { wholeCutsToPass } from "@/entities/agent";
@@ -104,7 +104,8 @@ function SourceChip({ data, className }: { data: Receipts; className?: string })
   return (
     <span
       className={cn(
-        "inline-flex h-8 items-center gap-2 rounded-full border-2 border-ink bg-paper px-3 text-[12.5px] font-extrabold whitespace-nowrap lg:h-[38px] lg:border-[2.5px] lg:px-4 lg:text-sm",
+        // On a phone the long contract name wraps inside the pill instead of pushing the page sideways.
+        "inline-flex min-h-8 max-w-full items-center gap-2 rounded-full border-2 border-ink bg-paper px-3 py-1 text-[12.5px] leading-4 font-extrabold lg:h-[38px] lg:border-[2.5px] lg:px-4 lg:py-0 lg:text-sm lg:whitespace-nowrap",
         className,
       )}
     >
@@ -285,9 +286,9 @@ function JournalCard({ data, now }: { data: Receipts; now: Date }) {
       ) : (
         <ol className="mt-2.5 lg:mt-3">
           {data.pending && <PendingRow pending={data.pending} renderedAt={data.renderedAt} now={now} />}
-          {data.rows.map((row) => (
-            <JournalRow key={row.key} row={row} now={now} />
-          ))}
+          {groupRuns(data.rows).map((run) =>
+            run.length >= RUN_MIN ? <JournalRun key={run[0]!.key} rows={run} now={now} /> : <JournalRow key={run[0]!.key} row={run[0]!} now={now} />,
+          )}
           {data.rows.length === 0 && !data.pending && <li className="border-t-[1.5px] border-line py-6 text-center text-[14.5px] text-ink-3">No entries here yet.</li>}
         </ol>
       )}
@@ -321,6 +322,53 @@ function Tag({ tag, label }: { tag: ReceiptTag; label: string }) {
     >
       {label}
     </span>
+  );
+}
+
+/** Back-to-back entries of the same kind fold into one line from this many on (a cut never folds). */
+const RUN_MIN = 3;
+
+/** Splits the journal into runs: consecutive rows of the same kind; a short run becomes single rows again. */
+function groupRuns(rows: ReceiptRow[]): ReceiptRow[][] {
+  const runs: ReceiptRow[][] = [];
+  for (const row of rows) {
+    const last = runs.at(-1);
+    if (last && last[0]!.tag === row.tag && row.tag !== "cut") last.push(row);
+    else runs.push([row]);
+  }
+  return runs.flatMap((run) => (run.length >= RUN_MIN ? [run] : run.map((row) => [row])));
+}
+
+/** A run of same-kind entries as one line that opens to show each of them. */
+function JournalRun({ rows, now }: { rows: ReceiptRow[]; now: Date }) {
+  const first = rows[0]!;
+  const newest = whenText(first.at, now);
+  const oldest = whenText(rows.at(-1)!.at, now);
+  return (
+    <li className="border-t-[1.5px] border-line">
+      <details className="group">
+        <summary className="-mx-2 flex cursor-pointer list-none items-center gap-2 rounded-xl px-2 py-[11px] outline-none hover:bg-canvas focus-visible:ring-3 focus-visible:ring-ring/50 lg:min-h-14 lg:gap-3.5 lg:py-[7px] [&::-webkit-details-marker]:hidden">
+          <Tag tag={first.tag} label={first.label} />
+          <span className="hidden w-[116px] shrink-0 text-[13px] leading-[17px] font-semibold text-ink-3 lg:block">{newest === oldest ? newest : `${newest} to ${oldest}`}</span>
+          <span className="min-w-0 grow">
+            <span className="block text-[14.5px] leading-5 font-bold">
+              {formatCount(rows.length)} {first.label.toLowerCase()} entries in a row
+            </span>
+            <span className="block truncate text-[13px] leading-[18px] text-ink-3 lg:text-[14.5px] lg:leading-5">Newest: {first.what}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1 text-[12.5px] font-bold lg:text-[13px]">
+            <span className="group-open:hidden">Show all</span>
+            <span className="hidden group-open:inline">Hide</span>
+            <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" strokeWidth={2.6} />
+          </span>
+        </summary>
+        <ol className="mb-2 rounded-xl bg-canvas/60 px-3 lg:px-4 [&>li:first-child]:border-t-0">
+          {rows.map((row) => (
+            <JournalRow key={row.key} row={row} now={now} />
+          ))}
+        </ol>
+      </details>
+    </li>
   );
 }
 
