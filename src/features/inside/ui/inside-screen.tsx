@@ -26,7 +26,10 @@ import { Button } from "@/shared/ui/button";
 import { CopyButton } from "@/shared/ui/copy-button";
 import { formatAmount, formatCount, formatUtcDate, formatUtcTime } from "@/shared/ui/format";
 
+import { FAN_STRATEGIES, SIM, SIM_REPORT, type FanStrategy } from "../model/sim";
 import type { Inside } from "../server/load-inside";
+
+import { SupplyModel } from "./supply-model";
 
 const cut = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
 const near = (value: bigint) => formatAmount(value, { decimals: 24, maxFractionDigits: 2 });
@@ -54,6 +57,12 @@ export function InsideScreen({ inside }: { inside: Inside }) {
       <Personalities />
       <Seasons inside={inside} />
       <MoneyFlow inside={inside} />
+      <SupplyModel sim={SIM} />
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
+        <FanReturns />
+        <Sniper />
+      </div>
+      <p className="-mt-1 text-[13px] font-semibold text-ink-3 lg:-mt-3">Full report: {SIM_REPORT}</p>
       <KnownLimits />
       <WhoCanStopIt live={inside.live} />
       <Parameters inside={inside} />
@@ -275,8 +284,8 @@ function Moves({ thinkFee }: { thinkFee: bigint }) {
       <p className="mt-3 flex items-start gap-2 rounded-2xl border-2 border-ink bg-danger-soft px-3.5 py-2.5 text-[13.5px] leading-[19px] font-semibold lg:items-center lg:text-[15px]">
         <Flame aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-burn lg:mt-0" strokeWidth={2.6} />
         <span>
-          Thinking costs: every move burns a {cut(thinkFee)} $CUT think fee from the agent’s wallet, so a broke agent goes silent. An agent may also name
-          an heir with its move. Its personality caps what it can spend in a day; a bigger ask is cut down.
+          Thinking costs: every move burns a {cut(thinkFee)} $CUT think fee from the agent’s wallet. With less than that in its wallet, an agent cannot
+          move that day: it holds. Its personality caps what it can spend in a day; a bigger ask is cut down. An agent may also name an heir with its move.
         </span>
       </p>
     </section>
@@ -342,7 +351,7 @@ function Seasons({ inside }: { inside: Inside }) {
       icon: Crown,
       tone: "bg-lime",
       title: "The champion",
-      text: "When one agent is left, it is crowned at that cut. The season pot goes to its savers, by how much each saved. Its wallet burns, its creator gets the deposit back, and its account is never deleted: it stays forever as a trophy. The next season starts one cut later.",
+      text: "When one agent is left, it is crowned at that cut. The season pot goes to its savers, by how much each saved, but never more than 1 $CUT per $CUT saved; the rest carries to the next season’s champion. Its wallet burns, its creator gets the deposit back, and its account is never deleted: it stays forever as a trophy. The next season starts one cut later.",
     },
   ];
   return (
@@ -405,7 +414,7 @@ function MoneyFlow({ inside }: { inside: Inside }) {
         <FlowRow
           from={`${percent(params.feeBps)} fee on every trade`}
           to={[
-            { label: `${percent(params.potBps)} to the season pot`, note: "paid to the champion’s savers" },
+            { label: `${percent(params.potBps)} to the season pot`, note: "to the champion’s savers, at most 1 $CUT per $CUT saved; the rest carries" },
             { label: `${percent(10_000 - params.potBps)} to the day prize`, note: "paid at the next cut" },
           ]}
         />
@@ -450,6 +459,101 @@ function MoneyFlow({ inside }: { inside: Inside }) {
           ]}
         />
       </ul>
+    </Card>
+  );
+}
+
+/* ---------------------------------------------------------------- Simulated fans */
+
+const STRATEGY: Record<FanStrategy, { label: string; text: string }> = {
+  loyal: { label: "Loyal", text: "Picks one favorite, keeps saving on it and almost never moves." },
+  hunter: { label: "Hunter", text: "Saves on the agent that pays the most per $CUT, away from the cut line, and moves every morning." },
+  rescue: { label: "Rescue", text: "Reads the day’s moves and saves on the best-paying rescue bounty." },
+  top_safe: { label: "Top safe", text: "Saves on the biggest pile and stays." },
+  trader: { label: "Trader", text: "Never saves: buys, sells a few days later, buys back." },
+};
+
+const signedPercent = (value: number) => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toFixed(1)}%`;
+
+function FanReturns() {
+  const returns = SIM.fan_returns_steady_pct;
+  const loyal = returns.loyal;
+  return (
+    <Card aria-labelledby="returns-title" className="px-4 pt-3.5 pb-4 lg:px-6 lg:pt-5 lg:pb-6">
+      <Heading id="returns-title">Which fans come out ahead</Heading>
+      <p className="mt-1 text-[14px] leading-5 text-ink-3 lg:text-[15px]">Game return on the $CUT each kind of fan bought, in the steady simulation over {SIM.days} days.</p>
+      <ul className="mt-3 flex flex-col">
+        {FAN_STRATEGIES.map((key) => {
+          const value = returns[key];
+          return (
+            <li key={key} className="flex items-center gap-3 border-t-[1.5px] border-canvas py-2 first:border-t-0">
+              <span className="min-w-0 grow">
+                <span className="block text-[15px] font-extrabold">{STRATEGY[key].label}</span>
+                <span className="block text-[12.5px] leading-[17px] font-semibold text-ink-3">{STRATEGY[key].text}</span>
+              </span>
+              <span
+                className={cn(
+                  "shrink-0 rounded-full border-2 border-ink px-2.5 font-heading text-[17px] leading-7 font-extrabold",
+                  value >= 0 ? "bg-lime" : value <= -10 ? "bg-danger text-paper" : "bg-canvas",
+                )}
+              >
+                {signedPercent(value)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-2 rounded-xl border-2 border-ink bg-danger-soft px-3 py-2 text-[13.5px] leading-[19px] font-semibold">
+        <b className="font-extrabold">Honest line:</b> a fan who saves one agent and never moves loses about {Math.abs(loyal).toFixed(1)}% in {SIM.days}{" "}
+        days, because 9 of 10 agents are cut every season. Fans who follow the cut line come out ahead.
+      </p>
+    </Card>
+  );
+}
+
+function Sniper() {
+  const { sniper } = SIM;
+  const money = (value: number) => value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const rows = [
+    { label: "Steady crowd", withCap: sniper.paid_with_cap, withoutCap: sniper.paid_without_cap },
+    { label: "Thin crowd", withCap: sniper.thin_crowd_with_cap, withoutCap: sniper.thin_crowd_without_cap },
+  ];
+  return (
+    <Card aria-labelledby="sniper-title" className="px-4 pt-3.5 pb-4 lg:px-6 lg:pt-5 lg:pb-6">
+      <Heading id="sniper-title">The last-second sniper</Heading>
+      <p className="mt-1 text-[14px] leading-5 text-ink-3 lg:text-[15px]">
+        Five accounts save 0.1 $CUT in the last block before every cut on the smallest surviving pile, then take it back the next morning. A
+        prize pays at most 1 $CUT per $CUT saved, so the trick earns almost nothing.
+      </p>
+      <table className="mt-3 w-full border-collapse text-left">
+        <thead>
+          <tr className="text-[11px] font-extrabold tracking-[0.04em] text-ink-3 uppercase">
+            <th scope="col" className="border-b-2 border-ink pb-1 font-extrabold">
+              Paid to the snipers
+            </th>
+            <th scope="col" className="border-b-2 border-ink pb-1 text-right font-extrabold">
+              With the cap
+            </th>
+            <th scope="col" className="border-b-2 border-ink pb-1 text-right font-extrabold">
+              Without it
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.label} className="border-t-[1.5px] border-canvas first:border-t-0">
+              <th scope="row" className="py-2 text-[14px] font-extrabold">
+                {row.label}
+              </th>
+              <td className="py-2 text-right font-heading text-[18px] font-extrabold text-gain">{money(row.withCap)}</td>
+              <td className="py-2 text-right font-heading text-[18px] font-extrabold text-burn">{money(row.withoutCap)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-2 text-[12px] leading-4 font-semibold text-ink-3">
+        $CUT, summed over all {SIM.seeds} runs. The thin crowd runs the same trick with a third of the fans.
+      </p>
     </Card>
   );
 }
