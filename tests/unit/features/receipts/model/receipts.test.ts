@@ -4,11 +4,11 @@ import { getParams } from "@/entities/market/server";
 import { getJournal, getJournalStats } from "@/entities/journal/server";
 import { getAgents, getBench, getStage } from "@/entities/agent/server";
 import { runAudit, LAUNCH_PARAMS } from "@/features/receipts/model/audit";
-import { describeGroup, groupEntries, isFoldedBurn, whenText, type DescribeContext } from "@/features/receipts/model/describe";
+import { describeGroup, groupEntries, isFoldedBurn, nearText, whenText, type DescribeContext } from "@/features/receipts/model/describe";
 import { cursorParam, filterEvents, parseCursor, parseFilter, receiptsHref, type Cursor } from "@/features/receipts/model/filters";
 import { percentText, supplyOf } from "@/features/receipts/model/supply";
 import { sampleHoursBeforeCut } from "@/shared/config/sample";
-import { units } from "@/shared/lib/amount";
+import { NEAR_DECIMALS, units } from "@/shared/lib/amount";
 
 const NOW = sampleHoursBeforeCut(1);
 
@@ -166,5 +166,26 @@ describe("runAudit", () => {
     expect(checks[1].detail).toContain("at block 277,690,085");
     expect(runAudit({ ...lagging, books: { ...atBlock, totalSupply: atBlock.totalSupply - 1n }, agents })[1].pass).toBe(false);
     expect(runAudit({ ...lagging, books: { ...atBlock, totalSaved: atBlock.totalSaved + 1n }, agents })[2].pass).toBe(false);
+  });
+});
+
+describe("small trades", () => {
+  const buy = (data: Record<string, unknown>) => ({
+    key: "t",
+    event: "buy",
+    txHash: "tx",
+    at: NOW,
+    entries: [{ id: "t", standard: "thecut", event: "buy", at: NOW, txHash: "tx", blockHeight: 1, accountId: "fan.testnet", agentId: null, cutIndex: 5, amount: null, data }],
+  });
+  const ctx: DescribeContext = { names: new Map(), now: NOW, cutAt: () => null, siblings: () => [] };
+
+  it("keeps the NEAR a testnet buy paid instead of rounding it to 0.1 or 0", () => {
+    expect(nearText(units(5, NEAR_DECIMALS - 2))).toBe("0.05");
+    expect(nearText(units(215, NEAR_DECIMALS - 7))).toBe("0.0000215");
+    expect(nearText(units(859, NEAR_DECIMALS - 1))).toBe("85.9");
+    const line = describeGroup(buy({ account_id: "fan.testnet", near_in: units(5, NEAR_DECIMALS - 2).toString(), cut_out: (units(1_152_476) / 10n).toString(), fee: (units(5) / 10n).toString(), to_pot: (units(25) / 100n).toString(), cut_index: 5 }), ctx);
+    expect(line.what).toBe("fan.testnet bought 115,247.6 $CUT for 0.05 NEAR");
+    // Half a $CUT fee splits into halves that add up, not 0.3 + 0.3.
+    expect(line.detail).toBe("1% fee, 0.5 $CUT: 0.25 to the season pot, 0.25 to the prize of cut #5");
   });
 });

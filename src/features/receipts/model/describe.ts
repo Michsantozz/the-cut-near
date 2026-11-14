@@ -137,7 +137,7 @@ export function groupEntries(entries: readonly JournalEntry[]): ReceiptGroup[] {
 
 /** $CUT with up to one decimal: "1,775.4", "400". */
 export const cutText = (value: bigint) => formatAmount(value, { maxFractionDigits: 1 });
-/** NEAR with up to one decimal: "85.9". */
+/** NEAR with one decimal from 1 NEAR up ("85.9"), three significant digits below ("0.05", "0.0000215"). */
 export const nearText = (value: bigint) => formatSignificant(value, { decimals: NEAR_DECIMALS, maxFractionDigits: 1 });
 
 function str(data: Record<string, unknown>, key: string): string {
@@ -243,7 +243,9 @@ function feeText(d: Record<string, unknown>, ctx: DescribeContext): string {
   const fee = big(d, "fee");
   const pot = d.to_pot === undefined ? null : big(d, "to_pot");
   const prize = prizeOf(ctx, num(d, "cut_index")).replace(/^To/, "to");
-  return pot === null ? `1% fee, ${cutText(fee)} $CUT` : `1% fee, ${cutText(fee)} $CUT: ${cutText(pot)} to the season pot, ${cutText(fee - pot)} ${prize}`;
+  // Under 1 $CUT the halves keep their digits ("0.25"), so the two parts add up to the fee shown.
+  const part = (value: bigint) => formatSignificant(value, { maxFractionDigits: 1 });
+  return pot === null ? `1% fee, ${part(fee)} $CUT` : `1% fee, ${part(fee)} $CUT: ${part(pot)} to the season pot, ${part(fee - pot)} ${prize}`;
 }
 
 /** What happened, in one line plus one detail line. */
