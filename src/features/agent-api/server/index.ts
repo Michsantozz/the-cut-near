@@ -4,3 +4,5 @@ import "server-only";
 // It reads the chain and prepares unsigned calls. It holds no key and signs nothing.
 export { agentDetailJson, gameJson, movesJson } from "./api";
 export { apiError, apiJson, apiPreflight, apiRead } from "./http";
+export { createAgentMcpServer, handleMcpPost, mcpMethodNotAllowed, mcpPreflight } from "./mcp";
+export type { MovePorts } from "../model/ports";
