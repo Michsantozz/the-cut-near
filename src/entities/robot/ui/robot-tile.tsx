@@ -14,5 +14,5 @@ export function RobotTile({ id, name, className }: { id: string; name: string; c
       </span>
     );
   }
-  return <Image src={src} alt="" width={40} height={40} className={cn(frame, "object-cover")} />;
+  return <Image src={src} alt="" width={64} height={64} className={cn(frame, "object-cover")} />;
 }

@@ -30,3 +30,6 @@ export function robotFullBody(id: string): Art | null {
 }
 
 export const DIRECTOR_ART: Art = { src: "/director.webp", width: 326, height: FULL_HEIGHT };
+
+/** The stage under the scissors, the backdrop of the cut. */
+export const STAGE_ART: Art = { src: "/stage.webp", width: 1536, height: 1024 };

@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
 
+import { TestnetBanner } from "@/features/account";
+import { publicEnv } from "@/shared/config";
+import { isLive } from "@/shared/config/data-source";
 import { cn } from "@/shared/lib/cn";
 import { WalletProvider } from "@/shared/wallet";
 
@@ -29,7 +32,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <WalletProvider>
           <div className="lg:flex">
             <SideNav />
-            <main className="min-w-0 flex-1 pb-24 lg:pb-0 [body:has([data-fullscreen-flow])_&]:pb-0">{children}</main>
+            <main className="min-w-0 flex-1 pb-24 lg:pb-0 [body:has([data-fullscreen-flow])_&]:pb-0">
+              {isLive() && publicEnv.network === "testnet" && <TestnetBanner />}
+              {children}
+            </main>
           </div>
           <TabBar />
         </WalletProvider>
