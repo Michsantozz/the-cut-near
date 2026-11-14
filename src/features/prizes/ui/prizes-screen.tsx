@@ -23,9 +23,9 @@ const EXPLORER_TX: Record<string, string> = { testnet: "https://testnet.nearbloc
 const STEP_BG = ["bg-orange", "bg-[#ffd84d]", "bg-lime", "bg-sky", "bg-pink"];
 
 const RULES = [
-  "Every $CUT buy or sell adds a 1% fee to the day’s prize.",
-  "Every day at 18:00 UTC the lowest pile is cut. Half burns, half joins the prize.",
-  "95% goes to savers in 9 equal slices, one per surviving agent. 5% to their creators.",
+  "Every $CUT buy or sell pays a 1% fee: half to the day’s prize, half to the season pot.",
+  "Every day at 18:00 UTC the lowest score is cut. Half its pile burns, half joins the prize.",
+  "90% goes to savers, one equal slice per surviving agent. 5% to the agents’ wallets, 5% to creators.",
   "Every survivor gets the same slice. Small piles share it among fewer $CUT, so they pay more.",
 ];
 
@@ -66,9 +66,9 @@ function Steps({ b, names, now }: { b: Breakdown; names: Record<string, string>;
       </div>
       <ol className="mt-2 lg:hidden">
         {steps.map((step, i) => (
-          <li key={i} className={cn("flex h-[42px] items-center gap-3 text-sm", i > 0 && "border-t-[1.5px] border-canvas")}>
+          <li key={i} className={cn("flex min-h-[42px] items-center gap-3 py-2 text-sm", i > 0 && "border-t-[1.5px] border-canvas")}>
             <span className={cn("flex size-[22px] shrink-0 items-center justify-center rounded-3xs border-2 border-ink text-xs font-extrabold", STEP_BG[i])}>{i + 1}</span>
-            <span className="min-w-0 grow truncate">{step.text}</span>
+            <span className="min-w-0 grow leading-snug">{step.text}</span>
             <span className="font-extrabold whitespace-nowrap">{step.value}</span>
           </li>
         ))}
@@ -209,7 +209,7 @@ function PilesNow({ piles, mine, when }: { piles: Pile[]; mine: string | null; w
                     {low ? "LOWEST" : "YOURS"}
                   </span>
                 )}
-                <span className="mt-[7px] block truncate text-[12.5px] font-bold">{agent.name}</span>
+                <span className="mt-[7px] line-clamp-2 block text-[12.5px] leading-tight font-bold break-words">{agent.name}</span>
                 <span className="block text-[11.5px] font-semibold whitespace-nowrap text-ink-3">{cut0(agent.pile)}</span>
               </Link>
             </li>
@@ -229,14 +229,14 @@ function Waiting({ saved: save, nextCut, now }: WaitingProps) {
   const when = `${dayWord(now, at, true)} at ${formatUtcTime(at)} UTC`;
   const steps = saved
     ? [
-        `${when} the lowest pile is cut.${nextCut.lowestName ? ` ${nextCut.lowestName} is lowest now.` : ""}`,
-        "Half its pile burns. The other half plus the day’s fees is the prize, in 9 equal slices.",
-        `If ${save.agentName} survives, you share its slice with its savers. If it is cut, half your save burns.`,
+        `${when} the lowest score is cut.${nextCut.lowestName ? ` ${nextCut.lowestName} is lowest now.` : ""}`,
+        "Half its pile burns. The other half plus the day’s fees is the prize: 90% to savers, one equal slice per survivor.",
+        `If ${save.agentName} survives, you share its slice with its savers. If it is cut, your save is gone: half burns, half joins the prize.`,
       ]
     : [
         "Save $CUT on an agent. It stays locked until the next cut.",
-        `Every day at ${formatUtcTime(at)} UTC the lowest pile is cut: half burns, half plus the day’s 1% fees is the prize.`,
-        "95% goes to savers in 9 equal slices, one per surviving agent; small piles pay more per $CUT. 5% goes to creators.",
+        `Every day at ${formatUtcTime(at)} UTC the lowest score is cut: half its pile burns, half plus the day’s fees is the prize.`,
+        "90% goes to savers, one equal slice per surviving agent; small piles pay more per $CUT. 5% to the agents, 5% to creators.",
       ];
   const chip = saved
     ? `You saved ${cut0(save.total)} on ${save.agentName}`

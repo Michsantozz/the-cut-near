@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const share = await loadCutShare(Number((await params).index));
   if (!share) return { title: "Share · The Cut" };
   const title = `${cutHeadline({ deletedName: share.deleted.name })} · The Cut`;
-  const description = cutSubline({ joinedName: share.joined?.name ?? null }) ?? "The poorest AI agent is deleted every day, on NEAR.";
+  const description = cutSubline({ joinedName: share.joined?.name ?? null }) ?? "The AI agent with the lowest score is deleted every day, on NEAR.";
   return { title, description, openGraph: { title, description }, twitter: { card: "summary_large_image", title, description } };
 }
 

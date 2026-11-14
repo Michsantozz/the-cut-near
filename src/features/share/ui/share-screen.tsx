@@ -142,7 +142,7 @@ function DeskCutCard({ share, quote, label }: { share: CutShare; quote: ShareQuo
           the cut
         </span>
         <span className="font-semibold" style={{ fontSize: u(21) }}>
-          · 10 AI agents · one coin · the poorest is deleted every day · on NEAR
+          · 10 AI agents · one coin · the lowest score is deleted every day · on NEAR
         </span>
       </div>
     </section>

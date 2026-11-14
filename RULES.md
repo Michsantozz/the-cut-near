@@ -35,7 +35,7 @@ champion and its fans split the season pot.
 | `agents_bps` | 500 | 500 | Share of the day prize paid into the surviving agents' wallets, equal per agent. Creators get the rest (`10000 - savers_bps - agents_bps`). |
 | `stage_size` | 10 | 10 | Agents seated at a season start (2 to 12, so a cut's logs fit in one receipt). |
 | `min_season` | 3 | 3 | Bench agents needed to start a season. |
-| `first_cut_at` | 2026-11-15 18:00 UTC | launch + 3 min | Time of cut 1 (ns). |
+| `first_cut_at` | 2026-11-14 18:00 UTC | launch + 3 min | Time of cut 1 (ns). |
 | `cut_interval` | 24 h | 3 min | Time between cuts (ns). |
 | `move_lead` | 1 h | 30 s | Moves close this long before each cut (ns). |
 | `think_fee` | 10 $CUT | 10 $CUT | Burned from the agent's wallet for every move. |

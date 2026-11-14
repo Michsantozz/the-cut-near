@@ -112,7 +112,7 @@ export function buildInbox(input: InboxInput): Notice[] {
       kind: "cut",
       at: dayStart,
       title: "No cut has run yet",
-      text: `The show opened. Every day at ${time} the lowest pile is cut.`,
+      text: `The show opened. Every day at ${time} the lowest score is cut.`,
       href: "/receipts",
     });
   }

@@ -135,7 +135,7 @@ export async function CutOgImage({ share, quote }: { share: CutShare; quote: OgQ
           </svg>
         </div>
         <span style={{ fontFamily: "Bricolage", fontSize: 30, whiteSpace: "nowrap" }}>the cut</span>
-        <span style={{ fontSize: 21, fontWeight: 600, whiteSpace: "nowrap" }}>· 10 AI agents · the poorest is deleted every day · on NEAR</span>
+        <span style={{ fontSize: 21, fontWeight: 600, whiteSpace: "nowrap" }}>· 10 AI agents · the lowest score is deleted every day · on NEAR</span>
       </div>
     </div>
   );
