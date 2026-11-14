@@ -203,13 +203,13 @@ export function SaveScreen({ data }: { data: SaveData }) {
                 <Tile id={picked.robot.id} name={picked.robot.name} className="size-10" />
                 <div className="min-w-0 grow">
                   <p className="font-heading text-[17px] font-extrabold">{picked.robot.name}</p>
-                  <p className="text-[12.5px] text-ink-3">
+                  <p className="truncate text-[12.5px] text-ink-3">
                     Pile {cutWhole(picked.robot.pile)} · {ordinal(picked.rank)} of {stageSize}
                   </p>
                 </div>
-                <p className="text-right">
+                <p className="shrink-0 text-right whitespace-nowrap">
                   <span className={cn("block font-heading text-lg leading-5 font-extrabold", picked.isLowest && "text-burn")}>{picked.isLowest ? "Cut" : pays(picked.paysPer100)}</span>
-                  <span className="text-[11.5px] font-bold">{picked.isLowest ? "if the cut ran now" : "per 100"}</span>
+                  <span className="text-[11.5px] font-bold">{picked.isLowest ? "if it ran now" : "per 100"}</span>
                 </p>
               </div>
             )}

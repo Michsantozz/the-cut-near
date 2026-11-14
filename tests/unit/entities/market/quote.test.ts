@@ -38,3 +38,16 @@ describe("market getters on the sample day", () => {
     expect(await serverQuoteBuy(units(100, NEAR_DECIMALS))).toEqual(quoteBuy(pool, units(100, NEAR_DECIMALS)));
   });
 });
+
+describe("live price history", () => {
+  it("prices a buy and a sell from their events, fee included", async () => {
+    const { tradePrice } = await import("@/entities/market/api/live");
+    const at = new Date("2026-11-13T09:14:00Z");
+    const buy = tradePrice({ event: "buy", blockTimestamp: at, data: { near_in: units(859, NEAR_DECIMALS - 1).toString(), cut_out: units(120).toString() } });
+    expect(buy?.yoctoNearPerCut).toBe((units(859, NEAR_DECIMALS - 1) * units(1)) / units(120));
+    const sell = tradePrice({ event: "sell", blockTimestamp: at, data: { near_out: units(1, NEAR_DECIMALS).toString(), cut_in: units(2).toString() } });
+    expect(sell?.yoctoNearPerCut).toBe(units(5, NEAR_DECIMALS - 1));
+    expect(tradePrice({ event: "save", blockTimestamp: at, data: { amount: "1" } })).toBeNull();
+    expect(tradePrice({ event: "buy", blockTimestamp: at, data: { near_in: "1", cut_out: "0" } })).toBeNull();
+  });
+});
