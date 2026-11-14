@@ -164,22 +164,22 @@ export function SaveScreen({ data }: { data: SaveData }) {
   const survivors = Math.max(stageSize - 1, 0);
 
   return (
-    <TradeFrame title="Save a robot" nav={{ kind: "back", label: "Back to the lineup", onClick: () => router.push("/") }} wide bareOnDesk>
-      <div className="flex grow flex-col lg:-mx-[30px] lg:-mt-[26px] lg:-mb-[30px] lg:grid lg:grid-cols-[1fr_382px]">
-        <div className="lg:px-[30px] lg:pt-[26px] lg:pb-[26px]">
-          <p className="hidden text-[12.5px] font-extrabold tracking-[0.05em] text-ink-3 uppercase lg:block">Save a robot</p>
-          <p className="hidden font-heading text-[30px] leading-9 font-extrabold tracking-[-0.8px] lg:block">Who do you keep alive?</p>
-          <p className="mt-2 text-[14.5px] leading-5 text-ink-2 lg:mt-1">
+    <TradeFrame title="Save a robot" nav={{ kind: "back", label: "Back to the lineup", onClick: () => router.push("/") }} deskWidth="lg:w-[1000px]" bareOnDesk>
+      <div className="flex grow flex-col lg:-mx-[30px] lg:-mt-[26px] lg:-mb-[30px] lg:grid lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="lg:py-6 lg:pr-6 lg:pl-7">
+          <p className="hidden text-xs font-extrabold tracking-[0.05em] text-ink-3 uppercase lg:block">Save a robot</p>
+          <p className="hidden font-heading text-[30px] leading-[34px] font-extrabold tracking-[-0.8px] lg:mt-0.5 lg:block">Who do you keep alive?</p>
+          <p className="mt-3 px-1 text-[13.5px] leading-[19px] text-ink-2 lg:mt-1 lg:px-0 lg:text-sm lg:leading-5">
             Your $CUT goes into the robot’s pile, locked until {when.trim() === "today" ? "today’s cut" : "the next cut"} at {at}. The lowest pile is cut; saves count by $CUT, not by people.
           </p>
 
           {/* Phone: a grid of tiles. Laptop: the ranked list with the cut line. */}
-          <section aria-label="Pick a robot" className="mt-3 rounded-3xl border-2 border-ink bg-paper px-3.5 pt-3 pb-3.5 lg:hidden">
+          <section aria-label="Pick a robot" className="mt-3 rounded-[20px] border-2 border-ink bg-paper px-3 pt-2.5 pb-3 lg:hidden">
             <p className="flex justify-between text-[11.5px] font-extrabold tracking-[0.04em] text-ink-3 uppercase">
               <span>Pick a robot</span>
               <span>Pays per 100 saved</span>
             </p>
-            <div role="radiogroup" aria-label="Robots" className="mt-2 grid grid-cols-5 gap-1.5">
+            <div role="radiogroup" aria-label="Robots" className="mt-1.5 grid grid-cols-5 gap-1">
               {choices.map((choice) => (
                 <button
                   key={choice.robot.id}
@@ -189,44 +189,45 @@ export function SaveScreen({ data }: { data: SaveData }) {
                   aria-label={`${choice.robot.name}, ${choice.isLowest ? "cut if the cut ran now" : `pays ${pays(choice.paysPer100)} per 100 saved`}`}
                   onClick={() => setPickedId(choice.robot.id)}
                   className={cn(
-                    "flex flex-col items-center gap-0.5 rounded-xl border-2 border-transparent py-1.5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-checked:border-ink aria-checked:bg-lime-soft",
+                    "flex flex-col items-center gap-0.5 rounded-xl border-2 border-transparent pt-1 pb-[3px] outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-checked:border-ink aria-checked:bg-lime-soft",
                     choice.isLowest && "bg-danger-tint",
                   )}
                 >
-                  <Tile id={choice.robot.id} name={choice.robot.name} className="size-8" />
-                  <span className={cn("text-[13px] font-extrabold", choice.isLowest && "text-burn")}>{choice.isLowest ? "Cut" : pays(choice.paysPer100)}</span>
+                  <Tile id={choice.robot.id} name={choice.robot.name} className="size-7 rounded-full" />
+                  <span className={cn("text-[13px] leading-[15px] font-extrabold", choice.isLowest && "text-burn")}>{choice.isLowest ? "Cut" : pays(choice.paysPer100)}</span>
                 </button>
               ))}
             </div>
-            <p className="mt-1.5 text-[12.5px] leading-[17px] text-ink-3">If the cut ran now. Small piles pay more per $CUT, but they sit closer to the cut line.</p>
+            <p className="mt-[5px] text-xs leading-4 text-ink-3">If the cut ran now. Small piles pay more per $CUT, but they sit closer to the cut line.</p>
             {picked && (
-              <div className="mt-2.5 flex items-center gap-3 rounded-2xl border-2 border-ink bg-lime-soft px-3 py-2">
-                <Tile id={picked.robot.id} name={picked.robot.name} className="size-10" />
+              <div className="mt-2 flex items-center gap-2.5 rounded-[14px] border-2 border-ink bg-lime-soft px-2.5 py-[7px]">
+                <Tile id={picked.robot.id} name={picked.robot.name} className="size-10 rounded-xl" />
                 <div className="min-w-0 grow">
-                  <p className="font-heading text-[17px] font-extrabold">{picked.robot.name}</p>
-                  <p className="truncate text-[12.5px] text-ink-3">
+                  <p className="text-[15px] leading-[18px] font-extrabold">{picked.robot.name}</p>
+                  <p className="truncate text-xs leading-[15px] text-ink-3">
                     Pile {cutWhole(picked.robot.pile)} · {ordinal(picked.rank)} of {stageSize}
                   </p>
                 </div>
-                <p className="shrink-0 text-right whitespace-nowrap">
-                  <span className={cn("block font-heading text-lg leading-5 font-extrabold", picked.isLowest && "text-burn")}>{picked.isLowest ? "Cut" : pays(picked.paysPer100)}</span>
-                  <span className="text-[11.5px] font-bold">{picked.isLowest ? "if it ran now" : "per 100"}</span>
+                <p className="shrink-0 text-right leading-4 whitespace-nowrap">
+                  <span className={cn("block font-heading text-base font-extrabold", picked.isLowest && "text-burn")}>{picked.isLowest ? "Cut" : pays(picked.paysPer100)}</span>
+                  <span className="text-[11px] font-bold text-ink-3">{picked.isLowest ? "if it ran now" : "per 100"}</span>
                 </p>
               </div>
             )}
           </section>
 
           <section aria-label="Pick a robot" className="hidden lg:mt-4 lg:block">
-            <div className="flex px-3 text-[11.5px] font-extrabold tracking-[0.04em] text-ink-3 uppercase">
+            <div className="flex h-[26px] items-center gap-3 px-3 text-[11px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">
               <span className="grow">Robot</span>
-              <span className="w-24 text-right">Pile</span>
-              <span className="w-[136px] pr-8 text-right whitespace-nowrap">Pays per 100</span>
+              <span className="w-[72px] text-right">Pile</span>
+              <span className="w-[92px] text-right whitespace-nowrap">Pays per 100</span>
+              <span className="w-5" />
             </div>
-            <div role="radiogroup" aria-label="Robots" className="mt-1 flex flex-col gap-1">
+            <div role="radiogroup" aria-label="Robots" className="flex flex-col gap-[3px]">
               {choices.map((choice) => (
                 <div key={choice.robot.id}>
                   {choice.isLowest && (
-                    <div aria-hidden="true" className="my-1 flex items-center gap-2 px-3 text-[11.5px] font-extrabold text-burn">
+                    <div aria-hidden="true" className="mt-0 mb-[3px] flex items-center gap-2 px-3 text-[11px] font-extrabold tracking-[0.05em] whitespace-nowrap text-burn">
                       CUT LINE · lowest pile at {at}
                       {when}
                       <span className="grow border-t-2 border-dashed border-danger" />
@@ -237,27 +238,27 @@ export function SaveScreen({ data }: { data: SaveData }) {
                     role="radio"
                     aria-checked={choice.robot.id === pickedId}
                     onClick={() => setPickedId(choice.robot.id)}
-                    className="flex h-[39px] w-full items-center gap-3 rounded-xl border-2 border-transparent px-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-checked:border-ink aria-checked:bg-lime-soft"
+                    className="flex h-[38px] w-full items-center gap-3 rounded-[13px] border-2 border-transparent px-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-checked:border-ink aria-checked:bg-lime-soft"
                   >
                     <Tile id={choice.robot.id} name={choice.robot.name} className="size-[26px] rounded-full" />
-                    <span className="w-[140px] shrink-0 text-[15px] font-semibold in-aria-checked:font-extrabold">{choice.robot.name}</span>
-                    <span aria-hidden="true" className="mx-2 h-2.5 grow overflow-hidden rounded-[5px] bg-canvas">
+                    <span className="w-32 shrink-0 text-sm font-semibold whitespace-nowrap in-aria-checked:font-extrabold">{choice.robot.name}</span>
+                    <span aria-hidden="true" className="h-2.5 grow overflow-hidden rounded-[5px] bg-canvas">
                       <span
                         className={cn("block h-full rounded-[5px]", choice.isLowest ? "bg-orange" : choice.robot.id === pickedId ? "bg-ink" : "bg-violet")}
                         style={{ width: `${barWidth(choice.robot.pile, choices[0]?.robot.pile ?? 0n)}%` }}
                       />
                     </span>
-                    <span className={cn("w-24 text-right text-[15px] font-bold", choice.isLowest && "text-burn")}>{cutWhole(choice.robot.pile)}</span>
-                    <span className={cn("w-[84px] text-right text-[15px] font-extrabold", choice.isLowest && "text-burn")}>{choice.isLowest ? "Cut" : pays(choice.paysPer100)}</span>
-                    <span aria-hidden="true" className="flex size-5 items-center justify-center rounded-full border-2 border-ink bg-paper">
-                      {choice.robot.id === pickedId && <span className="size-2.5 rounded-full border-2 border-ink bg-lime" />}
+                    <span className={cn("w-[72px] text-right text-sm font-bold", choice.isLowest && "text-burn")}>{cutWhole(choice.robot.pile)}</span>
+                    <span className={cn("w-[92px] text-right text-sm font-extrabold", choice.isLowest && "text-burn")}>{choice.isLowest ? "Cut" : pays(choice.paysPer100)}</span>
+                    <span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-paper in-aria-checked:bg-lime">
+                      {choice.robot.id === pickedId && <span className="size-2 rounded-full bg-ink" />}
                     </span>
                   </button>
                 </div>
               ))}
             </div>
-            <p className="mt-3 flex items-start gap-2.5 rounded-2xl border-2 border-ink bg-lime-soft px-3.5 py-2.5 text-sm leading-5 font-semibold">
-              <Gift aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.4} />
+            <p className="mt-2.5 flex items-start gap-2.5 rounded-[14px] border-2 border-ink bg-lime-soft px-3 py-2.5 text-[13.5px] leading-[19px] font-semibold">
+              <Gift aria-hidden="true" className="mt-px size-[18px] shrink-0" strokeWidth={2.6} />
               Pays per 100 $CUT saved, if the cut ran now. Every survivor gets the same slice of the prize, so small piles pay more per $CUT, but they sit closer to the cut line.
             </p>
           </section>
@@ -265,7 +266,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
 
         <div className="flex grow flex-col lg:border-l-2 lg:border-ink lg:bg-canvas">
           {picked && <PickHeader choice={picked} stageSize={stageSize} />}
-          <div className="flex grow flex-col lg:px-[22px] lg:pt-3.5 lg:pb-[26px]">
+          <div className="flex grow flex-col lg:px-5 lg:pt-3.5 lg:pb-5">
             {picked && (
               <div className="hidden items-start justify-between gap-3 lg:flex">
                 <div>
@@ -274,19 +275,35 @@ export function SaveScreen({ data }: { data: SaveData }) {
                     {picked.robot.kind} · pile {cutWhole(picked.robot.pile)}
                   </p>
                 </div>
-                <p className="text-right text-[13px] font-bold">
+                <p className="pt-1.5 text-right text-[13px] font-bold">
                   {picked.isLowest ? "Cut" : `${pays(picked.paysPer100)} per 100 saved`}
                   <span className="block font-semibold text-ink-3">if the cut ran now</span>
                 </p>
               </div>
             )}
 
-            <section aria-label="Amount" className="mt-3 rounded-3xl border-2 border-ink bg-paper px-3.5 pt-3 pb-3 lg:mt-2.5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
-              <p className="flex justify-between text-sm font-extrabold">
-                <label htmlFor="save-amount">Amount</label>
-                {account && <span className="font-semibold text-ink-3">You have {cutText(free)} free $CUT</span>}
+            <section aria-label="Amount" className="mt-3 rounded-[20px] border-2 border-ink bg-paper px-3 pt-2.5 pb-3 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
+              <p className="flex items-baseline justify-between gap-2">
+                <label htmlFor="save-amount" className="text-[13px] font-extrabold">
+                  Amount
+                </label>
+                {account && (
+                  <span className="text-[12.5px] font-semibold whitespace-nowrap text-ink-3">
+                    {/* Phone: the locked save line is hidden, so the header names it. */}
+                    {held && !held.unlocked ? (
+                      <>
+                        <span className="lg:hidden">
+                          {cutText(free)} free · {cutText(held.amount)} saved here
+                        </span>
+                        <span className="hidden lg:inline">You have {cutText(free)} free $CUT</span>
+                      </>
+                    ) : (
+                      `You have ${cutText(free)} free $CUT`
+                    )}
+                  </span>
+                )}
               </p>
-              <div className="mt-1.5 flex h-[60px] items-center gap-2 rounded-2xl border-2 border-ink bg-paper px-4 ring-4 ring-lime">
+              <div className="mt-1.5 flex h-[52px] items-center gap-2 rounded-2xl border-2 border-ink bg-paper px-3.5 ring-[3px] ring-lime lg:h-[50px]">
                 <input
                   id="save-amount"
                   inputMode="decimal"
@@ -297,18 +314,16 @@ export function SaveScreen({ data }: { data: SaveData }) {
                     const next = event.target.value.replaceAll(",", "");
                     if (next === "" || /^\d{0,12}(\.\d{0,2})?$/.test(next)) setText(next);
                   }}
-                  className={cn("min-w-[1ch] bg-transparent font-heading text-[28px] font-extrabold outline-none [field-sizing:content]", problem === "too-much" && "text-burn")}
+                  className={cn("min-w-[1ch] bg-transparent font-heading text-[28px] font-extrabold outline-none [field-sizing:content] lg:text-[26px]", problem === "too-much" && "text-burn")}
                 />
-                <span className="font-heading text-base font-extrabold">$CUT</span>
-                {amount && rate !== null && <span className="ml-auto text-sm font-semibold text-ink-3">≈ {formatUsd(cutToUsdCents(amount, spot, rate))}</span>}
+                <span className="text-sm font-extrabold">$CUT</span>
+                {amount && rate !== null && <span className="ml-auto text-[13px] font-semibold text-ink-3">≈ {formatUsd(cutToUsdCents(amount, spot, rate))}</span>}
               </div>
-              <p className="mt-2 flex justify-between gap-2 text-[13px] font-bold">
-                <span className="flex items-center gap-1.5">
-                  <Lock aria-hidden="true" className="size-3.5" strokeWidth={2.6} />
-                  Locked until {at}
-                  {when}
-                </span>
-                {account && amount !== null && amount <= free && <span className="font-semibold text-ink-3">{cutText(free - amount)} stays free</span>}
+              <p className="mt-2 flex items-center gap-1.5 text-[12.5px] font-bold whitespace-nowrap">
+                <Lock aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2.6} />
+                Locked until {at}
+                {when}
+                {account && amount !== null && amount <= free && <span className="ml-auto font-semibold text-ink-3">{cutText(free - amount)} stays free</span>}
               </p>
               {problem === "too-much" && (
                 <p role="alert" className="mt-1.5 text-[13px] font-semibold text-burn">
@@ -321,7 +336,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
                 </p>
               )}
               {held && (
-                <div className="mt-2.5 flex items-center justify-between gap-2 rounded-xl bg-canvas px-3 py-2 text-[13px] font-semibold lg:bg-paper">
+                <div className={cn("mt-2 items-center justify-between gap-2 rounded-xl bg-canvas px-3 py-1.5 text-[12.5px] font-semibold lg:flex lg:bg-paper", held.unlocked ? "flex" : "hidden")}>
                   <span>
                     Your save: <b className="font-extrabold">{cutText(held.amount)} $CUT</b>
                     {held.unlocked ? " · unlocked" : ` · locked till ${at}`}
@@ -336,7 +351,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
             </section>
 
             {picked && (
-              <div className="mt-3 grid grid-cols-2 gap-2.5">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <Outcome
                   tone="survives"
                   title={picked.isLowest ? "You lift it" : "You share its slice"}
@@ -360,20 +375,20 @@ export function SaveScreen({ data }: { data: SaveData }) {
               </p>
             )}
 
-            <div className="mt-auto pt-6 lg:pt-4">
+            <div className="mt-auto pt-4 lg:pt-3.5">
               <Button
                 variant="primary"
                 size="xl"
                 elevated
                 disabled={!picked || (status === "signed-in" && problem !== null)}
-                className="h-14 w-full rounded-2xl text-base"
+                className="h-[54px] w-full rounded-2xl text-base lg:text-[15.5px]"
                 onClick={() => void send("save")}
               >
                 <Lock aria-hidden="true" strokeWidth={2.6} />
                 {status === "signed-out" ? "Connect a wallet to save" : cta}
               </Button>
               {account && topUp > 0n && (
-                <p className="mt-2 text-center text-xs font-semibold text-ink-3">Adds {nearText(topUp)} NEAR to your storage with $CUT, to keep the save’s record.</p>
+                <p className="mt-1.5 text-center text-[11.5px] leading-4 font-semibold text-ink-3">Adds {nearText(topUp)} NEAR of storage to keep the save’s record.</p>
               )}
             </div>
           </div>
@@ -404,20 +419,20 @@ function PickHeader({ choice, stageSize }: { choice: SaveChoice; stageSize: numb
   return (
     <div
       className={cn(
-        "relative hidden h-[170px] items-end justify-center overflow-hidden border-b-2 border-ink bg-[radial-gradient(var(--color-paper)_1.2px,transparent_1.3px)] [background-size:18px_18px] lg:flex lg:rounded-tr-[26px]",
+        "relative hidden h-[168px] shrink-0 overflow-hidden border-b-2 border-ink bg-[radial-gradient(rgb(255_255_255/0.3)_1.6px,transparent_1.8px)] [background-size:18px_18px] lg:block lg:rounded-tr-[26px]",
         ROBOT_BG[choice.robot.id] ?? "bg-lime",
       )}
     >
-      {art && <Image src={art.src} alt="" width={art.width} height={art.height} className="h-[150px] w-auto" />}
-      <span className="absolute top-4 left-4 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 text-[12.5px] font-extrabold">
+      {art && <Image src={art.src} alt="" width={art.width} height={art.height} className="absolute top-3.5 left-1/2 h-[300px] w-auto max-w-none -translate-x-1/2 -rotate-2" />}
+      <span className="absolute top-4 left-4 flex h-7 items-center rounded-full border-2 border-ink bg-paper px-[11px] text-xs font-extrabold whitespace-nowrap">
         Your pick · {ordinal(choice.rank)} of {stageSize}
       </span>
       <Link
         href="/"
         aria-label="Close"
-        className="absolute top-3.5 right-3.5 flex size-[38px] items-center justify-center rounded-[12px] border-2 border-ink bg-paper shadow-hard-xs outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="absolute top-4 right-4 flex size-[38px] items-center justify-center rounded-[12px] border-2 border-ink bg-paper outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
-        <X aria-hidden="true" className="size-[18px]" strokeWidth={2.8} />
+        <X aria-hidden="true" className="size-4" strokeWidth={2.8} />
       </Link>
     </div>
   );
@@ -426,15 +441,15 @@ function PickHeader({ choice, stageSize }: { choice: SaveChoice; stageSize: numb
 function Outcome({ tone, title, body }: { tone: "survives" | "cut"; title: string; body: string }) {
   const Icon = tone === "survives" ? Gift : Flame;
   return (
-    <div className={cn("rounded-2xl border-2 border-ink px-3 pt-2.5 pb-3", tone === "survives" ? "bg-lime-soft" : "bg-danger-tint")}>
-      <p className="flex items-center gap-1.5 text-[11.5px] font-extrabold tracking-[0.03em] uppercase">
-        <span aria-hidden="true" className="flex size-5 items-center justify-center rounded-md border-2 border-ink bg-paper">
-          <Icon className="size-3" strokeWidth={2.6} />
+    <div className={cn("rounded-2xl border-2 border-ink px-[11px] pt-2.5 pb-[11px] lg:rounded-[14px] lg:px-2.5 lg:pt-[9px] lg:pb-2.5", tone === "survives" ? "bg-lime-soft" : "bg-danger-tint")}>
+      <p className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-[0.04em] whitespace-nowrap uppercase lg:text-[10.5px]">
+        <span aria-hidden="true" className="flex size-[22px] shrink-0 items-center justify-center rounded-[7px] border-2 border-ink bg-paper lg:size-5">
+          <Icon className="size-3 lg:size-[11px]" strokeWidth={2.8} />
         </span>
         {tone === "survives" ? "If it survives" : "If it is cut"}
       </p>
-      <p className="mt-1.5 text-[15.5px] leading-5 font-extrabold">{title}</p>
-      <p className="mt-1 text-[13px] leading-[17px]">{body}</p>
+      <p className="mt-1.5 font-heading text-base leading-[19px] font-extrabold lg:mt-[5px] lg:text-[15px] lg:leading-[18px]">{title}</p>
+      <p className="mt-[3px] text-xs leading-4 font-medium">{body}</p>
     </div>
   );
 }

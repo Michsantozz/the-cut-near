@@ -170,10 +170,10 @@ export function SellScreen({ data }: { data: SellData }) {
 
   return (
     <TradeFrame title="Sell $CUT" icon={Minus} iconTile="bg-paper text-ink" nav={{ kind: "close" }}>
-      <div className="flex grow flex-col lg:grid lg:grid-cols-2 lg:gap-[30px]">
+      <div className="flex grow flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_384px] lg:gap-[30px]">
         <div className="flex flex-col">
           <FieldLabel htmlFor="sell-amount">You sell</FieldLabel>
-          <div className="mt-3.5 flex items-baseline justify-center lg:mt-1.5 lg:h-28 lg:items-center lg:justify-start lg:rounded-[20px] lg:border-2 lg:border-ink lg:bg-paper lg:px-6 lg:ring-4 lg:ring-violet/20">
+          <div className="mt-[26px] flex items-baseline justify-center lg:mt-1.5 lg:h-28 lg:items-center lg:justify-start lg:rounded-[20px] lg:border-2 lg:border-ink lg:bg-paper lg:px-6 lg:ring-4 lg:ring-violet/20">
             <input
               id="sell-amount"
               inputMode="decimal"
@@ -186,21 +186,21 @@ export function SellScreen({ data }: { data: SellData }) {
                 if (next === "" || /^\d{0,12}(\.\d{0,2})?$/.test(next)) setText(next);
               }}
               className={cn(
-                "max-w-full min-w-[1ch] bg-transparent text-right font-heading [field-sizing:content] text-[64px] leading-[68px] font-extrabold tracking-[-2px] outline-none lg:text-left",
+                "max-w-full min-w-[1ch] bg-transparent text-right font-heading [field-sizing:content] text-[58px] leading-[62px] font-extrabold tracking-[-2px] outline-none lg:text-left lg:text-[70px] lg:leading-20 lg:tracking-[-2.4px]",
                 tooMuch && "text-burn",
               )}
             />
-            <span className="ml-2 font-heading text-[28px] font-extrabold lg:text-[32px]">$CUT</span>
+            <span className="ml-2 font-heading text-[30px] font-extrabold lg:ml-3 lg:text-[34px] lg:tracking-[-0.8px]">$CUT</span>
           </div>
-          <p className="mt-2 text-center text-[15px] font-semibold text-ink-3 lg:mt-3 lg:text-left">{sub}</p>
-          <div role="group" aria-label="How much" className="mt-3.5 flex justify-center gap-2 lg:grid lg:grid-cols-4 lg:gap-2.5">
+          <p className="mt-1 text-center text-[15px] font-semibold text-ink-3 lg:mt-2.5 lg:text-left">{sub}</p>
+          <div role="group" aria-label="How much" className="mt-4 flex justify-center gap-2 lg:grid lg:grid-cols-4 lg:gap-2.5">
             {SELL_PRESETS.map((percent) => (
               <button
                 key={percent}
                 type="button"
                 aria-pressed={preset === percent}
                 onClick={() => setText(cutToInput(sellShare(free, percent)))}
-                className="h-9 rounded-full border-2 border-ink bg-paper px-4 text-[13.5px] font-bold outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:bg-lime lg:h-[44px] lg:rounded-xl lg:text-[15.5px] lg:font-extrabold"
+                className="h-9 rounded-full border-2 border-ink bg-paper px-4 text-sm font-bold outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:bg-lime aria-pressed:font-extrabold lg:h-[44px] lg:rounded-[14px] lg:text-[15px]"
               >
                 {percent === 100 ? "All free" : `${percent}%`}
               </button>
@@ -210,13 +210,13 @@ export function SellScreen({ data }: { data: SellData }) {
         </div>
 
         <div className="flex grow flex-col">
-          <section aria-label="What you get" className="mt-3.5 rounded-3xl border-2 border-ink bg-paper px-4 pt-3 pb-3 shadow-hard lg:mt-0 lg:px-5 lg:pt-[18px] lg:pb-3">
-            <p className="text-[13px] font-bold text-ink-3 lg:text-sm">You get</p>
+          <section aria-label="What you get" className="mt-5 rounded-[22px] border-2 border-ink bg-paper px-4 py-3.5 shadow-hard lg:mt-0 lg:px-5 lg:py-[18px]">
+            <p className="text-[13px] font-semibold text-ink-3 lg:text-[13.5px]">You get</p>
             <p className={cn("flex items-baseline justify-between gap-3", !fresh && step.kind !== "moved" && "opacity-60")}>
-              <span className="font-heading text-[26px] leading-8 font-extrabold lg:text-[38px] lg:leading-[44px]">{shown ? `${nearText(shown.amountOut)} NEAR` : "—"}</span>
-              {shown && rate !== null && <span className="text-base font-bold">{nearMoney(shown.amountOut, rate)}</span>}
+              <span className="font-heading text-[28px] leading-[34px] font-extrabold lg:text-[40px] lg:leading-[46px] lg:tracking-[-1.2px]">{shown ? `${nearText(shown.amountOut)} NEAR` : "—"}</span>
+              {shown && rate !== null && <span className="text-[15px] font-bold lg:text-[17px]">{nearMoney(shown.amountOut, rate)}</span>}
             </p>
-            <dl className="mt-2 lg:mt-2.5 lg:border-t-[1.5px] lg:border-canvas">
+            <dl className="mt-[7px] lg:mt-2.5 lg:border-t-[1.5px] lg:border-canvas">
               <Row label={`Fee (1%) · to ${prize}`} value={shown ? cutMoney(shown.fee, spot, rate) : "—"} />
               <Row label="Network fee" value={rate !== null ? "about $0.01" : "under 0.01 NEAR"} />
               <Row label="Price per $CUT" value={priceText(spot, rate)} />
@@ -258,9 +258,14 @@ export function SellScreen({ data }: { data: SellData }) {
 
 function LockNote({ text, where }: { text: string; where: string }) {
   return (
-    <p className={cn("mt-4 flex items-center gap-3 rounded-2xl border-2 border-ink bg-lime px-4 py-3 text-sm leading-5 font-bold lg:mt-[22px] lg:text-[14.5px]", where)}>
-      <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-ink bg-paper">
-        <Lock className="size-4" strokeWidth={2.6} />
+    <p
+      className={cn(
+        "mt-3.5 flex items-center gap-3 rounded-[18px] border-2 border-ink bg-lime px-3.5 py-3 text-[13.5px] leading-[19px] font-semibold lg:mt-[22px] lg:px-4 lg:py-3.5 lg:text-[14.5px] lg:leading-5",
+        where,
+      )}
+    >
+      <span aria-hidden="true" className="flex size-[38px] shrink-0 items-center justify-center rounded-xl border-2 border-ink bg-paper lg:size-10">
+        <Lock className="size-5" strokeWidth={2.6} />
       </span>
       <span>{text}</span>
     </p>

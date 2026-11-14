@@ -21,7 +21,7 @@ export function TradeFrame({
   nav,
   tone = "paper",
   hideHeader = false,
-  wide = false,
+  deskWidth = "lg:w-[936px]",
   bareOnDesk = false,
   children,
 }: {
@@ -33,7 +33,8 @@ export function TradeFrame({
   tone?: "paper" | "lime";
   /** Status steps (pending, done, failed) have no header on the phone. */
   hideHeader?: boolean;
-  wide?: boolean;
+  /** The laptop dialog's width class (designs differ per step). */
+  deskWidth?: string;
   /** The laptop dialog draws its own header (Save a robot). */
   bareOnDesk?: boolean;
   children: ReactNode;
@@ -60,7 +61,8 @@ export function TradeFrame({
         aria-labelledby={titleId}
         className={cn(
           "relative mx-auto flex min-h-[inherit] w-full max-w-[640px] flex-col px-5 pt-[18px] pb-4 lg:max-h-full lg:min-h-0 lg:overflow-y-auto lg:rounded-[28px] lg:border-2 lg:border-ink lg:px-[30px] lg:pt-[26px] lg:pb-[30px] lg:shadow-hard-lg",
-          wide ? "lg:w-[1080px] lg:max-w-[calc(100vw-4rem)]" : "lg:w-[936px] lg:max-w-[calc(100vw-4rem)]",
+          deskWidth,
+          "lg:max-w-[calc(100vw-4rem)]",
           tone === "lime" ? "lg:bg-lime" : "lg:bg-paper",
         )}
       >
@@ -108,12 +110,20 @@ function NavButton({ nav, className }: { nav: Nav; className?: string }) {
   );
 }
 
-/** A label/value line in a summary card. */
-export function Row({ label, value, strong = true }: { label: ReactNode; value: ReactNode; strong?: boolean }) {
+/**
+ * A label/value line in a summary card. Phone: 13.5px lines 6px apart. Laptop: ruled rows,
+ * 14px (Sell) or 14.5px with a little more air (`roomy`, Buy's review).
+ */
+export function Row({ label, value, roomy = false }: { label: ReactNode; value: ReactNode; roomy?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 py-[3px] text-[14.5px] lg:border-t-[1.5px] lg:border-canvas lg:py-[7px] lg:first:border-t-0">
+    <div
+      className={cn(
+        "flex items-baseline justify-between gap-3 py-[3px] text-[13.5px] leading-4 lg:border-t-[1.5px] lg:border-canvas lg:first:border-t-0 lg:last:pb-0",
+        roomy ? "lg:py-[9px] lg:text-[14.5px] lg:leading-[18px]" : "lg:py-2 lg:text-sm lg:leading-[17px]",
+      )}
+    >
       <dt className="text-ink-3">{label}</dt>
-      <dd className={cn("text-right whitespace-nowrap", strong ? "font-bold" : "font-semibold")}>{value}</dd>
+      <dd className="text-right font-semibold whitespace-nowrap lg:font-bold">{value}</dd>
     </div>
   );
 }

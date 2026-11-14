@@ -47,7 +47,7 @@ function MemberClub({ club, member }: { club: Club; member: ClubMember }) {
       <div className="flex flex-col gap-3 lg:gap-4">
         {member.save ? <SaveCard save={member.save} cutAt={club.cutAt} /> : <NoSaveCard />}
         {member.points && (
-          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-1 lg:gap-4">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-1 lg:gap-4">
             <GuessCard />
             <TopSavers savers={member.topSavers} member={member} />
           </div>
@@ -117,33 +117,33 @@ function MemberCard({ club, member }: { club: Club; member: ClubMember }) {
 
 function Perks({ perks }: { perks: Perk[] }) {
   return (
-    <section aria-labelledby="perks-title">
+    <section aria-labelledby="perks-title" className="mt-1 lg:mt-0">
       <div className="flex items-baseline justify-between gap-3 lg:justify-start">
-        <h2 id="perks-title" className="font-heading text-xl font-extrabold lg:text-[26px]">
+        <h2 id="perks-title" className="font-heading text-[19px] font-extrabold lg:text-[26px]">
           This week’s perks
         </h2>
-        <p className="text-[13px] font-bold text-ink-3 lg:text-[15px] lg:font-semibold">from creators</p>
+        <p className="text-[12.5px] font-semibold text-ink-3 lg:text-[15px]">from creators</p>
       </div>
-      <ul className="mt-2 flex flex-col gap-2.5 lg:mt-3 lg:grid lg:grid-cols-3 lg:gap-5">
+      <ul className="mt-2 flex flex-col gap-2 lg:mt-3 lg:grid lg:grid-cols-3 lg:gap-5">
         {perks.map((perk) => {
           const art = robotFullBody(perk.robotId);
           return (
-            <li key={perk.title} className="flex items-center gap-3 rounded-2xl border-2 border-ink bg-paper px-3 py-2.5 lg:block lg:overflow-hidden lg:rounded-3xl lg:p-0 lg:shadow-hard">
+            <li key={perk.title} className="flex items-center gap-2.5 rounded-[18px] border-2 border-ink bg-paper px-2.5 py-[9px] lg:block lg:overflow-hidden lg:rounded-3xl lg:p-0 lg:shadow-hard">
               <div className={cn("relative hidden h-[200px] border-b-2 border-ink lg:block", PERK_TONE[perk.robotId] ?? "bg-sky")}>
                 <span aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(rgb(255_255_255/0.45)_1.5px,transparent_1.5px)] [background-size:18px_18px]" />
                 {art && <Image src={art.src} alt="" width={art.width} height={art.height} className="absolute bottom-0 left-1/2 h-[180px] w-auto -translate-x-1/2" />}
                 <span className="absolute top-3 left-3 rounded-full border-2 border-ink bg-paper px-2.5 text-[11.5px] leading-5 font-extrabold">{perk.audience}</span>
               </div>
-              <RobotTile id={perk.robotId} name={perk.title} className="size-10 rounded-lg lg:hidden" />
+              <RobotTile id={perk.robotId} name={perk.title} className="size-10 rounded-xl lg:hidden" />
               <div className="min-w-0 grow lg:px-4 lg:pt-3.5">
-                <p className="text-[15px] leading-5 font-extrabold lg:text-base">{perk.title}</p>
-                <p className="text-[13px] text-ink-3">
+                <p className="truncate text-sm leading-[17px] font-bold lg:overflow-visible lg:text-base lg:leading-5 lg:font-extrabold lg:whitespace-normal">{perk.title}</p>
+                <p className="truncate text-xs leading-[15px] text-ink-3 lg:overflow-visible lg:text-[13px] lg:leading-5 lg:whitespace-normal">
                   {perk.sub}
                   {perk.audience === "ALL MEMBERS" ? <span className="lg:hidden"> · All members</span> : null}
                 </p>
               </div>
               <div className="shrink-0 lg:px-4 lg:pt-8 lg:pb-4">
-                <Button asChild variant={PERK_CTA[perk.cta]} size="default" className="lg:h-10 lg:w-full">
+                <Button asChild variant={PERK_CTA[perk.cta]} size="default" className="h-[34px] rounded-[11px] px-3 text-[13px] font-bold lg:h-10 lg:w-full lg:rounded-md lg:px-4 lg:text-sm lg:font-extrabold">
                   <Link href={perk.href}>{perk.cta}</Link>
                 </Button>
               </div>
@@ -164,11 +164,11 @@ function SaveCard({ save, cutAt }: { save: ClubSave; cutAt: Date }) {
   ];
 
   return (
-    <section aria-labelledby="save-title" className="rounded-3xl border-2 border-ink bg-[#ffd84d] px-3.5 py-3 shadow-hard lg:px-[18px] lg:pt-4 lg:pb-[18px]">
+    <section aria-labelledby="save-title" className="rounded-[20px] border-2 border-ink bg-[#ffd84d] py-[11px] pr-3 pl-3.5 shadow-hard lg:rounded-3xl lg:px-[18px] lg:pt-4 lg:pb-[18px]">
       <div className="flex items-center gap-3">
-        <RobotTile id={save.robot.id} name={save.robot.name} className="size-12 rounded-xl lg:hidden" />
+        <RobotTile id={save.robot.id} name={save.robot.name} className="size-[46px] rounded-[14px] lg:hidden" />
         <div className="min-w-0 grow">
-          <p className="flex items-center gap-1.5 text-[11.5px] font-extrabold tracking-[0.05em] uppercase">
+          <p className="flex items-center gap-[5px] text-[11px] font-extrabold tracking-[0.04em] whitespace-nowrap uppercase lg:gap-1.5 lg:text-[11.5px] lg:tracking-[0.05em]">
             <Lock aria-hidden="true" className="size-3" strokeWidth={3} />
             Your save<span className="hidden lg:inline"> · locked till {time}</span>
           </p>
@@ -183,17 +183,17 @@ function SaveCard({ save, cutAt }: { save: ClubSave; cutAt: Date }) {
               </p>
             </div>
           </div>
-          <p className="font-heading text-[19px] leading-6 font-extrabold lg:hidden">
+          <p className="mt-px truncate font-heading text-lg leading-[22px] font-extrabold lg:hidden">
             {cut(save.amount)} $CUT on {save.robot.name}
           </p>
-          <p className="text-[13px] font-bold lg:hidden">
+          <p className="truncate text-[12.5px] font-semibold lg:hidden">
             Locked till {time}
             {save.rank ? ` · ${ordinal(save.rank)} of ${save.stageSize}` : ""}
           </p>
         </div>
-        <Button asChild variant="black" size="icon-sm" className="lg:hidden">
+        <Button asChild variant="black" size="icon-sm" className="size-[34px] rounded-[11px] lg:hidden">
           <WalletGatedLink href={`/save/${save.robot.id}`} aria-label={`Save more on ${save.robot.name}`}>
-            <Plus aria-hidden="true" className="size-5" strokeWidth={3} />
+            <Plus aria-hidden="true" className="size-4" strokeWidth={3} />
           </WalletGatedLink>
         </Button>
       </div>
@@ -231,14 +231,14 @@ function GuessCard() {
   return (
     <Link
       href="/director"
-      className="flex h-[62px] items-center gap-2.5 rounded-[20px] border-2 border-ink bg-pink px-3 shadow-hard outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:h-[72px] lg:gap-3.5 lg:px-4"
+      className="flex h-[50px] items-center gap-2 rounded-2xl border-2 border-ink bg-pink px-2.5 shadow-hard-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:h-[72px] lg:gap-3.5 lg:rounded-[20px] lg:px-4 lg:shadow-hard"
     >
-      <span className="flex size-7 shrink-0 items-center justify-center lg:size-10 lg:rounded-xl lg:border-2 lg:border-ink lg:bg-paper">
+      <span className="flex size-[18px] shrink-0 items-center justify-center lg:size-10 lg:rounded-xl lg:border-2 lg:border-ink lg:bg-paper">
         <Target aria-hidden="true" className="size-[18px] lg:size-5" strokeWidth={2.6} />
       </span>
       <span className="min-w-0 grow">
-        <span className="block font-heading text-[15px] leading-[18px] font-extrabold lg:text-xl lg:leading-6">Guess the cut</span>
-        <span className="block text-xs font-bold lg:text-[13px]">
+        <span className="block text-sm leading-4 font-bold lg:font-heading lg:text-xl lg:leading-6 lg:font-extrabold">Guess the cut</span>
+        <span className="block text-xs leading-4 font-semibold lg:text-[13px] lg:font-bold">
           +2<span className="hidden lg:inline"> club points</span> if right
         </span>
       </span>
@@ -250,16 +250,19 @@ function GuessCard() {
 function TopSavers({ savers, member }: { savers: TopSaver[]; member: ClubMember }) {
   const rank = member.points?.rank;
   return (
-    <section id="top-savers" aria-labelledby="top-title" className="rounded-[20px] border-2 border-ink bg-paper px-3 py-2.5 lg:rounded-3xl lg:px-[18px] lg:pt-4 lg:pb-[18px] lg:shadow-hard">
-      <div className="flex items-center justify-between gap-2">
-        <h2 id="top-title" className="flex items-center gap-2 font-heading text-[15px] leading-[18px] font-extrabold lg:text-xl">
-          <Trophy aria-hidden="true" className="hidden size-[18px] lg:block" strokeWidth={2.6} />
-          Top savers
-        </h2>
+    <section id="top-savers" aria-labelledby="top-title" className="rounded-2xl border-2 border-ink bg-paper px-2.5 lg:rounded-3xl lg:px-[18px] lg:pt-4 lg:pb-[18px] lg:shadow-hard">
+      <div className="flex h-[46px] items-center gap-2 lg:h-auto lg:justify-between">
+        <Trophy aria-hidden="true" className="size-[18px] shrink-0 lg:hidden" strokeWidth={2.6} />
+        <div className="min-w-0 grow lg:grow-0">
+          <h2 id="top-title" className="flex items-center gap-2 text-sm leading-4 font-bold lg:font-heading lg:text-xl lg:leading-7 lg:font-extrabold">
+            <Trophy aria-hidden="true" className="hidden size-[18px] lg:block" strokeWidth={2.6} />
+            Top savers
+          </h2>
+          {rank && <p className="truncate text-xs leading-4 text-ink-3 lg:hidden">you’re #{formatCount(rank)}</p>}
+        </div>
         <span className="hidden text-xs font-bold text-ink-3 lg:inline">club points</span>
-        <ChevronRight aria-hidden="true" className="size-4 lg:hidden" strokeWidth={3} />
+        <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-3 lg:hidden" strokeWidth={2.6} />
       </div>
-      {rank && <p className="text-xs font-semibold text-ink-3 lg:hidden">you’re #{formatCount(rank)}</p>}
       <ol className="mt-1.5 hidden lg:block">
         {savers.map((saver, index) => (
           <li key={saver.accountId} className="flex items-center gap-3 border-t-[1.5px] border-canvas py-2 text-[15px] first:border-t-0">
