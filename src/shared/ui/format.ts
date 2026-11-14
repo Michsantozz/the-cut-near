@@ -60,6 +60,11 @@ export function formatCount(value: number): string {
   return groupThousands(Math.trunc(value).toString());
 }
 
+/** A count with its noun, plural unless it is 1: (1, "saver") → "1 saver", (2, "saver") → "2 savers". */
+export function formatCountOf(value: number, noun: string, plural = `${noun}s`): string {
+  return `${formatCount(value)} ${Math.trunc(value) === 1 ? noun : plural}`;
+}
+
 const SECOND = 1_000;
 const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;

@@ -4,6 +4,7 @@ import { units } from "@/shared/lib/amount";
 import {
   formatAmount,
   formatCount,
+  formatCountOf,
   formatCountdown,
   formatDuration,
   formatSignificant,
@@ -68,6 +69,12 @@ describe("formatUsd and formatCount", () => {
     expect(formatUsd(124_053n)).toBe("$1,240.53");
     expect(formatUsd(5n)).toBe("$0.05");
     expect(formatUsd(-1_000n)).toBe("-$10.00");
+  });
+
+  it("pluralizes a counted noun unless it is 1", () => {
+    expect(formatCountOf(1, "saver")).toBe("1 saver");
+    expect(formatCountOf(0, "saver")).toBe("0 savers");
+    expect(formatCountOf(12_000, "agent")).toBe("12,000 agents");
   });
 
   it("groups whole counts", () => {

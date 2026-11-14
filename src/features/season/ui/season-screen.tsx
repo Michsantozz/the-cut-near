@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AgentPoses, AgentTile, agentPoses, PersonalityChip } from "@/entities/agent";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { formatAmount, formatCount, formatUtcTime } from "@/shared/ui/format";
+import { formatAmount, formatCount, formatCountOf, formatUtcTime } from "@/shared/ui/format";
 
 import type { SeasonPage } from "../server/load-season";
 
@@ -227,7 +227,7 @@ function BenchQueue({ page }: { page: SeasonPage }) {
               <PersonalityChip personality={agent.personality} withLimit={false} className="hidden sm:inline-flex" />
               <span className="w-[120px] text-right">
                 <span className="block font-heading text-[16px] leading-5 font-extrabold">{whole(agent.pile)}</span>
-                <span className="block text-[11px] font-semibold text-ink-3">queue · {formatCount(agent.savers)} savers</span>
+                <span className="block text-[11px] font-semibold text-ink-3">queue · {formatCountOf(agent.savers, "saver")}</span>
               </span>
               <Badge variant={page.seated.has(agent.id) ? "lime" : "paper"} className="hidden uppercase sm:inline-flex">
                 {page.seated.has(agent.id) ? "Gets a seat" : "Waits"}
