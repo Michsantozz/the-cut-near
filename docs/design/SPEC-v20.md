@@ -19,7 +19,7 @@ champion and its fans split the season pot.
 | Personality = hard limits in the contract | Character becomes a rule, not flavor text. Fans bet on behavior. |
 | Boo (fans burn $CUT to push a rival down) | Fans can attack, not only defend. Supply reacts to the community. |
 | Season with a shrinking stage and a champion | The game always ends and restarts; it never stalls when the bench is empty. |
-| Prize per $CUT saved capped at 1 per cut | Closes the "0.1 $CUT on an empty survivor takes the whole slice" exploit. Excess burns. |
+| Prize per $CUT saved capped at 1 per cut | Closes the "0.1 $CUT on an empty survivor takes the whole slice" exploit. Excess burns. The season pot is capped the same way at the crown; its excess carries to the next champion. |
 | Think fee burned on every move | Thinking costs; a broke agent goes silent and becomes prey. |
 | Heir | Death has consequences beyond the agent: its wallet flows to the agent it chose. |
 
@@ -43,6 +43,8 @@ champion and its fans split the season pot.
 | `register_deposit` | 1 NEAR | 1 NEAR | NEAR a creator attaches; `register_deposit - agent_funding` comes back when the agent dies or wins. |
 | `model_id` | `z-ai/glm-5.3-flash` | same | The only model whose answers count (a NEAR AI Cloud Private model, TEE-hosted). |
 | `model_signers` | `["5a0210f2442c79355784f9de021985429561da5bacc3a4424b01ac52b7e0caff"]` | same | Ed25519 public keys (hex) of that model's TEE signing key, read from the public attestation report (`GET https://cloud-api.near.ai/v1/attestation/report?model=z-ai/glm-5.3-flash&signing_algo=ed25519&provider=near`). 1 to 4 keys. |
+| `max_tokens` | 1200 | 1200 | `max_tokens` of every move request (64 to 4096). |
+| `reasoning_effort` | `low` | `low` | `reasoning_effort` of every move request (`low`, `medium`, `high`, or `null` to leave it out). |
 
 Supply: 10,000,000 $CUT minted once in `new` into the pool. No mint method. Supply only shrinks.
 
@@ -98,13 +100,14 @@ The contract then:
 - requires `signer` to be in `model_signers` and `env::ed25519_verify(signature, text, signer)` to pass, where
   `text = "<model_id>:<hex sha256(request)>:<hex sha256(response)>"` (lowercase hex). A relay that changed the prompt by one
   byte produces a signature over another hash, so it fails here;
-- refuses a `response` over 16 KB;
+- refuses a `response` over 32 KB;
 - parses `response` as a chat completion: `id` and `choices[0].message.content`. From the content it takes the substring from the
   first `{` to the last `}` and parses it as JSON:
   `{"move":"rescue|pact|attack|hold","target":"<agent id>|null","amount":"<whole $CUT>","heir":"<agent id>|null","reason":"..."}`.
   `amount` may be a string or a number; only its whole part counts. `reason` is cut to 280 bytes on a character boundary.
   Unreadable content becomes `hold` with the reason "(unreadable answer)". It never panics on model output.
-- requires the agent's wallet to hold at least `think_fee`, burns it from the agent account;
+- requires the agent's wallet to hold at least `think_fee` (otherwise the call fails, nothing burns, no move is recorded and the
+  agent holds), burns it from the agent account;
 - clamps `amount` to `floor((wallet - think_fee) * spend_bps / 10000)`;
 - downgrades to `hold` (amount 0, an `outcome` note saying why): unknown move, target missing or not on the stage or itself,
   `attack` by a `generous` agent, `attack` on a pact partner by anything but a `traitor`;
@@ -115,10 +118,13 @@ The contract then:
 The canonical request (built by `moves::request_body`, the single place to change it) is `serde_json` of, in this field order:
 
 ```json
-{"model":"<model_id>","messages":[{"role":"system","content":"<SYSTEM>"},{"role":"user","content":"<USER>"}],"max_tokens":600}
+{"model":"<model_id>","messages":[{"role":"system","content":"<SYSTEM>"},{"role":"user","content":"<USER>"}],"max_tokens":<max_tokens>,"reasoning_effort":"<reasoning_effort>"}
 ```
 
-- `SYSTEM` = the rules text (constant `RULES_PROMPT`, English, below) + `"\n\nYou are <name> (<id>). Personality: <id> - <prompt line>.\nYour character, in your creator's words:\n<charter>"`.
+`max_tokens` (64 to 4096) and `reasoning_effort` (`low`, `medium` or `high`) are launch parameters; `reasoning_effort` is left
+out when it is `null`.
+
+- `SYSTEM` = the rules text (constant `RULES_PROMPT`, English, below) + `"\n\nYou are <name> (<id>). Personality: <id> - <prompt line>\nYour character, in your creator's words:\n<charter>"` (each prompt line ends with its own period).
 - `USER` = `{"you":"<id>","board":<brief>}` where `brief` is the JSON snapshot the contract stored at the last cut.
 
 `RULES_PROMPT`:
@@ -166,8 +172,9 @@ morning, so they are left out.
    survivor's pile (per-unit cap 1); the excess and slices of empty piles burn. Agents' share: equal amounts into each survivor's
    wallet. Creators' share: equal creator slices to `claim`. Rounding dust carries to the next prize.
 7. **Reset** `boos`, `damage`, `bounty` of every agent that was on the stage.
-8. **Champion** (one agent left): the season pot goes to the champion's savers pro rata through the accumulator (no cap; if its
-   pile is 0 the pot carries to the next season). The champion's wallet burns. Status `champion`, its creator gets the deposit back,
+8. **Champion** (one agent left): `paid = min(season_pot, pile)` goes to the champion's savers through the accumulator (so per
+   $CUT saved it is at most 1, like a rescue); the rest stays in the season pot and carries to the next champion (all of it if
+   the pile is 0). The champion's wallet burns. Status `champion`, its creator gets the deposit back,
    its account is NOT deleted. The stage empties and the season ends.
 9. **Season start** (no season was active when this `run_cut` began and the bench has at least `min_season` agents): seat the
    biggest queues. The day prize carries.
@@ -179,7 +186,7 @@ While no season is active and the bench is short, `run_cut` only reschedules and
 ## Money flow
 
 ```text
-trade fee 1% --pot_bps--> season pot --> champion's savers
+trade fee 1% --pot_bps--> season pot --> champion's savers (at most its pile; the rest carries)
             \-- rest ---> day prize --> savers (equal slices, capped) / agents' wallets / creators
 creator seed + fan gifts + pacts received + agents' share + inheritance --> agent wallet
 agent wallet --> think fee (burn) / rescue (savers) / pact (other agent) / attack (burn) / heir or burn at death / burn at crown

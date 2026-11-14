@@ -1,7 +1,8 @@
-//! Saves, unsaves and prize claims.
+//! Saves, unsaves, boos and prize claims.
 //!
 //! Prizes use a reward-per-unit accumulator per agent: at each cut, a surviving agent's
-//! accumulator grows by `slice / pile`. A save's prize is `amount * (accumulator now -
+//! accumulator grows by `paid / pile` for its rescue and its prize slice (each capped at the
+//! pile, so at most 1 per $CUT saved), and a champion's by `pot / pile`. A save's prize is `amount * (accumulator now -
 //! accumulator when it last settled)`. So the cut touches each agent once and never
 //! loops over savers, and `claim` only loops over the caller's own saves (at most
 //! `MAX_SAVES_PER_ACCOUNT`).
@@ -51,7 +52,7 @@ impl Contract {
         let account_id = env::predecessor_account_id();
         require!(
             !self.cut_is_due(),
-            "The cut is due: piles are frozen until someone calls run_cut (anyone can, and keeps the agent's 0.5 NEAR)"
+            "The cut is due: piles are frozen until someone calls run_cut (anyone can, and keeps the cut agent's funding)"
         );
         require!(amount.0 > 0, "amount must be positive");
         let agent = self.agent(&agent_id);
@@ -59,6 +60,9 @@ impl Contract {
             AgentStatus::Stage | AgentStatus::Bench => {}
             AgentStatus::Pending => env::panic_str("This agent is still being created"),
             AgentStatus::Deleted => env::panic_str("This agent was cut"),
+            AgentStatus::Champion => env::panic_str(
+                "This agent is a champion: its run is over. Save on a stage or bench agent",
+            ),
         }
         let acc_now = agent.reward_per_unit;
         let balance = near_sdk_contract_tools::ft::Nep141Controller::balance_of(self, &account_id);
@@ -134,8 +138,8 @@ impl Contract {
     }
 
     /// Takes back a whole save, with the prize it earned. Allowed once the cut it was
-    /// locked for has run, on an agent that survived it or a bench agent that is still
-    /// waiting. A save on a cut agent is gone; `claim` collects what it earned before.
+    /// locked for has run, on an agent that survived it, a bench agent or a champion. A save
+    /// on a cut agent is gone; `claim` collects what it earned before.
     pub fn unsave(&mut self, agent_id: AgentId) -> U128 {
         let account_id = env::predecessor_account_id();
         require!(
@@ -182,6 +186,52 @@ impl Contract {
             }],
         );
         U128(payout)
+    }
+
+    /// Burns `amount` $CUT of the caller to push a stage agent down: its score at the next
+    /// cut drops by `amount`. Only while a season runs and the cut is not due; at least
+    /// 0.1 $CUT. Nothing is stored for the caller.
+    pub fn boo(&mut self, agent_id: AgentId, amount: U128) -> U128 {
+        let account_id = env::predecessor_account_id();
+        require!(
+            self.season.active,
+            "No season is running: boos open when the next season starts"
+        );
+        require!(
+            !self.cut_is_due(),
+            "The cut is due: scores are frozen until someone calls run_cut"
+        );
+        require!(
+            amount.0 >= MIN_SAVE,
+            format!("A boo must be at least {MIN_SAVE} units (0.1 $CUT)")
+        );
+        require!(
+            self.agent(&agent_id).status == AgentStatus::Stage,
+            "Only agents on the stage can be booed"
+        );
+        let balance = near_sdk_contract_tools::ft::Nep141Controller::balance_of(self, &account_id);
+        require!(
+            balance >= amount.0,
+            format!(
+                "Not enough $CUT: you have {balance} units, this needs {}",
+                amount.0
+            )
+        );
+        self.burn_cut(&account_id, amount.0, &format!("boo {agent_id}"));
+        let agent = self.agent_mut(&agent_id);
+        agent.boos = checked(agent.boos.checked_add(amount.0));
+        let boos = agent.boos;
+        events::emit(
+            "boo",
+            &[events::Boo {
+                account_id,
+                agent_id,
+                amount,
+                boos: U128(boos),
+                cut_index: self.next_cut_index,
+            }],
+        );
+        U128(boos)
     }
 
     /// Sends the caller every prize it can collect: prizes earned by its saves (which keep
@@ -249,6 +299,7 @@ impl Contract {
                 let agent_status = match agent.status {
                     AgentStatus::Stage => AgentStatusView::Stage,
                     AgentStatus::Deleted => AgentStatusView::Deleted,
+                    AgentStatus::Champion => AgentStatusView::Champion,
                     AgentStatus::Bench | AgentStatus::Pending => AgentStatusView::Bench,
                 };
                 Some(SaveView {

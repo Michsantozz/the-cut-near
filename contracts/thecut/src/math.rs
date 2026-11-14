@@ -1,4 +1,4 @@
-//! Pure math for the pool, the cut and the prize split.
+//! Pure math for the pool, the cut, the prize split and the move limits.
 //!
 //! Every function is free of `env` calls so it can be unit-tested on its own, and every
 //! function returns `None` instead of overflowing. Products of two `u128` go through a
@@ -99,6 +99,13 @@ pub fn quote_sell(
     })
 }
 
+/// Splits a trade fee into the season pot part and the day prize part.
+/// Returns `(to_pot, to_prize)`.
+pub fn fee_split(fee: u128, pot_bps: u16) -> Option<(u128, u128)> {
+    let to_pot = bps_of(fee, pot_bps)?;
+    Some((to_pot, fee.checked_sub(to_pot)?))
+}
+
 /// Splits a cut pile into the part that burns and the part that joins the prize.
 /// Returns `(burned, to_prize)`.
 pub fn burn_part(pile: u128, burn_bps: u16) -> Option<(u128, u128)> {
@@ -106,46 +113,84 @@ pub fn burn_part(pile: u128, burn_bps: u16) -> Option<(u128, u128)> {
     Some((burned, pile.checked_sub(burned)?))
 }
 
-/// How one prize is cut into equal slices.
+/// How one day prize is cut into equal slices.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PrizeSplit {
     /// `prize * savers_bps / 10_000`: the savers' share.
     pub savers_total: u128,
+    /// `prize * agents_bps / 10_000`: the agents' share.
+    pub agents_total: u128,
     /// The rest: the creators' share.
     pub creators_total: u128,
-    /// One savers' slice per surviving agent.
+    /// One savers' slice per surviving agent (before the per-pile cap).
     pub slice: u128,
+    /// $CUT into each surviving agent's wallet.
+    pub agent_slice: u128,
     /// One creator slice per surviving agent.
     pub creator_slice: u128,
     /// Rounding remainder, carried into the next prize so no $CUT goes missing.
     pub dust: u128,
 }
 
-/// Cuts `prize` into one equal savers' slice and one equal creator slice per survivor.
-pub fn split_prize(prize: u128, savers_bps: u16, survivors: u32) -> Option<PrizeSplit> {
+/// Cuts `prize` into one equal savers' slice, one equal agent slice and one equal creator
+/// slice per survivor. `savers_bps + agents_bps` must be at most 10,000.
+pub fn split_prize(
+    prize: u128,
+    savers_bps: u16,
+    agents_bps: u16,
+    survivors: u32,
+) -> Option<PrizeSplit> {
     if survivors == 0 {
         return None;
     }
     let n = u128::from(survivors);
     let savers_total = bps_of(prize, savers_bps)?;
-    let creators_total = prize.checked_sub(savers_total)?;
+    let agents_total = bps_of(prize, agents_bps)?;
+    let creators_total = prize.checked_sub(savers_total)?.checked_sub(agents_total)?;
     let slice = savers_total / n;
+    let agent_slice = agents_total / n;
     let creator_slice = creators_total / n;
-    let paid = slice.checked_add(creator_slice)?.checked_mul(n)?;
+    let paid = slice
+        .checked_add(agent_slice)?
+        .checked_add(creator_slice)?
+        .checked_mul(n)?;
     let dust = prize.checked_sub(paid)?;
     Some(PrizeSplit {
         savers_total,
+        agents_total,
         creators_total,
         slice,
+        agent_slice,
         creator_slice,
         dust,
     })
 }
 
-/// Increase of an agent's reward-per-unit accumulator when its pile receives `slice`.
-/// `None` when the pile is empty (that slice burns instead).
-pub fn reward_increment(slice: u128, pile: u128) -> Option<u128> {
-    mul_div(slice, ACC_SCALE, pile)
+/// Caps a payout to a pile at one $CUT per $CUT saved. Returns `(paid, excess)`: an empty
+/// pile pays nothing and the whole amount is excess.
+pub fn cap_to_pile(amount: u128, pile: u128) -> (u128, u128) {
+    let paid = amount.min(pile);
+    (paid, amount - paid)
+}
+
+/// Most an agent may commit in one move: `floor(spendable * spend_bps / 10_000)`, where
+/// `spendable` is its wallet after the think fee.
+pub fn spend_cap(spendable: u128, spend_bps: u16) -> Option<u128> {
+    bps_of(spendable, spend_bps)
+}
+
+/// An agent's score at the cut: `pile - boos - damage`, signed.
+pub fn score(pile: u128, boos: u128, damage: u128) -> Option<i128> {
+    let pile = i128::try_from(pile).ok()?;
+    let boos = i128::try_from(boos).ok()?;
+    let damage = i128::try_from(damage).ok()?;
+    pile.checked_sub(boos)?.checked_sub(damage)
+}
+
+/// Increase of an agent's reward-per-unit accumulator when its pile receives `amount`.
+/// `None` when the pile is empty.
+pub fn reward_increment(amount: u128, pile: u128) -> Option<u128> {
+    mul_div(amount, ACC_SCALE, pile)
 }
 
 /// Prize earned by `amount` saved since the accumulator was at `snapshot`.
@@ -167,18 +212,18 @@ pub fn next_cut_after(at: u64, interval: u64, now: u64) -> Option<u64> {
 /// An agent as seen by the cut and seat rules.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Contender {
-    /// $CUT in its pile (stage) or queue (bench).
-    pub pile: u128,
+    /// Its score (stage) or its queue (bench).
+    pub score: i128,
     /// Registration order: a higher `seq` is a newer agent.
     pub seq: u64,
 }
 
-/// Whether `a` would be cut before `b`: lower pile first, and on a tie the newer agent.
+/// Whether `a` would be cut before `b`: lower score first, and on a tie the newer agent.
 fn cut_before(a: Contender, b: Contender) -> bool {
-    a.pile < b.pile || (a.pile == b.pile && a.seq > b.seq)
+    a.score < b.score || (a.score == b.score && a.seq > b.seq)
 }
 
-/// Index of the agent the cut deletes: the lowest pile; on a tie, the newer agent.
+/// Index of the agent the cut deletes: the lowest score; on a tie, the newer agent.
 pub fn pick_lowest(agents: &[Contender]) -> Option<usize> {
     let mut best: Option<usize> = None;
     for (i, agent) in agents.iter().enumerate() {
@@ -190,26 +235,25 @@ pub fn pick_lowest(agents: &[Contender]) -> Option<usize> {
     best
 }
 
-/// Index of the bench agent that takes a free seat: the biggest queue; on a tie, the
-/// older agent.
+/// Index of the bench agent that takes a seat: the biggest queue; on a tie, the older agent.
 pub fn pick_biggest(agents: &[Contender]) -> Option<usize> {
     let mut best: Option<usize> = None;
     for (i, agent) in agents.iter().enumerate() {
         match best {
             Some(b)
-                if !(agent.pile > agents[b].pile
-                    || (agent.pile == agents[b].pile && agent.seq < agents[b].seq)) => {}
+                if !(agent.score > agents[b].score
+                    || (agent.score == agents[b].score && agent.seq < agents[b].seq)) => {}
             _ => best = Some(i),
         }
     }
     best
 }
 
-/// $CUT the lowest agent needs so that another agent becomes the one cut.
+/// Score the lowest agent needs to gain so that another agent becomes the one cut.
 /// `next` is the agent that would be cut if `lowest` were gone.
 pub fn gap_to_next(lowest: Contender, next: Contender) -> u128 {
-    let diff = next.pile.saturating_sub(lowest.pile);
-    // On equal piles the newer agent is cut, so a newer `lowest` needs one unit more.
+    let diff = next.score.saturating_sub(lowest.score).max(0) as u128;
+    // On equal scores the newer agent is cut, so a newer `lowest` needs one unit more.
     if lowest.seq > next.seq {
         diff.saturating_add(1)
     } else {
