@@ -41,11 +41,15 @@ export function ConnectSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   async function choose(walletId?: string) {
     setPending(walletId ?? "picker");
     setFailed(false);
+    // NEAR Connect draws its own picker and wallet frames on the page. A modal sheet left open on top keeps
+    // `pointer-events: none` on the body and takes the clicks (on a phone, a tap closes everything), so this sheet
+    // steps aside first and comes back only to say that the connection did not happen.
+    onOpenChange(false);
     try {
       await connect(walletId);
-      onOpenChange(false);
     } catch {
       setFailed(true);
+      onOpenChange(true);
     } finally {
       setPending(null);
     }
@@ -54,7 +58,13 @@ export function ConnectSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   const { shown, more } = wallets ? pickWallets(wallets) : { shown: [], more: 0 };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) setFailed(false);
+        onOpenChange(next);
+      }}
+    >
       <SheetContent side="auto" className="px-5 pt-5 pb-[26px] lg:px-[26px] lg:pt-[26px] lg:pb-[22px]">
         <div aria-hidden="true" className="mx-auto -mt-2 mb-3.5 h-[5px] w-11 rounded-full bg-line-3 lg:hidden" />
         <SheetHeader>
