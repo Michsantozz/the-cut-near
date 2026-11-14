@@ -16,7 +16,7 @@ function ClockRow({ label, at, now, doneLabel, sub, emphasis }: { label: string;
       <time
         dateTime={new Date(at).toISOString()}
         role="timer"
-        className={cn("block font-heading leading-none font-extrabold tracking-[-1.2px] whitespace-nowrap", emphasis ? "text-[38px] lg:text-[46px]" : "text-[30px] lg:text-[34px]")}
+        className={cn("block font-heading leading-none font-extrabold tracking-[-1.2px] whitespace-nowrap tabular-nums", emphasis ? "text-[38px] lg:text-[42px]" : "text-[30px] lg:text-[32px]")}
       >
         {left > 0 ? formatCountdown(left) : doneLabel}
       </time>

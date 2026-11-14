@@ -70,7 +70,7 @@ export function CutLineCard({ lineup, className }: { lineup: Lineup; className?:
   const pressure = [lowest.damage > 0n && `${cut(lowest.damage)} attack damage`, lowest.boos > 0n && `${cut(lowest.boos)} in boos`].filter(Boolean).join(" and ");
 
   return (
-    <section aria-labelledby="cutline-title" className={cn("overflow-hidden rounded-3xl border-2 border-ink bg-violet text-paper shadow-hard lg:grid lg:grid-cols-[180px_minmax(0,1fr)_minmax(0,330px)]", className)}>
+    <section aria-labelledby="cutline-title" className={cn("overflow-hidden rounded-3xl border-2 border-ink bg-violet text-paper shadow-hard lg:grid lg:grid-cols-[180px_minmax(0,1fr)_minmax(0,300px)] xl:grid-cols-[180px_minmax(0,1fr)_380px]", className)}>
       <Link
         href={`/agents/${lowest.id}`}
         aria-label={`${lowest.name}: see its page`}
@@ -110,7 +110,7 @@ export function CutLineCard({ lineup, className }: { lineup: Lineup; className?:
         </div>
       </div>
       <div className="border-t-2 border-ink bg-ink px-4 py-3.5 lg:flex lg:flex-col lg:justify-center lg:border-t-0 lg:border-l-2 lg:px-5">
-        <CutClocks movesCloseAt={lineup.movesCloseAt.getTime()} cutAt={lineup.cutAt.getTime()} renderedAt={lineup.renderedAt} />
+        <CutClocks movesCloseAt={lineup.movesCloseAt.getTime()} cutAt={lineup.cutAt.getTime()} renderedAt={lineup.renderedAt} className="lg:grid-cols-1 lg:gap-3 xl:grid-cols-2 xl:gap-4" />
         <p className="mt-3 text-[12.5px] leading-[17px] font-semibold text-violet-soft">
           Day prize so far: <b className="font-extrabold text-paper">{cut(lineup.prizeSoFar)} $CUT</b>, for the savers of every survivor.
         </p>
