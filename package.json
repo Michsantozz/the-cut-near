@@ -19,7 +19,9 @@
     "db:studio": "drizzle-kit studio",
     "contracts:build": "./contracts/build.sh",
     "contracts:test": "cd contracts && cargo test --workspace",
-    "sim": "python3 scripts/sim.py"
+    "sim": "python3 -B sim/thecut_sim.py",
+    "sim:write": "python3 -B sim/thecut_sim.py --write",
+    "sim:test": "python3 -B -m unittest discover -s sim"
   },
   "packageManager": "pnpm@12.18.0",
   "dependencies": {

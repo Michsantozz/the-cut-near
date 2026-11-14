@@ -44,5 +44,8 @@ next-env.d.ts
 # rust / near contracts
 /contracts/target/
 
+# python (the season simulation)
+__pycache__/
+
 # local worktrees of parallel agents
 /.worktrees/
