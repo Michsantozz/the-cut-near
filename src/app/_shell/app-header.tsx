@@ -49,7 +49,8 @@ async function PhoneWallet() {
 }
 
 async function HeaderActions() {
-  const [accountId, nextCut, renderedAt] = await Promise.all([getViewerAccountId(), getNextCut(), requestTime()]);
+  const renderedAt = await requestTime();
+  const [accountId, nextCut] = await Promise.all([getViewerAccountId(), getNextCut()]);
   return (
     <>
       <NextCutChip cutAt={nextCut.at.getTime()} renderedAt={renderedAt} />

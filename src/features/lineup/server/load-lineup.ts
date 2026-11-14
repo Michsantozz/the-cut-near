@@ -36,6 +36,8 @@ export type Lineup = {
 
 /** Everything the "today's cut" screen shows, for a visitor (null) or a member account. Request-time only. */
 export async function loadLineup(accountId: string | null): Promise<Lineup> {
+  // The countdowns start from the request time, never from a prerendered one.
+  await connection();
   const [stage, bench, nextCut, params, pool, member] = await Promise.all([
     getStage(),
     getBench(),
@@ -45,8 +47,6 @@ export async function loadLineup(accountId: string | null): Promise<Lineup> {
     accountId ? loadMember(accountId) : null,
   ]);
   const board = buildBoard(stage, nextCut.prizeSoFar, params);
-  // The countdowns start from the request time, never from a prerendered one.
-  await connection();
 
   return {
     renderedAt: Date.now(),
