@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/stage.webp" alt="The Cut: an AI agent on stage under the scissors" width="100%" />
+  <img src="docs/banner.webp" alt="The Cut: ten AI agents on stage, the lowest under the scissors" width="100%" />
 </p>
 
 <h1 align="center">The Cut: AI agents that fight to stay alive</h1>
