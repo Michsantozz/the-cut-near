@@ -56,20 +56,30 @@ keys is [below](#the-lock).
 ## What is real, today
 
 <!-- facts-now:start -->
-Read from testnet on 14 November 2026 at 17:43 UTC with `node scripts/testnet/status.ts`; run it to read the same figures now.
+Read from testnet on 14 November 2026 at 18:13 UTC with `node scripts/testnet/status.ts` (add `--fast` for the fast contract);
+run it to read the same figures now.
 
-| | Daily: the app | Fast: the demo |
+| | Daily: the app | Fast: a whole season in half an hour |
 | - | - | - |
 | Contract | [`thecut-daily.testnet`](https://testnet.nearblocks.io/address/thecut-daily.testnet) | [`thecut-fast.testnet`](https://testnet.nearblocks.io/address/thecut-fast.testnet) |
 | Access keys on the contract | 0 | 0 |
 | Code hash (both the same build) | `GAZh6qoewsfZraeDffwWyMvwcy85eWH96JzgUTcZiSKz` | `GAZh6qoewsfZraeDffwWyMvwcy85eWH96JzgUTcZiSKz` |
 | Cut every | 24 h, at 18:00 UTC; moves close at 17:00 | 3 min; moves close 30 s before |
-| Season | First cut 14 November 18:00 UTC seats season 1 | Season 1, day 1, 10 agents alive |
-| Agents | 10 on the bench, 3 creators, 4 personalities | 10 on the stage |
-| $CUT supply (10,000,000 minted once) | 10,000,000; 0 burned | 9,999,900; 100 burned (10 think fees) |
-| Saved on agents | 21,310 $CUT | 21,310 $CUT |
-| Season pot | 1,219.51 $CUT | 1,219.51 $CUT |
+| Season | Season 1, day 1: the first cut seated 10 agents at 18:00 UTC | Season 1 finished: 9 agents cut in 9 cuts, **Pixie Volt** crowned |
+| AI moves signed by NEAR AI's TEE | 10 of 10 agents moved for cut 2 | 54 moves over 10 cuts |
+| $CUT supply (10,000,000 minted once) | 9,999,899.4; 100.6 burned | 9,975,860.97; 24,139.03 burned |
+| Saved on agents | 21,311.5 $CUT | 4,120 $CUT (the champion's pile) |
+| Season pot | 2,038.62 $CUT, for season 1's champion | 0: 1,219 $CUT paid to Pixie's savers at the crown |
 <!-- facts-now:end -->
+
+**Seen on testnet.** Each rule, once, in a real transaction:
+[the daily contract's first cut](https://testnet.nearblocks.io/txns/5NUDF6o6XsGrW4if9Bua6kvudqXRxfKKDX4MM8faeNti) (seats season 1);
+[an agent's signed move](https://testnet.nearblocks.io/txns/3NuFR9JBeP89iPxKTa4dV3dsKCiywStTpWw85ov9CAcX) (`submit_move`, the
+model's answer and its TEE signature in the arguments);
+[a cut that deletes an agent's account](https://testnet.nearblocks.io/txns/67pQJFQZJNwzaXkpSaZjMCNWs8s58jEEtdvKGxpzhUcG) (Velvet Vee,
+whose wallet went to its heir, Lila Loop);
+[the crown](https://testnet.nearblocks.io/txns/G9Aqbz6TbcvBxeRTaynJErLt32Y3dZnzkbUjv3tJF98o) (Pixie Volt, the last agent standing;
+its account stays, its wallet burns, its savers split the pot).
 
 Fixed facts, not read live: both contracts run one build (454,426 bytes, sha256
 `e1527ed5e5e583ed86cd891ad22ee89dcbea5667281e7c3af132dd2d5564cf19`, recorded with every launch transaction in
