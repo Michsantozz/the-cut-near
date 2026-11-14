@@ -52,7 +52,8 @@ export function TradeFrame({
   }, [nav, router]);
 
   return (
-    <div className={cn("min-h-[calc(100dvh-82px)] lg:fixed lg:inset-0 lg:z-50 lg:flex lg:min-h-0 lg:items-center lg:justify-center lg:bg-scrim lg:p-8", tone === "lime" && "bg-lime lg:bg-scrim")}>
+    // `data-fullscreen-flow` hides the phone tab bar: on the phone a flow takes the whole screen, as in the design.
+    <div data-fullscreen-flow className={cn("min-h-dvh lg:fixed lg:inset-0 lg:z-50 lg:flex lg:min-h-0 lg:items-center lg:justify-center lg:bg-scrim lg:p-8", tone === "lime" && "bg-lime lg:bg-scrim")}>
       <section
         role="dialog"
         aria-modal="false"

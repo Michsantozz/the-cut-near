@@ -29,7 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <WalletProvider>
           <div className="lg:flex">
             <SideNav />
-            <main className="min-w-0 flex-1 pb-24 lg:pb-0">{children}</main>
+            <main className="min-w-0 flex-1 pb-24 lg:pb-0 [body:has([data-fullscreen-flow])_&]:pb-0">{children}</main>
           </div>
           <TabBar />
         </WalletProvider>

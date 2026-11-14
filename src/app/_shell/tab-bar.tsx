@@ -6,13 +6,13 @@ import { WalletGatedLink } from "@/shared/wallet";
 import { MAIN_NAV, type NavItem } from "./nav";
 import { NavLink } from "./nav-link";
 
-/** The phone tab bar: Lineup, Club, the Buy button, Prizes, Director. */
+/** The phone tab bar: Lineup, Club, the Buy button, Prizes, Director. Hidden while a full-screen flow (`data-fullscreen-flow`) is open. */
 export function TabBar() {
   const [lineup, club, prizes, director] = MAIN_NAV;
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 flex h-[82px] items-center justify-around border-t-2 border-ink bg-paper px-2 pb-2 lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex h-[82px] items-center justify-around border-t-2 border-ink bg-paper px-2 pb-2 lg:hidden [body:has([data-fullscreen-flow])_&]:hidden"
     >
       <Tab item={lineup} />
       <Tab item={club} />
