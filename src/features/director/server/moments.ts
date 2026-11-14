@@ -65,7 +65,9 @@ export async function momentPrompts(moment: DirectorMoment, options: { now?: Dat
   }
   const facts = buildDayFacts({ stage, bench, nextCut, params, now: options.now ?? new Date() });
   if (moment === "final-hour") return [finalHourPrompt(facts)];
-  const posters = [...facts.stage.map((robot) => robot.id), ...(facts.bench[0] ? [facts.bench[0].id] : [])];
+  // The two lowest first: if the model fails midway, the robots that need it most have posted.
+  const urgent = [facts.lowest.id, facts.nextUp.id];
+  const posters = [...urgent, ...facts.stage.map((robot) => robot.id).filter((id) => !urgent.includes(id)), ...(facts.bench[0] ? [facts.bench[0].id] : [])];
   const now = options.now ?? new Date();
   const saves = await Promise.all(posters.map((id) => latestSave(id, now)));
   return [scheduledPrompt(facts, "lowest"), scheduledPrompt(facts, "next-up"), ...posters.map((id, i) => robotPostPrompt(facts, id, saves[i]))];

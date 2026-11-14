@@ -145,13 +145,17 @@ describe("lines and proofs for the UI", () => {
 describe("runDirectorMoment", () => {
   const plain = ["The bunny needs a miracle or a whale before the cut."];
 
-  it("scheduled: one attestation, the two block lines and four robot posts", async () => {
+  it("scheduled: one attestation, the two block lines and a post from every robot on the stage and the bench leader", async () => {
     const { cloud, deps } = setup({ lines: plain });
     const report = await runDirectorMoment("scheduled", { deps, now: SAMPLE_NOW });
     expect(report.failures).toEqual([]);
-    expect(report.lines.map((l) => `${l.kind}:${l.subjectId}`)).toEqual(["scheduled:kiko", "scheduled:onyx", "robot-post:kiko", "robot-post:onyx", "robot-post:pixie", "robot-post:chartwise"]);
+    const posters = ["kiko", "onyx", "pixie", "lila", "oracle", "mabel", "melody", "yuna", "gremlin", "velvet", "chartwise"];
+    expect(report.lines.map((l) => `${l.kind}:${l.subjectId}`)).toEqual(["scheduled:kiko", "scheduled:onyx", ...posters.map((id) => `robot-post:${id}`)]);
     expect(report.lines.every((l) => l.proofStatus === "verified")).toBe(true);
     expect(cloud.calls.attestation).toBe(1);
+    // mika.near saved 400 on Melody-9 that morning: Melody's post is asked to thank that account.
+    const melody = cloud.requests.find((r) => r.body?.includes("You are Melody-9"));
+    expect(melody?.body).toContain("Your newest saver: mika.near saved 400 $CUT on you.");
   });
 
   it("skips lines the moment already has for the same cut, so a repeated cron costs nothing", async () => {
@@ -159,7 +163,7 @@ describe("runDirectorMoment", () => {
     await runDirectorMoment("scheduled", { deps, now: SAMPLE_NOW });
     const again = await runDirectorMoment("scheduled", { deps, now: SAMPLE_NOW });
     expect(again.lines).toEqual([]);
-    expect(again.skipped).toHaveLength(6);
+    expect(again.skipped).toHaveLength(13);
     expect(cloud.calls.attestation).toBe(1);
   });
 
