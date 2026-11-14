@@ -79,7 +79,7 @@ export function extractEvents(tx: TxApiTransaction, contractId: string): Journal
           standard: event.standard,
           version: event.version,
           event: event.event,
-          ...eventRefs(data),
+          ...eventRefs(data, event.event),
           data,
         });
       });

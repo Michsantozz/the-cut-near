@@ -17,7 +17,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "contracts:build": "cd contracts && cargo near build non-reproducible-wasm --manifest-path thecut/Cargo.toml && cargo near build non-reproducible-wasm --manifest-path robot/Cargo.toml",
+    "contracts:build": "./contracts/build.sh",
     "contracts:test": "cd contracts && cargo test --workspace",
     "sim": "python3 scripts/sim.py"
   },

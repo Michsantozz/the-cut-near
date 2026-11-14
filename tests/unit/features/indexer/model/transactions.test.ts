@@ -23,7 +23,7 @@ describe("extractEvents", () => {
         receipt("R1", CONTRACT, [
           "plain log line",
           event("thecut", "save", [{ account_id: "mika.testnet", robot_id: "melody", amount: "400", cut_index: 1 }]),
-          event("thecut", "prize", [{ account_id: "a.testnet", amount: "1" }, { account_id: "b.testnet", amount: "2" }]),
+          event("thecut", "prize", [{ cut_index: 1, robot_id: "onyx", creator: "a.testnet", slice: "1", creator_slice: "0", pile: "5", burned: false }, { cut_index: 1, robot_id: "pixie", creator: "b.testnet", slice: "2", creator_slice: "0", pile: "9", burned: false }]),
         ]),
       ]),
       CONTRACT,
@@ -54,7 +54,7 @@ describe("extractEvents", () => {
   });
 
   it("ignores other emitters, failed receipts and untracked standards", () => {
-    const forged = event("thecut", "prize", [{ account_id: "thief.testnet", amount: "1000000" }]);
+    const forged = event("thecut", "prize", [{ cut_index: 1, robot_id: "onyx", creator: "thief.testnet", slice: "1000000" }]);
     const rows = extractEvents(
       tx([
         receipt("R4", "evil.testnet", [forged]),
