@@ -8,12 +8,13 @@ import { barPercent, DIRECTOR_ART, RobotTile, robotFullBody, STAGE_ART } from "@
 import { publicEnv } from "@/shared/config/public";
 import { explorerAccountUrl } from "@/shared/near/network";
 import { Button } from "@/shared/ui/button";
+import { CopyButton } from "@/shared/ui/copy-button";
 import { formatAmount, formatCount, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 
 import { INSIDE_TABS, type InsideTab } from "../model/tabs";
 import { SCENARIOS, simulate } from "../model/sim";
 import type { Inside } from "../server/load-inside";
-import { CopyButton } from "./copy-button";
+
 import { SimChart } from "./sim-chart";
 
 const cut = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
@@ -504,7 +505,7 @@ function Parameters({ inside }: { inside: Inside }) {
         </div>
         <div className="mt-3 flex items-center gap-2.5 rounded-[14px] bg-[#23252b] py-2.5 pr-2.5 pl-4 lg:mt-0 lg:w-[460px] lg:shrink-0">
           <code className="grow font-sans text-sm leading-5 font-semibold break-all">{command}</code>
-          <CopyButton text={command} />
+          <CopyButton text={command} variant="lime" size="sm" className="h-[34px] rounded-[10px] border-0 px-3.5 text-[13px]" />
         </div>
       </div>
       <dl className="mt-4 grid gap-x-8 lg:grid-cols-3">
