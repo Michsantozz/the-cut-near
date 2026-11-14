@@ -73,6 +73,6 @@ The rest is cut into equal creator slices. A survivor with an empty pile burns i
 
 ## Events (NEP-297, `standard: "thecut"`, `version: "1.0.0"`)
 
-`ft_mint` and `ft_burn` follow NEP-141. Ours: `buy`, `sell`, `fee`, `save`, `unsave`, `cut`, `delete`, `prize`, `join`, `register`.
+`ft_mint`, `ft_transfer` and `ft_burn` follow NEP-141 (`standard: "nep141"`). Ours: `buy`, `sell`, `fee`, `save`, `unsave`, `cut`, `delete`, `prize`, `join`, `register`, `claim`.
 Each `data` item carries the account, robot id, amounts as strings and the cut index where it applies.
 The app's Receipts page and the indexer read these events. They are the public log the track asks for.
