@@ -9,6 +9,7 @@ import { WalletProvider } from "@/shared/wallet";
 import { SideNav } from "./_shell/side-nav";
 import { LiveTestnetBanner } from "./_shell/live-testnet-banner";
 import { SampleWorldBanner } from "./_shell/sample-world-banner";
+import { SiteFooter } from "./_shell/site-footer";
 import { TabBar } from "./_shell/tab-bar";
 import "./globals.css";
 
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <main className="min-w-0 flex-1 pb-24 lg:pb-0 [body:has([data-fullscreen-flow])_&]:pb-0">
               {isLive() ? publicEnv.network === "testnet" && <LiveTestnetBanner /> : <SampleWorldBanner />}
               {children}
+              <SiteFooter />
             </main>
           </div>
           <TabBar />

@@ -1,4 +1,4 @@
-import { Award, Bot, CircleDollarSign, List, SlidersHorizontal, Star, Trophy, TrendingUp, UserPlus, Users, type LucideIcon } from "lucide-react";
+import { Award, Bot, CircleDollarSign, List, CirclePlay, SlidersHorizontal, Star, Trophy, TrendingUp, UserPlus, Users, type LucideIcon } from "lucide-react";
 
 // The app's places. The phone tab bar shows the four main ones around the Buy button; the laptop side menu shows all.
 
@@ -14,6 +14,7 @@ export const MAIN_NAV: NavItem[] = [
 export const MORE_NAV: NavItem[] = [
   { label: "$CUT price", href: "/price", icon: TrendingUp },
   { label: "Inside the cut", href: "/inside", icon: Star },
+  { label: "Demo guide", href: "/demo", icon: CirclePlay },
   { label: "Club", href: "/club", icon: Award },
   { label: "Activity", href: "/activity", icon: List },
   { label: "Register an agent", href: "/creators", icon: UserPlus },
@@ -22,3 +23,14 @@ export const MORE_NAV: NavItem[] = [
 
 export const RECEIPTS_HREF = "/receipts";
 export const ACCOUNT_HREF = "/settings";
+
+/** The footer's links, on every page. */
+export const FOOTER_LINKS = [
+  { id: "inside", label: "How it works", href: "/inside" },
+  { id: "simulation", label: "The simulation", href: "/inside#simulation" },
+  { id: "demo", label: "Demo guide", href: "/demo" },
+  { id: "agents", label: "For agents", href: "/llms.txt" },
+] as const;
+
+/** The public source code. Empty until the repository is public: the footer then shows "GitHub · soon". */
+export const GITHUB_URL: string | null = process.env.NEXT_PUBLIC_GITHUB_URL || null;

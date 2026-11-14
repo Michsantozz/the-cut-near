@@ -12,13 +12,13 @@ export function risks(time: string) {
 
 export type TourStep = { title: string; see: string; href: string };
 
-/** The 5-minute tour of test mode: buy, save, run the cut, then find every line in Receipts. */
+/** The 5-minute tour of test mode: buy, save, watch the cut, then find every line in Receipts. The full guide is /demo. */
 export const TOUR: readonly TourStep[] = [
   { title: "Get a test account", see: "a testnet account with test NEAR in your wallet", href: "/settings" },
-  { title: "Buy $10 of $CUT", see: "your BUY line and its FEE line", href: "/buy" },
-  { title: "Save an agent", see: "your SAVE line, locked till the test cut", href: "/" },
-  { title: "Run the cut", see: "the lowest agent deleted, +0.5 test NEAR", href: "/director" },
-  { title: "Open Receipts", see: "your lines, then run the Audit: PASS", href: "/receipts" },
+  { title: "Buy $10 of $CUT", see: "your Buy line in Receipts", href: "/buy" },
+  { title: "Save an agent", see: "your Save line, locked till the next cut", href: "/" },
+  { title: "Watch the cut", see: "the lowest score deleted, its wallet to its heir or burned", href: "/" },
+  { title: "Open Receipts", see: "your lines, and the cut’s burns and prizes", href: "/receipts?filter=mine" },
 ];
 
 /** "every 2 minutes" for a 120 s interval, "every day" for 24 h. */

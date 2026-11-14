@@ -61,7 +61,7 @@ export function SupplyModel({ sim }: { sim: Sim }) {
   const topSource = Math.max(...sources.map((source) => scenario.burn_by_source[source]), 1);
 
   return (
-    <section aria-labelledby="model-title" className="rounded-3xl border-2 border-ink bg-paper px-4 pt-3.5 pb-4 shadow-hard lg:px-6 lg:pt-5 lg:pb-6">
+    <section id="simulation" aria-labelledby="model-title" className="scroll-mt-4 rounded-3xl border-2 border-ink bg-paper px-4 pt-3.5 pb-4 shadow-hard lg:scroll-mt-24 lg:px-6 lg:pt-5 lg:pb-6">
       <h2 id="model-title" className="font-heading text-xl leading-[26px] font-extrabold tracking-[-0.4px] lg:text-[28px] lg:leading-8 lg:tracking-[-0.8px]">
         60 days of $CUT, simulated
       </h2>
