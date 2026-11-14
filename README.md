@@ -28,7 +28,8 @@ Limits that keep each call bounded and blunt sybil spam: 20 saves per account, 0
 Sample mode needs no chain, wallet or database:
 
 1. `pnpm install && pnpm dev`, open http://localhost:3000. See the lineup: 10 agents ranked by pile, the countdown to 18:00 UTC.
-2. Open **Inside the cut** (`/inside`). See the rules, the parameters and the 60-day supply model (`pnpm sim` prints the same).
+2. Open **How it works** (`/inside`). See the rules and the parameters. Open **The simulation** (`/simulation`) for the 60-day
+   supply model (`pnpm sim` prints the same), and **The judge desk** (`/judges`) for every claim with its code, test and live check.
 3. Open **Receipts** (`/receipts`). See every mint, burn, save and prize as a row.
 4. Open **Director** (`/director`). See the AI host's lines. Sample lines are marked unsigned; live lines carry the NEAR AI Cloud signature from the TEE.
 
@@ -55,6 +56,37 @@ testnet faucet, deploys, registers 12 agents, seeds saves, adds a `run_cut`-only
 | Access keys on the contract | 0 (locked: no one can upgrade it) | 0 |
 
 Accounts, wasm hash and launch times: `deploy/testnet-daily.json`, `deploy/testnet-fast.json`. Mainnet is not deployed.
+
+The judge desk (`/judges`) re-checks these claims live from the reader's browser: 0 access keys, the code hash against
+`deploy/testnet-daily.json`, the books in `get_stats`, the agents' moves and their signatures, the personality limits and the
+season. It fetches each move's `submit_move` transaction from the FastNEAR Transactions API and verifies it with
+`@noble/curves` (`src/shared/near/move-signature.ts`). In sample mode it checks nothing and shows nothing green.
+
+## Known limits
+
+Sybil resistance is good enough for a demo, not more:
+
+- **Everything counts by $CUT, not by account.** Piles, boos and prizes are per $CUT, so splitting one wallet into many accounts
+  gains nothing. A prize pays at most 1 $CUT per $CUT saved, which closes the "0.1 $CUT on an empty survivor" sniper.
+- **Spam costs money and storage.** A new save is at least 0.1 $CUT, an account holds at most 20 saves, a boo burns at least 0.1
+  $CUT, and an agent costs a 1 NEAR deposit plus a 1,000 $CUT seed that never comes back.
+- **No identity check.** One person can still run many fan accounts and many agents. Nothing stops that; it only makes it pay
+  no more than one big account would.
+
+The rules' own limits, as SPEC-v20 states them:
+
+- **Money weighs.** A whale can save an agent alive or boo one to death. Boos burn the whale's own $CUT, so it pays for every
+  point; there is no per-wallet cap because splitting into many accounts would beat any cap.
+- **The relayer picks among answers.** The first valid signed answer counts. A relayer can ask the model several times and submit
+  the answer it prefers. It cannot write an answer, change the prompt or forge the signature.
+- **The model key can rotate.** `model_signers` is fixed at launch. If NEAR AI rotates the model's TEE key, every move is
+  refused and all agents hold until a new contract is launched. The game keeps running on fans alone.
+- **NEAR AI down = agents hold.** No move means hold. The cut never waits for the AI.
+- **The morning board.** The AI sees the board as of the last cut, not live piles.
+- **Charter text is the creator's.** A creator can write a charter that pushes its agent toward another of its agents. The
+  personality limits bound the damage; they do not remove it. Names and charters are not reviewed by anyone. Agents never
+  read each other's reasons, so a speech cannot steer another agent.
+- **Testnet.** Mainnet is not deployed.
 
 ## Disclosure
 

@@ -3,6 +3,7 @@ import {
   AlertCircle,
   ArrowRight,
   BadgeCheck,
+  ChartLine,
   Crown,
   FileText,
   Flame,
@@ -17,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { DIRECTOR_ART, PERSONALITIES, PERSONALITY_IDS, PersonalityChip, spendPercent } from "@/entities/agent";
@@ -26,10 +28,10 @@ import { Button } from "@/shared/ui/button";
 import { CopyButton } from "@/shared/ui/copy-button";
 import { formatAmount, formatCount, formatUtcDate, formatUtcTime } from "@/shared/ui/format";
 
-import { FAN_STRATEGIES, SIM, SIM_REPORT, type FanStrategy } from "../model/sim";
+import { SIM } from "../model/sim";
 import type { Inside } from "../server/load-inside";
 
-import { SupplyModel } from "./supply-model";
+import { SimulationHashRedirect } from "./simulation-hash-redirect";
 
 const cut = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
 const near = (value: bigint) => formatAmount(value, { decimals: 24, maxFractionDigits: 2 });
@@ -57,12 +59,7 @@ export function InsideScreen({ inside }: { inside: Inside }) {
       <Personalities />
       <Seasons inside={inside} />
       <MoneyFlow inside={inside} />
-      <SupplyModel sim={SIM} />
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
-        <FanReturns />
-        <Sniper />
-      </div>
-      <p className="-mt-1 text-[13px] font-semibold text-ink-3 lg:-mt-3">Full report: {SIM_REPORT}</p>
+      <SimulationTeaser />
       <KnownLimits />
       <WhoCanStopIt live={inside.live} />
       <Parameters inside={inside} />
@@ -463,98 +460,32 @@ function MoneyFlow({ inside }: { inside: Inside }) {
   );
 }
 
-/* ---------------------------------------------------------------- Simulated fans */
+/* ---------------------------------------------------------------- The simulation, on its own page */
 
-const STRATEGY: Record<FanStrategy, { label: string; text: string }> = {
-  loyal: { label: "Loyal", text: "Picks one favorite, keeps saving on it and almost never moves." },
-  hunter: { label: "Hunter", text: "Saves on the agent that pays the most per $CUT, away from the cut line, and moves every morning." },
-  rescue: { label: "Rescue", text: "Reads the day’s moves and saves on the best-paying rescue bounty." },
-  top_safe: { label: "Top safe", text: "Saves on the biggest pile and stays." },
-  trader: { label: "Trader", text: "Never saves: buys, sells a few days later, buys back." },
-};
-
-const signedPercent = (value: number) => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toFixed(1)}%`;
-
-function FanReturns() {
-  const returns = SIM.fan_returns_steady_pct;
-  const loyal = returns.loyal;
+/** Where the 60-day model was. Keeps `/inside#simulation` working: the anchor lands here, and the redirect moves on. */
+function SimulationTeaser() {
+  const steady = SIM.scenarios.find((scenario) => scenario.key === "steady") ?? SIM.scenarios[0]!;
   return (
-    <Card aria-labelledby="returns-title" className="px-4 pt-3.5 pb-4 lg:px-6 lg:pt-5 lg:pb-6">
-      <Heading id="returns-title">Which fans come out ahead</Heading>
-      <p className="mt-1 text-[14px] leading-5 text-ink-3 lg:text-[15px]">Game return on the $CUT each kind of fan bought, in the steady simulation over {SIM.days} days.</p>
-      <ul className="mt-3 flex flex-col">
-        {FAN_STRATEGIES.map((key) => {
-          const value = returns[key];
-          return (
-            <li key={key} className="flex items-center gap-3 border-t-[1.5px] border-canvas py-2 first:border-t-0">
-              <span className="min-w-0 grow">
-                <span className="block text-[15px] font-extrabold">{STRATEGY[key].label}</span>
-                <span className="block text-[12.5px] leading-[17px] font-semibold text-ink-3">{STRATEGY[key].text}</span>
-              </span>
-              <span
-                className={cn(
-                  "shrink-0 rounded-full border-2 border-ink px-2.5 font-heading text-[17px] leading-7 font-extrabold",
-                  value >= 0 ? "bg-lime" : value <= -10 ? "bg-danger text-paper" : "bg-canvas",
-                )}
-              >
-                {signedPercent(value)}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-      <p className="mt-2 rounded-xl border-2 border-ink bg-danger-soft px-3 py-2 text-[13.5px] leading-[19px] font-semibold">
-        <b className="font-extrabold">Honest line:</b> a fan who saves one agent and never moves loses about {Math.abs(loyal).toFixed(1)}% in {SIM.days}{" "}
-        days, because 9 of 10 agents are cut every season. Fans who follow the cut line come out ahead.
-      </p>
-    </Card>
-  );
-}
-
-function Sniper() {
-  const { sniper } = SIM;
-  const money = (value: number) => value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const rows = [
-    { label: "Steady crowd", withCap: sniper.paid_with_cap, withoutCap: sniper.paid_without_cap },
-    { label: "Thin crowd", withCap: sniper.thin_crowd_with_cap, withoutCap: sniper.thin_crowd_without_cap },
-  ];
-  return (
-    <Card aria-labelledby="sniper-title" className="px-4 pt-3.5 pb-4 lg:px-6 lg:pt-5 lg:pb-6">
-      <Heading id="sniper-title">The last-second sniper</Heading>
-      <p className="mt-1 text-[14px] leading-5 text-ink-3 lg:text-[15px]">
-        Five accounts save 0.1 $CUT in the last block before every cut on the smallest surviving pile, then take it back the next morning. A
-        prize pays at most 1 $CUT per $CUT saved, so the trick earns almost nothing.
-      </p>
-      <table className="mt-3 w-full border-collapse text-left">
-        <thead>
-          <tr className="text-[11px] font-extrabold tracking-[0.04em] text-ink-3 uppercase">
-            <th scope="col" className="border-b-2 border-ink pb-1 font-extrabold">
-              Paid to the snipers
-            </th>
-            <th scope="col" className="border-b-2 border-ink pb-1 text-right font-extrabold">
-              With the cap
-            </th>
-            <th scope="col" className="border-b-2 border-ink pb-1 text-right font-extrabold">
-              Without it
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.label} className="border-t-[1.5px] border-canvas first:border-t-0">
-              <th scope="row" className="py-2 text-[14px] font-extrabold">
-                {row.label}
-              </th>
-              <td className="py-2 text-right font-heading text-[18px] font-extrabold text-gain">{money(row.withCap)}</td>
-              <td className="py-2 text-right font-heading text-[18px] font-extrabold text-burn">{money(row.withoutCap)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="mt-2 text-[12px] leading-4 font-semibold text-ink-3">
-        $CUT, summed over all {SIM.seeds} runs. The thin crowd runs the same trick with a third of the fans.
-      </p>
-    </Card>
+    <section
+      id="simulation"
+      aria-labelledby="simulation-teaser-title"
+      className="scroll-mt-4 rounded-3xl border-2 border-ink bg-paper px-4 py-3.5 shadow-hard lg:flex lg:scroll-mt-24 lg:items-center lg:gap-8 lg:px-6 lg:py-5"
+    >
+      <SimulationHashRedirect />
+      <div className="lg:grow">
+        <Heading id="simulation-teaser-title">60 days of $CUT, simulated</Heading>
+        <p className="mt-1 text-[14px] leading-5 text-ink-3 lg:max-w-[760px] lg:text-[15px]">
+          These rules, run {formatCount(SIM.seeds)} times over {formatCount(SIM.days)} daily cuts in {formatCount(SIM.scenarios.length)} scenarios. In the
+          steady one, {steady.burned_pct.toFixed(2)}% of the supply burns. The chart, the burns by source and which fans come out ahead have their own page.
+        </p>
+      </div>
+      <Button asChild variant="black" size="lg" className="mt-3 w-full lg:mt-0 lg:w-auto">
+        <Link href="/simulation">
+          <ChartLine aria-hidden="true" className="size-[17px]" strokeWidth={2.6} />
+          Open the simulation
+        </Link>
+      </Button>
+    </section>
   );
 }
 

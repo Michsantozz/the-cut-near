@@ -1,17 +1,21 @@
-import { ed25519 } from "@noble/curves/ed25519.js";
-import { sha256 } from "@noble/hashes/sha2.js";
-import { bytesToHex, hexToBytes, utf8ToBytes } from "@noble/hashes/utils.js";
+import { utf8ToBytes } from "@noble/hashes/utils.js";
+
+import {
+  isModelSigner,
+  MAX_RESPONSE_BYTES,
+  MOVE_SIGNING_ALGO,
+  plainHex,
+  signedMoveText,
+  verifyMoveSignature,
+} from "../../../shared/near/move-signature.ts";
 
 // The move relay (SPEC-v20, "Agents, until next_cut_at - move_lead"): for each stage agent without a move,
 // post the contract's exact request to NEAR AI, fetch the TEE signature, run the contract's checks locally
 // and only then spend gas on `submit_move`. Every network call is a port, so the cron (src/features/moves/server)
-// and scripts/testnet/autopilot.ts run this same code. Node-loadable on purpose: npm imports only.
+// and scripts/testnet/autopilot.ts run this same code. Node-loadable on purpose: npm imports and relative paths only.
+// The signature pieces live in src/shared/near/move-signature.ts, which the judge desk also runs in the browser.
 
-/** Moves are signed with the model TEE's Ed25519 key; `model_signers` holds those public keys. */
-export const MOVE_SIGNING_ALGO = "ed25519";
-
-/** The contract refuses a larger `response`. */
-export const MAX_RESPONSE_BYTES = 32 * 1024;
+export { MAX_RESPONSE_BYTES, MOVE_SIGNING_ALGO, plainHex, sha256Hex, signedMoveText } from "../../../shared/near/move-signature.ts";
 
 /** `GET /v1/signature/<chat id>` as NEAR AI returns it. */
 export type MoveSignature = { text: string; signature: string; signing_address: string; signing_algo?: string; signature_kind?: string };
@@ -84,21 +88,6 @@ export type RelayOptions = {
 const DEFAULT_CONCURRENCY = 3;
 const DEFAULT_CLOSE_MARGIN_MS = 3_000;
 
-export function sha256Hex(text: string): string {
-  return bytesToHex(sha256(utf8ToBytes(text)));
-}
-
-/** The text the model TEE signs: `<model_id>:<hex sha256(request)>:<hex sha256(response)>`. */
-export function signedMoveText(modelId: string, requestBody: string, responseBody: string): string {
-  return `${modelId}:${sha256Hex(requestBody)}:${sha256Hex(responseBody)}`;
-}
-
-/** Lowercase hex without `0x`, or null when `value` is not hex. */
-export function plainHex(value: string): string | null {
-  const hex = value.startsWith("0x") || value.startsWith("0X") ? value.slice(2) : value;
-  return hex.length % 2 === 0 && /^[0-9a-fA-F]+$/.test(hex) ? hex.toLowerCase() : null;
-}
-
 /** Why the contract would refuse `responseBody` for its size, or null when it fits. */
 export function oversizeReason(responseBody: string): string | null {
   const size = utf8ToBytes(responseBody).length;
@@ -121,14 +110,8 @@ export function checkMoveSignature({ modelId, requestBody, responseBody, signatu
   const bytes = plainHex(signature.signature);
   if (signer?.length !== 64) return fail("signing_address is not a 32-byte Ed25519 key.");
   if (bytes?.length !== 128) return fail("The signature is not 64 bytes of hex.");
-  if (!signers.some((known) => plainHex(known) === signer)) return fail(`The signer ${signer} is not in the contract's model_signers.`);
-  let valid = false;
-  try {
-    valid = ed25519.verify(hexToBytes(bytes), utf8ToBytes(signature.text), hexToBytes(signer));
-  } catch {
-    valid = false;
-  }
-  return valid ? { ok: true, signature: bytes, signer } : fail("The Ed25519 signature does not verify.");
+  if (!isModelSigner(signer, signers)) return fail(`The signer ${signer} is not in the contract's model_signers.`);
+  return verifyMoveSignature(bytes, signature.text, signer) ? { ok: true, signature: bytes, signer } : fail("The Ed25519 signature does not verify.");
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
