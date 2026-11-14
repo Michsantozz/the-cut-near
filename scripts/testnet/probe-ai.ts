@@ -44,7 +44,7 @@ const BRIEF = JSON.stringify({
     { id: "melody", name: "Melody-9", personality: "generous", pile: "3900", wallet: "1500", pacts: [], heir: null },
   ],
   last_cut: { deleted: "velvet", inherited_by: "kiko", burned: "6512" },
-  last_moves: [{ agent: "kiko", move: "attack", target: "velvet", amount: "120", reason: "Velvet was dead weight." }],
+  last_moves: [{ agent: "kiko", move: "attack", target: "velvet", amount: "120" }],
 });
 
 /** The request shape from the flags: max_tokens 1200 and reasoning_effort low unless told otherwise. */
