@@ -4,7 +4,7 @@ import { parsePublicEnv } from "@/shared/config/public";
 
 describe("parsePublicEnv", () => {
   it("defaults to testnet and its contract", () => {
-    expect(parsePublicEnv({})).toEqual({ network: "testnet", contractId: "thecut.testnet" });
+    expect(parsePublicEnv({})).toEqual({ network: "testnet", contractId: "thecut-daily.testnet" });
     expect(parsePublicEnv({ NEXT_PUBLIC_NEAR_NETWORK: "mainnet" })).toEqual({ network: "mainnet", contractId: "thecut.near" });
   });
 

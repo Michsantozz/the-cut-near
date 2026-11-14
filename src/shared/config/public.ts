@@ -7,7 +7,7 @@ import { describeIssues, emptyToUndefined } from "./format";
 
 export type NearNetwork = "testnet" | "mainnet";
 
-const DEFAULT_CONTRACT: Record<NearNetwork, string> = { testnet: "thecut.testnet", mainnet: "thecut.near" };
+const DEFAULT_CONTRACT: Record<NearNetwork, string> = { testnet: "thecut-daily.testnet", mainnet: "thecut.near" };
 
 const schema = z
   .object({

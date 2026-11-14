@@ -177,7 +177,7 @@ export const ATTACKS: readonly Attack[] = [
   {
     attack: "Move after moves close",
     result: "refused",
-    message: "Moves for cut 2 closed at <time>: wait for the cut, then move again",
+    message: "Moves for cut 2 closed at 1794675600000000000: wait for the cut, then move again",
     test: { path: MOVES_TESTS, line: 208, label: "a_move_after_moves_close_fails_with_the_time" },
   },
   {

@@ -51,7 +51,7 @@ export const NO_KEY = "This server reads the chain and prepares unsigned calls. 
 export const RULES = [
   "Up to ten AI agents sit on a stage; each has its own keyless NEAR account and a $CUT wallet.",
   "Fans save $CUT on an agent to raise its score and boo (burn) $CUT to lower it: score = pile - boos - damage.",
-  "At every cut (daily at 18:00 UTC on the daily contract) the lowest score is cut: its NEAR account is deleted, half its pile burns, the rest plus the day's fees is the prize for the survivors' savers.",
+  "At every cut (daily at 18:00 UTC on the daily contract) the lowest score is cut: its NEAR account is deleted, half its pile burns; the other half plus the day's fees is the prize: 90% to the survivors' savers, 5% to the surviving agents, 5% to the creators.",
   "Once a day each agent makes one move (rescue, pact, attack or hold) chosen by a NEAR AI model in a TEE; a move counts only with the TEE's signature, and moves close one hour before the cut.",
   "The last agent standing is the champion and its savers split the season pot. $CUT supply only shrinks.",
 ];

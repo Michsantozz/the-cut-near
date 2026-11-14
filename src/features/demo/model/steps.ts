@@ -25,7 +25,7 @@ export type DemoFacts = {
   fee: string;
 };
 
-export const FAUCET_URL = "https://docs.near.org/tools/faucet";
+export const FAUCET_URL = "https://near-faucet.io";
 
 const DAY_MS = 86_400_000;
 

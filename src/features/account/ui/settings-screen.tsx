@@ -93,7 +93,7 @@ function AccountCard({ accountId, network }: { accountId: string | null; network
         {accountId ? accountId.charAt(0).toUpperCase() : "?"}
       </span>
       <div className="min-w-0 grow">
-        <h2 className="truncate font-heading text-xl leading-[23px] font-extrabold lg:text-[28px] lg:leading-8 lg:tracking-[-0.6px]">{accountId ?? "No wallet connected"}</h2>
+        <h2 className="break-all font-heading text-xl leading-[23px] font-extrabold lg:text-[28px] lg:leading-8 lg:tracking-[-0.6px]">{accountId ?? "No wallet connected"}</h2>
         <p className="text-[13px] font-medium lg:mt-0.5 lg:text-[14.5px]">{accountId ? `Your wallet · ${where}` : "Looking needs no wallet. Connecting never moves money."}</p>
       </div>
       {accountId ? (
