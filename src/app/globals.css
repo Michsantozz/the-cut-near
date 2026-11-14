@@ -44,6 +44,8 @@
   --shadow-hard-violet: 4px 4px 0 var(--color-violet);
 
   /* Radii used by the design */
+  --radius-3xs: 0.4375rem; /* 7px */
+  --radius-2xs: 0.5rem; /* 8px */
   --radius-xs: 0.5625rem; /* 9px */
   --radius-sm: 0.625rem; /* 10px */
   --radius-md: 0.75rem; /* 12px */

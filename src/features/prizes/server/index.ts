@@ -1,3 +1,3 @@
 import "server-only";
 
-export { loadPrizes, type Prizes } from "./load-prizes";
+export { loadPrizes, loadPrizesPreview, type Pile, type Prizes, type PrizesPreview } from "./load-prizes";

@@ -1,7 +1,8 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 
-import { SettingsScreen } from "@/features/account";
+import { finalHourStart, SettingsScreen } from "@/features/account";
+import { getViewerPrefs } from "@/features/account/server";
 import { getNextCut } from "@/entities/cut/server";
 import { publicEnv } from "@/shared/config";
 import { formatUtcTime } from "@/shared/ui/format";
@@ -12,7 +13,8 @@ import { AppHeader } from "../_shell/app-header";
 
 export const metadata = { title: "Settings · The Cut" };
 
-// Settings: the connected wallet, display, history, test mode on testnet and the fine print.
+// Settings: the connected wallet, money and language, alerts, history and the fine print.
+// Test mode is reached from the striped testnet band, as in the design.
 export default function SettingsPage() {
   return (
     <>
@@ -27,6 +29,14 @@ export default function SettingsPage() {
 async function SettingsContent() {
   // Request time first: the sample cut time comes from the clock.
   await connection();
-  const [accountId, nextCut] = await Promise.all([getViewerAccountId(), getNextCut()]);
-  return <SettingsScreen accountId={accountId} network={publicEnv.network} cutTime={formatUtcTime(nextCut.at)} />;
+  const [accountId, nextCut, prefs] = await Promise.all([getViewerAccountId(), getNextCut(), getViewerPrefs()]);
+  return (
+    <SettingsScreen
+      accountId={accountId}
+      network={publicEnv.network}
+      cutTime={formatUtcTime(nextCut.at)}
+      finalHour={formatUtcTime(finalHourStart(nextCut.at))}
+      prefs={prefs}
+    />
+  );
 }
