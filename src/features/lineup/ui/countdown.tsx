@@ -9,6 +9,8 @@ import { useNow } from "@/shared/ui/use-now";
 
 import { FINAL_HOUR_MS } from "../model/board";
 
+const TEN_HOURS_MS = 10 * 60 * 60 * 1000;
+
 type CountdownProps = { cutAt: number; renderedAt: number };
 
 /** Live state of the next cut: time left, the last hour, and "due" once the time passed and nobody ran it yet. */
@@ -66,7 +68,9 @@ export function CountdownCard({ cutAt, renderedAt, day, className }: CountdownPr
           dateTime={cut.at.toISOString()}
           role="timer"
           className={cn(
-            "font-heading text-[44px] leading-[44px] font-extrabold tracking-[-1.5px] whitespace-nowrap lg:text-[56px] lg:leading-[58px] lg:tracking-[-2px]",
+            "font-heading text-[44px] leading-[44px] font-extrabold tracking-[-1.5px] whitespace-nowrap lg:leading-[58px]",
+            // The design sizes the card for "4:12:00"; two-digit hours step down so the card's labels still fit.
+            cut.left >= TEN_HOURS_MS ? "lg:text-[48px] lg:tracking-[-1.8px]" : "lg:text-[56px] lg:tracking-[-2px]",
             cut.finalHour && "text-lime",
           )}
         >

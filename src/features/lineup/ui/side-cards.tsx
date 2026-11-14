@@ -29,7 +29,7 @@ export function OnTheBlockCard({ lineup, className }: { lineup: Lineup; classNam
       <Link
         href={`/robots/${lowest.id}`}
         aria-label={`${lowest.name}: see its page`}
-        className="flex h-32 items-end justify-center border-b-2 border-ink bg-[radial-gradient(circle_at_50%_0%,var(--color-danger)_0%,transparent_70%),var(--color-violet-deep)] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="flex h-32 items-end justify-center border-b-2 border-ink bg-violet-deep bg-[radial-gradient(circle_at_50%_0%,var(--color-danger)_0%,transparent_70%)] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         {art && <Image src={art.src} alt="" width={art.width} height={art.height} className="block h-[118px] w-auto" />}
       </Link>
