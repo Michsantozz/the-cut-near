@@ -1,9 +1,10 @@
 import { cn } from "cn";
-import { Check, Clock, Scissors, TrendingUp, TriangleAlert, Trophy, Wallet, X, type LucideIcon } from "lucide-react";
+import { Check, ChevronDown, Clock, Scissors, TrendingUp, TriangleAlert, Trophy, Wallet, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
+import { wholeCutsToPass } from "@/entities/agent";
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
-import { formatAmount, formatCount, formatDuration, formatUsd, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
+import { formatAmount, formatCount, formatDuration, formatSignificant, formatUsd, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 import { ConnectButton } from "@/shared/wallet";
 
 import { cutText, whenText, type CutReceipt, type ReceiptTag } from "../model/describe";
@@ -43,6 +44,13 @@ const TAG_STYLE: Record<ReceiptTag, string> = {
 };
 
 const cutWhole = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
+/** A big $CUT amount, short: "2.3M", "940K", "812". */
+const compactCut = (value: bigint) =>
+  value >= 10n ** 24n
+    ? `${formatAmount(value, { decimals: 24, maxFractionDigits: 1 })}M`
+    : value >= 10n ** 21n
+      ? `${formatAmount(value, { decimals: 21, maxFractionDigits: 0 })}K`
+      : cutWhole(value);
 
 export function ReceiptsScreen({ data }: { data: Receipts }) {
   const now = new Date(data.renderedAt);
@@ -69,11 +77,12 @@ export function ReceiptsScreen({ data }: { data: Receipts }) {
 function Hero({ data }: { data: Receipts }) {
   const at = new Date(data.renderedAt);
   return (
-    <div className="pt-[22px] lg:flex lg:items-start lg:justify-between lg:gap-8 lg:pt-2">
+    <div className="lg:flex lg:items-start lg:justify-between lg:gap-8 lg:pt-2">
       <div className="lg:max-w-[820px]">
-        <SourceChip data={data} className="lg:hidden" />
-        <h2 className="mt-3.5 font-heading text-[60px] leading-[58px] font-extrabold tracking-[-2.5px] lg:hidden">The Receipts.</h2>
-        <p className="mt-2.5 text-base leading-[23px] font-medium lg:mt-0 lg:text-[21px] lg:leading-[30px]">
+        {/* Phone title, same size as the other tab pages (Prizes). */}
+        <h2 className="pt-4 font-heading text-[32px] leading-9 font-extrabold tracking-[-1px] lg:hidden">Receipts</h2>
+        <SourceChip data={data} className="mt-2 lg:hidden" />
+        <p className="mt-3 text-base leading-[23px] font-medium lg:mt-0 lg:text-[21px] lg:leading-[30px]">
           {data.live
             ? "Every buy, save, boo, move, cut, burn and prize since launch, from the contract’s public log on NEAR. Every entry links to its transaction."
             : "Every buy, save, boo, move, cut, burn and prize of the sample world, the way the contract logs them. In live mode each entry links to its transaction on NEAR."}
@@ -96,7 +105,8 @@ function SourceChip({ data, className }: { data: Receipts; className?: string })
   return (
     <span
       className={cn(
-        "inline-flex h-8 items-center gap-2 rounded-full border-2 border-ink bg-paper px-3 text-[12.5px] font-extrabold whitespace-nowrap lg:h-[38px] lg:border-[2.5px] lg:px-4 lg:text-sm",
+        // On a phone the long contract name wraps inside the pill instead of pushing the page sideways.
+        "inline-flex min-h-8 max-w-full items-center gap-2 rounded-full border-2 border-ink bg-paper px-3 py-1 text-[12.5px] leading-4 font-extrabold lg:h-[38px] lg:border-[2.5px] lg:px-4 lg:py-0 lg:text-sm lg:whitespace-nowrap",
         className,
       )}
     >
@@ -120,19 +130,23 @@ type Stat = { label: string; value: string; sub: string; icon: LucideIcon; bg: s
 
 function StatCards({ data, now }: { data: Receipts; now: Date }) {
   const { stats } = data;
-  const price =
-    stats.usdCentsPerNear !== null
-      ? formatUsd((stats.priceYoctoNear * stats.usdCentsPerNear * 2n + 10n ** 24n) / (2n * 10n ** 24n))
-      : `${formatAmount(stats.priceYoctoNear, { decimals: NEAR_DECIMALS, maxFractionDigits: 3 })} NEAR`;
-  const priceSub =
-    stats.usdCentsPerNear !== null
-      ? `${formatAmount(stats.priceYoctoNear, { decimals: NEAR_DECIMALS, maxFractionDigits: 3 })} NEAR · 1 NEAR = ${formatUsd(stats.usdCentsPerNear)}`
+  const nearPrice = `${formatSignificant(stats.priceYoctoNear, { decimals: NEAR_DECIMALS, maxFractionDigits: 3 })} NEAR`;
+  const usdCents = stats.usdCentsPerNear !== null ? (stats.priceYoctoNear * stats.usdCentsPerNear * 2n + 10n ** 24n) / (2n * 10n ** 24n) : 0n;
+  // Under a cent the dollar price reads "$0.00", and under 0.001 NEAR the NEAR price is a row of zeros:
+  // then the card shows how much $CUT one NEAR buys, and the exact price goes underneath.
+  const tiny = usdCents < 1n && stats.priceYoctoNear > 0n && stats.priceYoctoNear < 10n ** 21n;
+  const price = usdCents >= 1n ? formatUsd(usdCents) : tiny ? compactCut(10n ** 42n / stats.priceYoctoNear) : nearPrice;
+  const priceLabel = tiny ? "$CUT PER NEAR" : "$CUT PRICE";
+  const priceSub = tiny
+    ? `${nearPrice} each, from the pool`
+    : stats.usdCentsPerNear !== null
+      ? `${usdCents >= 1n ? `${nearPrice} · ` : ""}1 NEAR = ${formatUsd(stats.usdCentsPerNear)}`
       : "In NEAR, from the pool";
   const day = relativeUtcDay(now, stats.cutAt);
   const lastCut = stats.lastCut;
   const { season } = stats;
   const items: Stat[] = [
-    { label: "$CUT PRICE", value: price, sub: priceSub, icon: TrendingUp, bg: "bg-paper" },
+    { label: priceLabel, value: price, sub: priceSub, icon: TrendingUp, bg: "bg-paper" },
     {
       label: "SEASON POT",
       value: cutWhole(season.pot),
@@ -144,7 +158,7 @@ function StatCards({ data, now }: { data: Receipts; now: Date }) {
     {
       label: "ON THE CUT LINE",
       value: stats.lowest?.name ?? "Nobody",
-      sub: stats.lowest ? `Score ${cutWhole(stats.lowest.score)}${stats.gap > 0n ? ` · ${cutWhole(stats.gap)} short` : ""}` : "No season on the stage",
+      sub: stats.lowest ? `Score ${cutWhole(stats.lowest.score)}${stats.gap > 0n ? ` · ${cutWhole(wholeCutsToPass(stats.gap))} short` : ""}` : "No season on the stage",
       icon: TriangleAlert,
       bg: "bg-[#ffc2e8]",
     },
@@ -273,9 +287,9 @@ function JournalCard({ data, now }: { data: Receipts; now: Date }) {
       ) : (
         <ol className="mt-2.5 lg:mt-3">
           {data.pending && <PendingRow pending={data.pending} renderedAt={data.renderedAt} now={now} />}
-          {data.rows.map((row) => (
-            <JournalRow key={row.key} row={row} now={now} />
-          ))}
+          {groupRuns(data.rows).map((run) =>
+            run.length >= RUN_MIN ? <JournalRun key={run[0]!.key} rows={run} now={now} /> : <JournalRow key={run[0]!.key} row={run[0]!} now={now} />,
+          )}
           {data.rows.length === 0 && !data.pending && <li className="border-t-[1.5px] border-line py-6 text-center text-[14.5px] text-ink-3">No entries here yet.</li>}
         </ol>
       )}
@@ -312,9 +326,56 @@ function Tag({ tag, label }: { tag: ReceiptTag; label: string }) {
   );
 }
 
+/** Back-to-back entries of the same kind fold into one line from this many on (a cut never folds). */
+const RUN_MIN = 3;
+
+/** Splits the journal into runs: consecutive rows of the same kind; a short run becomes single rows again. */
+function groupRuns(rows: ReceiptRow[]): ReceiptRow[][] {
+  const runs: ReceiptRow[][] = [];
+  for (const row of rows) {
+    const last = runs.at(-1);
+    if (last && last[0]!.tag === row.tag && row.tag !== "cut") last.push(row);
+    else runs.push([row]);
+  }
+  return runs.flatMap((run) => (run.length >= RUN_MIN ? [run] : run.map((row) => [row])));
+}
+
+/** A run of same-kind entries as one line that opens to show each of them. */
+function JournalRun({ rows, now }: { rows: ReceiptRow[]; now: Date }) {
+  const first = rows[0]!;
+  const newest = whenText(first.at, now);
+  const oldest = whenText(rows.at(-1)!.at, now);
+  return (
+    <li className="border-t-[1.5px] border-line">
+      <details className="group">
+        <summary className="-mx-2 flex cursor-pointer list-none items-center gap-2 rounded-xl px-2 py-[11px] outline-none hover:bg-canvas focus-visible:ring-3 focus-visible:ring-ring/50 lg:min-h-14 lg:gap-3.5 lg:py-[7px] [&::-webkit-details-marker]:hidden">
+          <Tag tag={first.tag} label={first.label} />
+          <span className="hidden w-[116px] shrink-0 text-[13px] leading-[17px] font-semibold text-ink-3 lg:block">{newest === oldest ? newest : `${newest} to ${oldest}`}</span>
+          <span className="min-w-0 grow">
+            <span className="block text-[14.5px] leading-5 font-bold">
+              {formatCount(rows.length)} {first.label.toLowerCase()} entries in a row
+            </span>
+            <span className="block truncate text-[13px] leading-[18px] text-ink-3 lg:text-[14.5px] lg:leading-5">Newest: {first.what}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1 text-[12.5px] font-bold lg:text-[13px]">
+            <span className="group-open:hidden">Show all</span>
+            <span className="hidden group-open:inline">Hide</span>
+            <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" strokeWidth={2.6} />
+          </span>
+        </summary>
+        <ol className="mb-2 rounded-xl bg-canvas/60 px-3 lg:px-4 [&>li:first-child]:border-t-0">
+          {rows.map((row) => (
+            <JournalRow key={row.key} row={row} now={now} />
+          ))}
+        </ol>
+      </details>
+    </li>
+  );
+}
+
 function JournalRow({ row, now }: { row: ReceiptRow; now: Date }) {
   return (
-    <li className="border-t-[1.5px] border-line py-[11px] lg:flex lg:min-h-14 lg:items-center lg:gap-3.5 lg:py-[7px]">
+    <li className="border-t-[1.5px] border-line py-[11px] transition-colors lg:flex lg:hover:bg-ink/5 lg:min-h-14 lg:items-center lg:gap-3.5 lg:py-[7px]">
       <div className="flex items-center gap-2 lg:contents">
         <Tag tag={row.tag} label={row.label} />
         <time dateTime={row.at.toISOString()} className="min-w-0 grow text-[12.5px] font-semibold whitespace-nowrap text-ink-3 lg:order-0 lg:w-[116px] lg:shrink-0 lg:grow-0 lg:text-[13px] lg:leading-[17px] lg:whitespace-normal">

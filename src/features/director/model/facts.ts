@@ -1,12 +1,12 @@
 import type { DeletingCut, NextCut } from "@/entities/cut";
 import type { Params } from "@/entities/market";
-import { PERSONALITIES, rankByPile, rankByScore, type Agent } from "@/entities/agent";
+import { PERSONALITIES, rankByPile, rankByScore, wholeCutsToPass, type Agent } from "@/entities/agent";
 import type { Move } from "@/entities/move";
 import type { Season } from "@/entities/season";
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
 import { countdownParts, formatCut, formatRatio, utcClock } from "./format";
 
-// What the Director is allowed to know, already formatted the way the design writes numbers (SPEC-v20).
+// What the Director is allowed to know, already formatted the way the design writes numbers (RULES.md).
 // The Director decides nothing: the agent on the cut line comes from the contract (`NextCut.lowestId`, `CutRecord`),
 // ranked by score (pile - boos - damage), and the agents' moves come signed from their own AI.
 
@@ -128,7 +128,7 @@ export function buildDayFacts(input: DayInput): DayFacts {
     lowest,
     nextUp,
     top,
-    gap: formatCut(nextCut.gapToNext),
+    gap: formatCut(wholeCutsToPass(nextCut.gapToNext)),
     bench: rankByPile(input.bench).map((agent) => ({ id: agent.id, name: agent.name, tagline: agent.tagline, personality: personalityLabel(agent), queue: formatCut(agent.pile), savers: agent.savers })),
     moves: stage.flatMap((agent) => {
       const move = input.moves?.find((m) => m.agentId === agent.id);

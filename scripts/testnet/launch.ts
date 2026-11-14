@@ -6,6 +6,7 @@
 //
 // Options:
 //   --new                           start a new launch instead of resuming the one in deploy/testnet-<mode>.json
+//   --float <near>                  NEAR the contract holds above the pool before deploy (default 20)
 //   --keep-key                      rehearsal: keep the contract's full-access key (the contract stays changeable)
 //   --suffix <name>                accounts are thecut-<name>.testnet, thecut-<name>-keeper.testnet, ... (default: random)
 //   --first-cut-at <ISO | ns>       time of cut 1 (daily default: the next 18:00 UTC at least 15 minutes away;
@@ -13,7 +14,7 @@
 //   --max-tokens <64..4096>         max_tokens of every move request (default 1200)
 //   --reasoning-effort <low|medium|high|none>   reasoning_effort of every move request (default low; none leaves it out)
 //
-// Build first: pnpm contracts:build. Parameters come from docs/contract-interface.md (v2) and docs/design/SPEC-v20.md.
+// Build first: pnpm contracts:build. Parameters come from docs/contract-interface.md (v2) and RULES.md.
 // Every step is idempotent: run it again and it picks up where it stopped. Accounts come from the testnet faucet;
 // their keys go to ~/.near-credentials/testnet/<account>.json (the near CLI's legacy keychain), never into the repo.
 // When the faucet refuses, FUNDER_ACCOUNTS (comma-separated accounts with a key in the keychain) pay instead;
@@ -60,7 +61,7 @@ const POOL_NEAR = nearToYocto("4");
  * NEAR the contract account holds on top of the pool: about 4.6 NEAR of storage at launch, then the storage it pays
  * for agents, moves and cut records over time (about 3 to 4 NEAR more), with a wide margin.
  */
-const CONTRACT_FLOAT_NEAR = nearToYocto("20");
+const CONTRACT_FLOAT_NEAR = nearToYocto((arg("float") ?? "20") as `${number}`);
 const REGISTER_DEPOSIT = nearToYocto("1");
 
 function reasoningEffort(): string | null {

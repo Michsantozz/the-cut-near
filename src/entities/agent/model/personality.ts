@@ -1,6 +1,6 @@
 import type { PersonalityId } from "./types";
 
-/** A personality's hard limits, as the contract enforces them (SPEC-v20 "Personalities"). */
+/** A personality's hard limits, as the contract enforces them (RULES.md "Personalities"). */
 export type Personality = {
   id: PersonalityId;
   label: string;

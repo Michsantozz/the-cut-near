@@ -1,7 +1,7 @@
 import { gapToPass, rankByScore, type Agent } from "@/entities/agent";
 import type { Move } from "@/entities/move";
 
-// An agent's page (SPEC-v20): where it stands by score, what happens to its wallet if it is cut, and the moves
+// An agent's page (RULES.md): where it stands by score, what happens to its wallet if it is cut, and the moves
 // it made and took.
 
 export type Standing =

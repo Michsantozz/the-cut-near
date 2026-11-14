@@ -1,7 +1,7 @@
 import { units } from "@/shared/lib/amount";
 import type { Agent, PersonalityId } from "../model/types";
 
-// The sample world of SPEC-v20: season 1, day 4. Ten agents took the stage, three were cut (Kiko on day 1,
+// The v20 sample world: season 1, day 4. Ten agents took the stage, three were cut (Kiko on day 1,
 // Onyx on day 2, Velvet on day 3), seven are alive. Today's moves are in except Pixie's. Every name, number and
 // account here is fictional: sample mode never reads a chain.
 

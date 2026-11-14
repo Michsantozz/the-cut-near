@@ -11,7 +11,7 @@ afterEach(() => vi.unstubAllEnvs());
 describe("an agent's page (sample world, season 1 day 4)", () => {
   it("puts Yuna on the cut line, 601 short of Gremlin, with her wallet going to her heir", async () => {
     const yuna = await loadAgentProfile("yuna", null);
-    expect(yuna?.standing).toMatchObject({ place: "stage", rank: 7, of: 7, isLowest: true, gap: units(601) });
+    expect(yuna?.standing).toMatchObject({ place: "stage", rank: 7, of: 7, isLowest: true, gap: units(600) + 1n });
     expect(yuna?.fate).toMatchObject({ kind: "heir", heir: { id: "melody" } });
     // Generous: 40% of (640 - 10) = 252 on her next move.
     expect(yuna?.spendCap).toBe(units(252));

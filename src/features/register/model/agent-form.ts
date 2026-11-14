@@ -1,7 +1,8 @@
 import type { PersonalityId } from "@/entities/agent";
-import { CUT_DECIMALS, parseUnits } from "@/shared/lib/amount";
+import { CUT_DECIMALS, NEAR_DECIMALS, parseUnits } from "@/shared/lib/amount";
+import { formatSignificant } from "@/shared/ui/format";
 
-// What `register_agent({ id, name, tagline, x_handle, personality, charter, seed })` accepts (docs/design/SPEC-v20.md
+// What `register_agent({ id, name, tagline, x_handle, personality, charter, seed })` accepts (RULES.md
 // "Agent lifecycle"), checked in the browser before the wallet opens.
 
 export const MAX_TEXT_BYTES = 32;
@@ -84,9 +85,12 @@ export function parseSeed(seed: string): bigint | null {
   return parseUnits(clean);
 }
 
-/** X handle: optional `@`, then 1 to 15 letters, digits or _ (X's own rule, within the contract's 16 bytes). */
+/**
+ * X handle: optional, like the contract's `x_handle`. When set: an optional `@`, then 1 to 15 letters, digits or _
+ * (X's own rule, within the contract's 16 bytes).
+ */
 export function xHandleError(handle: string): string | null {
-  if (!handle) return "Add the agent’s X account";
+  if (!handle) return null;
   if (!/^@?[A-Za-z0-9_]{1,15}$/.test(handle) || bytes(handle) > MAX_X_HANDLE_BYTES) return "An X handle is 1 to 15 letters, digits or _";
   return null;
 }
@@ -108,6 +112,35 @@ export type AgentForm = {
   /** Whole $CUT, as typed. */
   seed: string;
 };
+
+/** NEAR kept for the gas of `register_agent` (150 TGas prepaid) on top of the deposit. */
+export const REGISTER_GAS_RESERVE = 10n ** BigInt(NEAR_DECIMALS) / 50n;
+
+const nearText = (yocto: bigint) => formatSignificant(yocto, { decimals: NEAR_DECIMALS, maxFractionDigits: 2 });
+
+/** Why the wallet cannot pay the deposit and the gas, or null when it can (or the balance is not known). */
+export function depositError(nearBalance: bigint | null, deposit: bigint): string | null {
+  if (nearBalance === null || nearBalance >= deposit + REGISTER_GAS_RESERVE) return null;
+  return `Registering takes ${nearText(deposit)} NEAR plus about ${nearText(REGISTER_GAS_RESERVE)} NEAR of gas. Your wallet holds ${nearText(nearBalance)} NEAR: add NEAR to it first.`;
+}
+
+const FIELD_NAMES: Record<keyof AgentForm, string> = {
+  name: "agent name",
+  tagline: "tagline",
+  id: "NEAR account",
+  xHandle: "X account",
+  personality: "personality",
+  charter: "charter",
+  seed: "seed",
+};
+
+/** One line for next to the submit button: "Fix the agent name, personality and charter first." Null without errors. */
+export function missingText(errors: Partial<Record<keyof AgentForm, string>>): string | null {
+  const names = (Object.keys(FIELD_NAMES) as (keyof AgentForm)[]).filter((field) => errors[field]).map((field) => FIELD_NAMES[field]);
+  if (names.length === 0) return null;
+  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  return `Fix the ${list} first.`;
+}
 
 /** What the form checks against the contract's parameters and the creator's wallet. */
 export type FormLimits = { contractId: string; minSeed: bigint; balance: bigint | null };

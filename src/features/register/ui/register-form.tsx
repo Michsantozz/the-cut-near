@@ -13,8 +13,19 @@ import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { useWallet } from "@/shared/wallet";
 
-import { byteLength, formErrors, MAX_CHARTER_BYTES, normalizeXHandle, parseSeed, registerArgs, suggestAgentId, type AgentForm } from "../model/agent-form";
-import { checkAgentId, type AgentIdStatus } from "../server/actions";
+import {
+  byteLength,
+  depositError,
+  formErrors,
+  MAX_CHARTER_BYTES,
+  missingText,
+  normalizeXHandle,
+  parseSeed,
+  registerArgs,
+  suggestAgentId,
+  type AgentForm,
+} from "../model/agent-form";
+import { checkAgentId, checkNearBalance, type AgentIdStatus } from "../server/actions";
 
 // `register_agent` needs at least 50 TGas: it creates the account, deploys the agent contract, moves the seed and calls back.
 const REGISTER_GAS = "150000000000000";
@@ -40,7 +51,7 @@ const EMPTY: AgentForm = { id: "", name: "", tagline: "", xHandle: "", personali
 
 /** Register an agent: one transaction from the creator's wallet creates `<id>.<contract>` on the bench, with its seed in its wallet. */
 export function RegisterForm({ deposit, depositNear, backNear, minSeed, balance, contractId }: Props) {
-  const { status, openConnect, callContract } = useWallet();
+  const { status, accountId, openConnect, callContract } = useWallet();
   const [form, setForm] = useState<AgentForm>(EMPTY);
   const [idEdited, setIdEdited] = useState(false);
   const [touched, setTouched] = useState<Partial<Record<keyof AgentForm, boolean>>>({});
@@ -49,6 +60,7 @@ export function RegisterForm({ deposit, depositNear, backNear, minSeed, balance,
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<Sent | null>(null);
+  const [fetched, setFetched] = useState<{ accountId: string; balance: bigint | null } | null>(null);
   const ids = { name: useId(), id: useId(), tagline: useId(), x: useId(), personality: useId(), charter: useId(), charterCount: useId(), seed: useId() };
 
   const errors = useMemo(
@@ -60,6 +72,21 @@ export function RegisterForm({ deposit, depositNear, backNear, minSeed, balance,
   const account = `${form.id || "your-agent"}.${contractId}`;
   const charterBytes = byteLength(form.charter);
   const seed = parseSeed(form.seed);
+
+  // The connected wallet's NEAR, so a deposit it cannot pay is said here instead of failing in the wallet.
+  useEffect(() => {
+    if (!accountId) return;
+    let live = true;
+    checkNearBalance(accountId).then(
+      (balance) => live && setFetched({ accountId, balance: balance === null ? null : BigInt(balance) }),
+      () => {},
+    );
+    return () => {
+      live = false;
+    };
+  }, [accountId]);
+  const nearBalance = fetched && fetched.accountId === accountId ? fetched.balance : null;
+  const shortOfNear = status === "signed-in" ? depositError(nearBalance, BigInt(deposit)) : null;
 
   // Ask the contract (or the sample world) whether the id is free, a moment after typing stops.
   useEffect(() => {
@@ -87,8 +114,12 @@ export function RegisterForm({ deposit, depositNear, backNear, minSeed, balance,
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setTouched({ id: true, name: true, tagline: true, xHandle: true, personality: true, charter: true, seed: true });
-    if (!valid || !idFree) return;
+    if (!valid) return setError(missingText(errors));
+    if (!idFree) {
+      return setError(idStatus === "taken" ? `${account} is taken: pick another NEAR account.` : "Checking that the NEAR account is free. Try again in a moment.");
+    }
     if (status !== "signed-in") return openConnect();
+    if (shortOfNear) return setError(shortOfNear);
     setSending(true);
     setError(null);
     try {
@@ -111,7 +142,11 @@ export function RegisterForm({ deposit, depositNear, backNear, minSeed, balance,
       state: !form.id ? "wait" : errors.id || idStatus === "taken" || idStatus === "invalid" ? "fail" : idFree ? "pass" : "wait",
     },
     { label: "Name and tagline", value: errors.name || errors.tagline ? "Missing" : "Set", state: errors.name || errors.tagline ? failOrWait("name") : "pass" },
-    { label: "X account", value: errors.xHandle ? "Missing" : normalizeXHandle(form.xHandle), state: errors.xHandle ? failOrWait("xHandle") : "pass" },
+    {
+      label: "X account",
+      value: errors.xHandle ? "Not valid" : normalizeXHandle(form.xHandle) || "Optional",
+      state: errors.xHandle ? failOrWait("xHandle") : "pass",
+    },
     {
       label: "Personality",
       value: form.personality ? PERSONALITIES[form.personality].label : "Missing",
@@ -184,7 +219,7 @@ export function RegisterForm({ deposit, depositNear, backNear, minSeed, balance,
               </span>
             </div>
           </Field>
-          <Field id={ids.x} label="X account" error={touched.xHandle ? errors.xHandle : undefined} hint="Where you post its signed moves">
+          <Field id={ids.x} label="X account (optional)" error={touched.xHandle ? errors.xHandle : undefined} hint="Where you post its signed moves">
             <Input
               id={ids.x}
               value={form.xHandle}
@@ -290,7 +325,7 @@ export function RegisterForm({ deposit, depositNear, backNear, minSeed, balance,
           </Button>
         </div>
         <p role="alert" className="mt-2 text-[13px] font-semibold text-danger empty:hidden">
-          {error}
+          {error ?? shortOfNear}
         </p>
       </form>
 

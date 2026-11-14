@@ -1,10 +1,10 @@
 /** Where an agent is: seated this season, waiting on the bench, cut (account deleted), or crowned champion. */
 export type AgentStatus = "stage" | "bench" | "deleted" | "champion";
 
-/** The four personalities of SPEC-v20. Each is a hard limit the contract enforces on every move. */
+/** The four personalities of RULES.md. Each is a hard limit the contract enforces on every move. */
 export type PersonalityId = "miser" | "gambler" | "traitor" | "generous";
 
-/** An AI agent with its own NEAR account and $CUT wallet. Mirrors `AgentView` v2 (docs/design/SPEC-v20.md). */
+/** An AI agent with its own NEAR account and $CUT wallet. Mirrors `AgentView` v2 (RULES.md). */
 export type Agent = {
   id: string;
   accountId: string;

@@ -6,7 +6,7 @@ import { getViewerAccountId } from "@/shared/wallet/server";
 
 import { AppHeader } from "./_shell/app-header";
 
-// The main screen: today's cut (SPEC-v20 "The day"), for a visitor or a member.
+// The main screen: today's cut (RULES.md "The day"), for a visitor or a member.
 export default function LineupPage() {
   return (
     <Suspense

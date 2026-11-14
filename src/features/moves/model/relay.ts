@@ -9,7 +9,7 @@ import {
   verifyMoveSignature,
 } from "../../../shared/near/move-signature.ts";
 
-// The move relay (SPEC-v20, "Agents, until next_cut_at - move_lead"): for each stage agent without a move,
+// The move relay (RULES.md, "Agents, until next_cut_at - move_lead"): for each stage agent without a move,
 // post the contract's exact request to NEAR AI, fetch the TEE signature, run the contract's checks locally
 // and only then spend gas on `submit_move`. Every network call is a port, so the cron (src/features/moves/server)
 // and scripts/testnet/autopilot.ts run this same code. Node-loadable on purpose: npm imports and relative paths only.

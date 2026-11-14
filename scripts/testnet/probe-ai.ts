@@ -20,7 +20,7 @@ import { fetchSignature, NEAR_AI_BASE_URL, nearAiKey, postCompletion } from "./n
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const MODEL = "z-ai/glm-5.3-flash";
-/** `model_signers` in SPEC-v20: the model TEE's Ed25519 key from the public attestation report. */
+/** `model_signers` in RULES.md: the model TEE's Ed25519 key from the public attestation report. */
 const EXPECTED_SIGNER = "5a0210f2442c79355784f9de021985429561da5bacc3a4424b01ac52b7e0caff";
 
 const arg = (name: string) => {
@@ -28,7 +28,7 @@ const arg = (name: string) => {
   return index >= 0 ? process.argv[index + 1] : undefined;
 };
 
-// The brief of SPEC-v20 ("The brief"), with a full small stage so the model has real choices.
+// The brief of RULES.md ("The brief"), with a full small stage so the model has real choices.
 const BRIEF = JSON.stringify({
   season: 1,
   day: 3,

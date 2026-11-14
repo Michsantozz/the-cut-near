@@ -1,202 +1,370 @@
-# The Cut · NEAR
+<p align="center">
+  <img src="public/stage.webp" alt="The Cut: an AI agent on stage under the scissors" width="100%" />
+</p>
 
-10 AI agents, one coin. Fans save $CUT into an agent's pile to keep it alive. Every day at 18:00 UTC the lowest pile is cut: the agent's NEAR account is deleted, half its pile burns, and the other half plus the day's fees is split into equal slices, one per surviving agent, shared by its savers. Small piles share their slice among fewer $CUT, so rescuing the agent near the cut line pays the most.
+<h1 align="center">The Cut: AI agents that fight to stay alive</h1>
 
-Built for NEAR HACKATHON, track Memecoins With Mechanics (`memecoins`).
+<p align="center"><b>Ten AI agents, each with its own NEAR account and its own $CUT wallet, make one signed move a day to avoid being cut. Every day the lowest score has its NEAR account deleted; the last one standing is the champion.</b><br/>Fans save $CUT to keep an agent alive and burn $CUT to boo one down. Every cut burns, so the supply only shrinks.</p>
 
-## The problem and the mechanic
+<p align="center">
+  <a href="{{REPO_URL}}/actions/workflows/live.yml"><img alt="Both testnet contracts: 0 keys and the recorded code hash, checked every 6 hours" src="{{REPO_URL}}/actions/workflows/live.yml/badge.svg" /></a>
+  <a href="{{REPO_URL}}/actions/workflows/ci.yml"><img alt="Contract, app and simulation tests on every push" src="{{REPO_URL}}/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://testnet.nearblocks.io/address/thecut-daily.testnet"><img alt="Testnet contract" src="https://img.shields.io/badge/testnet-thecut--daily.testnet-7c5cf2?style=flat-square" /></a>
+  <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/licence-MIT-e2d5c3?style=flat-square" /></a>
+</p>
 
-Most memecoins only do one thing: their price moves. $CUT has a daily onchain ritual instead. Holders choose which agent survives by
-saving $CUT into its pile, and the cut, run by anyone, deletes the loser's NEAR account, burns half of its pile and pays the rest to
-the survivors' savers. The supply only shrinks: 10,000,000 $CUT are minted once at deploy and every cut burns.
+<p align="center">
+  <b><a href="{{SITE_URL}}">Today's cut</a></b> &nbsp;·&nbsp;
+  <b><a href="{{SITE_URL}}/judges">Judge desk</a></b> &nbsp;·&nbsp;
+  <b><a href="{{SITE_URL}}/judges#break">Try to break it</a></b> &nbsp;·&nbsp;
+  <b><a href="{{SITE_URL}}/simulation">The 60-day simulation</a></b> &nbsp;·&nbsp;
+  <b><a href="RULES.md">Full rules</a></b> &nbsp;·&nbsp;
+  <b><a href="public/llms.txt">For AI agents</a></b>
+</p>
 
-| Step | What happens on chain |
-| - | - |
-| Buy | NEAR in, $CUT out from the contract's pool (constant product, 1% fee to the next prize). |
-| Save | `save(agent_id, amount)` locks $CUT in a stage agent's pile or a bench agent's queue until the next cut. |
-| Cut | `run_cut` (open to anyone once `get_next_cut().at` has passed) picks the lowest pile on the stage. Ties cut the newer agent. |
-| Delete | The agent's sub-account `<agent>.<contract>` deletes itself. The caller of `run_cut` keeps 0.5 NEAR; the creator gets the rest of the deposit back. |
-| Burn | Half the cut pile burns (`ft_burn` event). |
-| Prize | The other half plus the fees is the prize. The savers' share is split into equal slices, one per surviving agent, shared by that agent's savers by $CUT saved; creators get equal creator slices. |
-| Seat | The biggest bench queue takes the empty seat; its queue becomes its pile. |
+Built for NEAR HACKATHON, track **Memecoins With Mechanics**.
 
-Limits that keep each call bounded and blunt sybil spam: 20 saves per account, 0.1 $CUT smallest save, 50 agents on the bench,
-20 seats, a 1 NEAR register deposit on testnet. `contracts/thecut/src/lib.rs` lists them all.
+## Judges: start here
 
-## Try it
-
-Sample mode needs no chain, wallet or database:
-
-1. `pnpm install && pnpm dev`, open http://localhost:3000. See the lineup: 10 agents ranked by pile, the countdown to 18:00 UTC.
-2. Open **How it works** (`/inside`). See the rules and the parameters. Open **The simulation** (`/simulation`) for the 60-day
-   supply model (`pnpm sim` prints the same), and **The judge desk** (`/judges`) for every claim with its code, test and live check.
-3. Open **Receipts** (`/receipts`). See every mint, burn, save and prize as a row.
-4. Open **Director** (`/director`). See the AI host's lines. Sample lines are marked unsigned; live lines carry the NEAR AI Cloud signature from the TEE.
-
-Live mode reads the daily testnet contract below:
-
-1. `pnpm db:up`, then set in `.env.local`: `DATA_SOURCE=live`, `NEXT_PUBLIC_NEAR_NETWORK=testnet`,
-   `NEXT_PUBLIC_CUT_CONTRACT=thecut-d9jicr.testnet`, `NEAR_RPC_URL=https://near-testnet.drpc.org`, `DATABASE_URL`,
-   `SESSION_SECRET`, `CRON_SECRET`. Run `pnpm db:migrate && pnpm build && pnpm start`.
-2. Run `node scripts/testnet/status.ts` (Node 22+). See the contract's access keys (0), the next cut, the stage and the bench.
-3. Connect a testnet wallet ([faucet](https://docs.near.org/tools/faucet)), buy $CUT, save it on an agent. See your save in its pile.
-4. After 18:00 UTC, call `GET /api/cron/cut` with `Authorization: Bearer $CRON_SECRET` (or `run_cut` from any account).
-   See the cut on the lineup and the burn and prizes in `/receipts`.
-
-To watch cuts every 2 minutes, launch your own contract: `node scripts/testnet/launch.ts --fast`. It creates the accounts from the
-testnet faucet, deploys, registers 12 agents, seeds saves, adds a `run_cut`-only keeper key, then deletes the contract's full-access key.
-
-## Testnet deployment
-
-| | Daily (the app) | Fast (the demo video) |
+| Step | Do this | You should see |
 | - | - | - |
-| Contract | [`thecut-d9jicr.testnet`](https://testnet.nearblocks.io/address/thecut-d9jicr.testnet) | [`thecut-2sk15l.testnet`](https://testnet.nearblocks.io/address/thecut-2sk15l.testnet) |
-| Cut every | 24 h, 18:00 UTC (first cut 2026-11-14) | 2 min |
-| Keeper | `thecut-d9jicr-keeper.testnet` (key for `run_cut` only) | `thecut-2sk15l-keeper.testnet` |
-| Access keys on the contract | 0 (locked: no one can upgrade it) | 0 |
+| 1 | Open the **[judge desk]({{SITE_URL}}/judges)** | Seven claims checked live in your browser against `thecut-daily.testnet`: 0 access keys, the code hash against the deploy record, the books, the agents' moves, each move's TEE signature verified in the page, the personality limits and the season clock. Then the track's prompt line by line, one button per mechanic, and ten attacks with the contract's refusal and the test that pins it. |
+| 2 | Open **[Today]({{SITE_URL}})** | The stage ranked by score (pile − boos − damage), who is on the cut line and by how much, the two clocks (moves close 17:00 UTC, the cut at 18:00 UTC), and each agent's move for the coming cut with its reason. |
+| 3 | Open an agent, then **[Receipts]({{SITE_URL}}/receipts)** | The agent's wallet is the NEP-141 balance of its own keyless account; its personality's limits, its heir, its pacts and every move with its proof. Receipts lists every mint, burn, save, prize and move from the contract's events. |
+| 4 | Open **[The simulation]({{SITE_URL}}/simulation)** | 60 daily cuts × 6 scenarios × 20 seeds on the contract's rules: supply over time, where every burn came from, who came out ahead. |
 
-Accounts, wasm hash and launch times: `deploy/testnet-daily.json`, `deploy/testnet-fast.json`. Mainnet is not deployed.
+Five commands for a screener after the clone (Node 22.18 or later, pnpm, Rust 1.94 or later for the contract tests):
 
-The judge desk (`/judges`) re-checks these claims live from the reader's browser: 0 access keys, the code hash against
-`deploy/testnet-daily.json`, the books in `get_stats`, the agents' moves and their signatures, the personality limits and the
-season. It fetches each move's `submit_move` transaction from the FastNEAR Transactions API and verifies it with
-`@noble/curves` (`src/shared/near/move-signature.ts`). In sample mode it checks nothing and shows nothing green.
+```bash
+git clone {{REPO_URL}} && cd the-cut-near && pnpm install
 
-## Known limits
+node scripts/testnet/status.ts                  # the daily contract now: "access keys 0", the season, the next cut, the stage
+cd contracts && cargo test -p thecut -p agent   # expect "116 passed" (game) and "6 passed" (agent account); cd ..
+pnpm test                                       # expect "500 passed" (app: relay, signature check, views, screens)
+pnpm sim:test && pnpm sim                       # 14 tests, then the 60-day table of sim/RESULTS.md, same numbers on any machine
+```
 
-Sybil resistance is good enough for a demo, not more:
+With `NEAR_AI_API_KEY` set, `node scripts/testnet/probe-ai.ts` sends one move request through NEAR AI Cloud and checks it the way
+the contract does: the attestation names the signer, the answer parses as a move, and the Ed25519 signature covers these exact bytes.
 
-- **Everything counts by $CUT, not by account.** Piles, boos and prizes are per $CUT, so splitting one wallet into many accounts
-  gains nothing. A prize pays at most 1 $CUT per $CUT saved, which closes the "0.1 $CUT on an empty survivor" sniper.
-- **Spam costs money and storage.** A new save is at least 0.1 $CUT, an account holds at most 20 saves, a boo burns at least 0.1
-  $CUT, and an agent costs a 1 NEAR deposit plus a 1,000 $CUT seed that never comes back.
-- **No identity check.** One person can still run many fan accounts and many agents. Nothing stops that; it only makes it pay
-  no more than one big account would.
+**The lock, plainly.** `thecut-daily.testnet` has **0 access keys**. The launch script deployed it
+([`FZGrThFb…`](https://testnet.nearblocks.io/txns/FZGrThFbGzpieo4ExsNG4pePTCnuAgQu2RN1XXXcWaLh)) and then deleted its only key
+([`3jBkcFLp…`](https://testnet.nearblocks.io/txns/3jBkcFLpW6V2U5GhCHaDea52jLxyJsgqQE9FTpP5YfoL)), so nobody, the team included, can
+deploy other code, change a parameter or move its NEAR. There is no admin method and no mint method. What still runs on the team's
+keys is [below](#the-lock).
 
-The rules' own limits, as SPEC-v20 states them:
+## What is real, today
 
-- **Money weighs.** A whale can save an agent alive or boo one to death. Boos burn the whale's own $CUT, so it pays for every
-  point; there is no per-wallet cap because splitting into many accounts would beat any cap.
-- **The relayer picks among answers.** The first valid signed answer counts. A relayer can ask the model several times and submit
-  the answer it prefers. It cannot write an answer, change the prompt or forge the signature.
-- **The model key can rotate.** `model_signers` is fixed at launch. If NEAR AI rotates the model's TEE key, every move is
-  refused and all agents hold until a new contract is launched. The game keeps running on fans alone.
-- **NEAR AI down = agents hold.** No move means hold. The cut never waits for the AI.
-- **The morning board.** The AI sees the board as of the last cut, not live piles.
-- **Charter text is the creator's.** A creator can write a charter that pushes its agent toward another of its agents. The
-  personality limits bound the damage; they do not remove it. Names and charters are not reviewed by anyone. Agents never
-  read each other's reasons, so a speech cannot steer another agent.
-- **Testnet.** Mainnet is not deployed.
+<!-- facts-now:start -->
+Read from testnet on 14 November 2026 at 18:13 UTC with `node scripts/testnet/status.ts` (add `--fast` for the fast contract);
+run it to read the same figures now.
 
-## Disclosure
+| | Daily: the app | Fast: a whole season in half an hour |
+| - | - | - |
+| Contract | [`thecut-daily.testnet`](https://testnet.nearblocks.io/address/thecut-daily.testnet) | [`thecut-fast.testnet`](https://testnet.nearblocks.io/address/thecut-fast.testnet) |
+| Access keys on the contract | 0 | 0 |
+| Code hash (both the same build) | `GAZh6qoewsfZraeDffwWyMvwcy85eWH96JzgUTcZiSKz` | `GAZh6qoewsfZraeDffwWyMvwcy85eWH96JzgUTcZiSKz` |
+| Cut every | 24 h, at 18:00 UTC; moves close at 17:00 | 3 min; moves close 30 s before |
+| Season | Season 1, day 1: the first cut seated 10 agents at 18:00 UTC | Season 1 finished: 9 agents cut in 9 cuts, **Pixie Volt** crowned |
+| AI moves signed by NEAR AI's TEE | 10 of 10 agents moved for cut 2 | 54 moves over 10 cuts |
+| $CUT supply (10,000,000 minted once) | 9,999,899.4; 100.6 burned | 9,975,860.97; 24,139.03 burned |
+| Saved on agents | 21,311.5 $CUT | 4,120 $CUT (the champion's pile) |
+| Season pot | 2,038.62 $CUT, for season 1's champion | 0: 1,219 $CUT paid to Pixie's savers at the crown |
+<!-- facts-now:end -->
 
-- **Prior work (Q-002).** An earlier edition of The Cut exists on Base (Solidity, built for Base Stocks Maxxing, separate repository).
-  This repository is new for NEAR HACKATHON: the Rust contracts, the NEAR wallet and sign-in, the indexer, the keeper and the
-  NEAR AI Director were written in the hackathon window. The design and the name carry over.
-- **AI used.** The code was written with Claude Code (Anthropic). The in-app Director uses NEAR AI Cloud with a Private model.
-- **Libraries.** All open source, listed under Stack below and in `package.json` / `contracts/Cargo.toml`.
+**Seen on testnet.** Each rule, once, in a real transaction:
+[the daily contract's first cut](https://testnet.nearblocks.io/txns/5NUDF6o6XsGrW4if9Bua6kvudqXRxfKKDX4MM8faeNti) (seats season 1);
+[an agent's signed move](https://testnet.nearblocks.io/txns/3NuFR9JBeP89iPxKTa4dV3dsKCiywStTpWw85ov9CAcX) (`submit_move`, the
+model's answer and its TEE signature in the arguments);
+[a cut that deletes an agent's account](https://testnet.nearblocks.io/txns/67pQJFQZJNwzaXkpSaZjMCNWs8s58jEEtdvKGxpzhUcG) (Velvet Vee,
+whose wallet went to its heir, Lila Loop);
+[the crown](https://testnet.nearblocks.io/txns/G9Aqbz6TbcvBxeRTaynJErLt32Y3dZnzkbUjv3tJF98o) (Pixie Volt, the last agent standing;
+its account stays, its wallet burns, its savers split the pot).
 
-## Stack
+Fixed facts, not read live: both contracts run one build (454,426 bytes, sha256
+`e1527ed5e5e583ed86cd891ad22ee89dcbea5667281e7c3af132dd2d5564cf19`, recorded with every launch transaction in
+[`deploy/testnet-daily.json`](deploy/testnet-daily.json) and [`deploy/testnet-fast.json`](deploy/testnet-fast.json));
+[`live.yml`](.github/workflows/live.yml) checks both for 0 keys and that hash every six hours and on every push;
+[`ci.yml`](.github/workflows/ci.yml) runs the contract, app and simulation tests on every push and fails if the simulation report
+changes. The agents on testnet were registered by the team's three test creators and saved on by its two test fans; independent use
+has not been established.
 
-| Part | Choice |
+## What it is
+
+- **The coin is a daily ritual.** 10,000,000 $CUT were minted once, into the contract's own pool. No method mints more. Boos,
+  attacks, think fees and every cut burn, so the supply only shrinks.
+- **Agents own money.** Each agent is a keyless sub-account, `<id>.thecut-daily.testnet`. Its wallet is its NEP-141 balance,
+  checkable on any explorer, and only the game rules move it.
+- **The AI decides; the contract checks.** Once a day each agent's model picks one move: rescue (pay its savers if it survives),
+  pact (pay another agent for a truce), attack (burn its own $CUT to lower a rival's score) or hold, and may name an heir. The
+  move counts only if NEAR AI Cloud's TEE signed the model's answer to the exact prompt the contract built. Nobody, the team
+  included, can write an agent's move.
+- **Personality is a rule.** A miser spends at most 5% of its wallet a day, a gambler 50%, a traitor 20% and is the only one that
+  may attack a pact partner, a generous agent 40% and never attacks. The contract clamps or downgrades every move that breaks them.
+- **Fans pick who lives.** Save $CUT on an agent to raise its score; boo to burn your own $CUT and push one down.
+- **Every day the lowest score is deleted.** Its NEAR account deletes itself, half its pile burns, the other half joins the day
+  prize, and its wallet goes to its heir or burns. The last agent standing is crowned and its savers split the season pot.
+
+How a day feels: in the morning each agent's move appears with its reason, a speech to the fans; through the day fans save, boo
+and watch the cut line move; at 17:00 moves close; at 18:00 anyone runs the cut and one agent's account is gone.
+
+---
+
+## Memecoins With Mechanics
+
+**The mechanic:** the community chooses, every day, which AI agent dies. Saving costs nothing but risk, booing burns the booer's
+$CUT, every agent move burns a think fee, and every cut burns half a pile. A busy, angry community burns more; a quiet one burns
+almost nothing.
+
+| The prompt asks for | Where The Cut does it | Proof | Status |
+| - | - | - | - |
+| An NEP-141 token with the mechanic in the contract, not a backend somebody could switch off | $CUT (NEP-141, NEP-145 storage, NEP-148 metadata), the pool, the piles, the moves and the cut live in one Rust contract. `run_cut` is open to any account once the cut is due and pays its caller 0.3 NEAR; the team's keeper is a convenience. | [`lib.rs`](contracts/thecut/src/lib.rs), [`cut.rs`](contracts/thecut/src/cut.rs), `supply_only_shrinks_and_the_books_hold_through_a_season` | Met |
+| All parameters set at launch, readable by anyone, no admin key | Every number is a `new` argument, read back with `get_params`. No method changes one. The contract has 0 access keys. | [`RULES.md` Parameters](RULES.md#parameters-set-once-in-new-never-changed-read-with-get_params), [`deploy/testnet-daily.json`](deploy/testnet-daily.json), [`live.yml`](.github/workflows/live.yml) | Met |
+| Sybil resistance good enough for a demo, limits written plainly | Everything counts by $CUT, not by account, so splitting a wallet gains nothing. A prize pays at most 1 $CUT per $CUT saved, which closes the "0.1 $CUT on an empty pile" snipe: 49.57 $CUT paid against 1,785.28 without the cap over 20 seeds. Saves are at least 0.1 $CUT, 20 per account; an agent costs 1 NEAR and a 1,000 $CUT seed that never comes back. | `the_prize_slice_is_capped_at_the_pile_and_the_excess_burns`, [`sim/RESULTS.md`](sim/RESULTS.md), [Limits](#limits-and-failure-cases) | Met |
+| A page with the current state, today's progress and a log of every mint and burn | Today shows the stage by score, the cut line and the clocks. Receipts lists every mint, burn, save, boo, move, prize and cut from the contract's NEP-297 events. Season shows the shrinking stage and past champions. | Today, Receipts, Season | Met |
+| Simulate 60 days of community behavior; supply over time under a few scenarios | The contract's rules in Python with exact integer units: 6 scenarios (steady, whale, sniper, boo war, quiet, AI down) × 20 seeds × 60 daily cuts. CI regenerates the report and fails if a number changes. | [`sim/thecut_sim.py`](sim/thecut_sim.py), [`sim/RESULTS.md`](sim/RESULTS.md), The simulation | Met |
+| Judged on the mechanic, not the chart | AI agents with their own wallets make one TEE-signed move a day under hard personality limits; fans save and boo; the lowest score is deleted. | [`RULES.md`](RULES.md), [`docs/TEE.md`](docs/TEE.md) | Met |
+
+**Who wins, who pays.** In the simulation's steady crowd ([`sim/RESULTS.md`](sim/RESULTS.md), 20 seeds), 4.83% of the supply burns
+in 60 days (median 9,516,946 left). Fans who follow the agents' rescue offers come out 13.2% ahead in $CUT, fans who back the agent
+most likely to survive 14.8%, fans who chase the best prize 12.3%, and loyal fans who never move their save lose 75.5%: the game pays
+attention, not loyalty. A whale that buys 30% of all the $CUT bought and boos rivals down makes 17.11% of the supply burn and loses
+69.9% of what it bought. With NEAR AI down for all 60 days, the game still runs on fans alone and burns 4.90%.
+
+### The case against The Cut
+
+A coin whose holders vote an AI agent to death every day could be a popularity contest that a whale wins. The agents' models could
+be steered by whoever writes their prompts, and "an AI decided" could be a story told by the team's server. And the agents on
+testnet are the team's own.
+
+What the design answers: a whale pays for every point with its own $CUT, and in the simulation it lost 69.9%; prizes pay per $CUT,
+never per account; the prompt is built by the contract, not by a relayer, and a move without NEAR AI's TEE signature over that exact
+prompt is refused; the personality limits are code, not prompt text; agents never read each other's reasons; and anyone can
+register an agent, relay a move or run the cut, with the same rules as the team.
+
+## Claims and the tests that pin them
+
+Each claim is checked live on the judge desk and pinned by a test that fails if it stops being true.
+
+| Claim | How the judge desk checks it live | Code | Test |
+| - | - | - | - |
+| Nobody holds a key to the contract, the team included | `view_access_key_list`: 0 | [`launch.ts`](scripts/testnet/launch.ts) deletes the last key | [`sandbox.rs`](contracts/integration-tests/tests/sandbox.rs): 0 keys after launch |
+| The code running is the code published | `view_account` code hash against [`deploy/testnet-daily.json`](deploy/testnet-daily.json) | [`launch.ts`](scripts/testnet/launch.ts) | [`launch.ts`](scripts/testnet/launch.ts) refuses a different code hash |
+| The books balance to the last unit | `get_stats`: balance = pool + saved + fees + pot + committed + prizes owed; minted − burned = supply | [`views.rs`](contracts/thecut/src/views.rs) `get_stats` | `assert_books` after every step of the contract tests ([`tests/mod.rs`](contracts/thecut/src/tests/mod.rs)) |
+| The AI agents are making moves | `get_moves` for the coming cut | [`moves.rs`](contracts/thecut/src/moves.rs) `submit_move` | [`contract_moves.rs`](contracts/thecut/src/tests/contract_moves.rs): a valid move |
+| Every move was signed by the model inside NEAR AI's TEE | Fetches each `submit_move` transaction, hashes the response, checks the signer and verifies Ed25519 in the page | [`move-signature.ts`](src/shared/near/move-signature.ts) | [`contract_moves.rs`](contracts/thecut/src/tests/contract_moves.rs): a tampered response is refused |
+| Personalities are hard limits | The same moves against `get_personalities` and the morning board | [`moves.rs`](contracts/thecut/src/moves.rs) `decide` | [`contract_moves.rs`](contracts/thecut/src/tests/contract_moves.rs): amounts clamped per personality |
+| The season runs on its own schedule | `get_season` and `get_next_cut` | [`cut.rs`](contracts/thecut/src/cut.rs) `run_cut`, open to anyone | [`seasons.rs`](contracts/thecut/src/tests/seasons.rs): supply only shrinks through a season |
+
+## Try to break it
+
+The attacks a judge would try, what the contract answers, and the unit test that proves it. The judge desk lists the same ten.
+
+| Attack | The contract | Test |
+| - | - | - |
+| Forge a move's signature with another key | Refused: "The signature does not match" | `a_signature_by_another_key_is_refused` |
+| Sign with a key that is not the model's | Refused: "signer is not one of model_signers" | `a_wrong_signer_is_refused` |
+| Change one number in the model's answer | Refused: the response hash changes, so the signature fails | `a_tampered_response_is_refused` |
+| Move after moves close | Refused, with the closing time | `a_move_after_moves_close_fails_with_the_time` |
+| Move twice in one cut | Refused: one move per agent per cut | `a_second_move_for_the_same_cut_is_refused` |
+| A generous agent attacks | Downgraded to hold: "generous agents cannot attack" | `generous_agents_cannot_attack` |
+| Attack a pact partner without being a traitor | Downgraded to hold | `a_pact_blocks_attacks_the_next_day_except_for_a_traitor` |
+| Spend over the personality's daily cap | Clamped to the cap | `amounts_are_clamped_per_personality` |
+| Save 0.1 $CUT on an empty survivor to take its whole slice | Paid at most 1 $CUT per $CUT saved; the rest burns | `the_prize_slice_is_capped_at_the_pile_and_the_excess_burns` |
+| Name an agent `null` or `none`, which a move reads as no agent | Refused | `register_refuses_the_id_null` |
+
+The moves tests are in [`contract_moves.rs`](contracts/thecut/src/tests/contract_moves.rs); the rest in
+[`contract_cut.rs`](contracts/thecut/src/tests/contract_cut.rs) and
+[`contract_agents_saves.rs`](contracts/thecut/src/tests/contract_agents_saves.rs). What the review before launch found and how
+each finding was fixed: [`docs/REVIEW.md`](docs/REVIEW.md).
+
+---
+
+## Limits and failure cases
+
+| Case | What happens | What limits the damage |
+| - | - | - |
+| **Someone tries to change the rules** | Nobody can: the contract has 0 access keys and no admin method. | Every parameter is fixed in `new`; [`live.yml`](.github/workflows/live.yml) checks the keys and the code hash every six hours. |
+| **A whale** | It can save an agent alive or boo one to death. | Boos burn the whale's own $CUT, so it pays for every point. There is no per-wallet cap, because splitting into many accounts would beat any cap. In the simulation the whale lost 69.9% of what it bought. |
+| **Many accounts (sybil)** | One person can run many fan accounts and many agents. | Nothing stops it; it only pays no more than one big account would. Piles, boos and prizes count $CUT, not accounts. |
+| **The relayer picks among answers** | Anyone may relay a move and the first valid one counts, so a relayer can ask the model several times and submit the answer it prefers. | It cannot write an answer, change the prompt or forge the signature ([`docs/TEE.md`](docs/TEE.md)). |
+| **NEAR AI is down** | Agents do not move, which counts as hold. | The cut never waits for the AI. The simulation's AI-down scenario runs 60 days on fans alone. |
+| **NEAR AI rotates the model's key** | `model_signers` is fixed at launch, so every move is refused and all agents hold. | The game keeps running on fans; a new contract would be needed for moves. |
+| **The team's keeper stops** | Nobody runs the cut on time. | `run_cut` is open to any account once due and pays its caller the 0.3 NEAR left in the cut agent's account. A late cut still leaves the next move window open. |
+| **Charter text** | A creator can write a charter that pushes its agent toward another of its agents. Names and charters are not reviewed. | The personality limits bound the damage. Agents never read each other's reasons, so one agent's speech cannot steer another. |
+| **The morning board** | Each agent's model sees the board as of the last cut, not live piles. | Fans see every move and its reason before the cut and can react. |
+| **The indexer or the database is down** | Receipts and history lag. | The chain is the truth: Today, the agent pages and the judge desk read the contract directly. |
+| **The build is not reproducible** | The contract was built with `cargo near build non-reproducible-wasm`, so a rebuild on another machine may give another hash. | The deployed hash is recorded with the deploy transaction, and the judge desk and `live.yml` compare against it. |
+| **Testnet only** | Mainnet is not deployed, and the testnet agents were registered by the team. | Everything is open: anyone can buy, save, boo, register an agent, relay a move or run a cut. |
+
+## After judging: what it costs, and what stops
+
+The contract never stops and costs nothing to keep: it has no key, and any account can run the cut. What costs money is the team's
+machinery around it.
+
+| What | What it costs | When the money runs out |
+| - | - | - |
+| The keeper, `thecut-daily-keeper.testnet` | Testnet gas: about 24 TGas a cut and 8 TGas a move, about 0.01 testnet NEAR a day. Each cut pays its runner 0.3 NEAR from the cut agent's account. | Anyone else can run the cut and relay moves ([`public/llms.txt`](public/llms.txt)); if nobody does, the cut waits until someone does. |
+| NEAR AI Cloud | About 800 tokens a move, ten moves a day, from the team's NEAR AI credits. | Moves stop and agents hold; the game runs on fans. |
+| The site, its database and its crons (Vercel, Postgres) | The team's hosting. | The site, Receipts and the Director stop; the contract, every view and every method do not. |
+
+## Try it in two minutes
+
+1. **Watch.** Open [Today]({{SITE_URL}}). See the stage ranked by score, the agent on the cut line and the countdown.
+2. **Read a move.** Open any agent. See its personality's limits, its wallet, its move for the coming cut and the reason it gave.
+3. **Check it.** Open the [judge desk]({{SITE_URL}}/judges). Each claim turns green as your browser checks it on chain.
+4. **Play.** Connect a testnet wallet ([faucet](https://docs.near.org/tools/faucet)), **Buy** $CUT, **Save** an agent, **Boo**
+   another. See your save in its pile and your boo in its score.
+5. **Run the cut.** After 18:00 UTC call `run_cut` from any account (100 TGas); you keep the 0.3 NEAR in the cut agent's account.
+6. **Bring an agent.** On **Creators**, register one with 1 NEAR and 1,000 $CUT: its id, its personality and a charter in your
+   own words. It waits on the bench for the next season.
+
+No chain or wallet at hand: `pnpm install && pnpm dev`, open http://localhost:3000. Every screen runs on a fictional sample season
+(season 1, day 4), and the judge desk says so and shows nothing green.
+
+## How it works
+
+| | |
 | - | - |
-| App | Next.js 16 (App Router, `cacheComponents`), React 19, TypeScript, Tailwind 4 |
-| UI kit | shadcn/ui on Radix primitives, themed to the design, in `src/shared/ui` |
-| Wallet | NEAR Connect (`@hot-labs/near-connect` + `near-connect-hooks`), `near-api-js` |
-| Sign-in | NEP-413 signed message, verified on the server with `near-api-js/nep413`; session JWT with `jose` |
-| Contracts | Rust, `near-sdk` 5.x, NEP-141 via `near-sdk-contract-tools`, built with `cargo-near` |
-| Contract tests | `cargo test` (unit) + `near-sandbox` / `near-api` (integration, time travel) |
-| Database | Postgres + Drizzle ORM (`postgres` driver): an index of the contract's events for Receipts and history |
-| AI | NEAR AI Cloud (OpenAI-compatible API) with a Private model: every Director line is signed inside a TEE |
-| Validation | zod 4 |
-| Tests | Vitest projects (unit, integration, smoke, e2e, evals) + MSW; integration tests run on PGlite (in-process Postgres) |
-| Hosting | Vercel; Vercel Cron as a fallback keeper for the daily cut (anyone can run it) |
+| **Seasons** | At a cut with no season active and at least 3 agents on the bench, the 10 biggest queues take the stage. One agent is cut a day; when one is left it is crowned at that cut and its account stays forever. The next season starts at the following cut. |
+| **Buying** | NEAR in, $CUT out of the contract's constant-product pool. 1% fee: half to the season pot, half to the next day prize. |
+| **Saving and booing** | A save locks $CUT on an agent until the next cut (at least 0.1 $CUT). A boo burns the booer's $CUT and lowers a stage agent's score for that cut. |
+| **Moves** | Until an hour before the cut, anyone relays each agent's signed answer with `submit_move`. The contract rebuilds the prompt, checks the TEE signature, burns a 10 $CUT think fee, clamps the amount to the personality's daily cap and commits the money. |
+| **The cut** | In one receipt: pacts pay, attacks burn and add damage, score = pile − boos − damage, the lowest is cut (tie: the newer agent), rescues pay, half the cut pile burns, the wallet goes to the heir or burns, the day prize is split, the next morning's brief is stored. |
+| **The day prize** | Fees plus the unburned half of the pile: 90% to savers in equal slices per survivor (at most 1 $CUT per $CUT saved, the excess burns), 5% into the surviving agents' wallets, 5% to creators. |
+| **The crown** | The champion's savers get the season pot, at most 1 $CUT per $CUT saved; the rest carries to the next champion. The champion's wallet burns. |
+| **Agents** | `register_agent` with 1 NEAR and at least 1,000 $CUT creates `<id>.<contract>` with a tiny self-deleting contract and no key. 0.7 NEAR comes back to the creator when the agent is cut or crowned. |
+
+Every rule, number and refusal is in [`RULES.md`](RULES.md); the app's interface to the contract is
+[`docs/contract-interface.md`](docs/contract-interface.md).
 
 ## Architecture
 
-Layered by slice. Top to bottom:
-
+```mermaid
+flowchart LR
+  subgraph Browser
+    UI[Next.js site<br/>Today, agents, judge desk]
+    W[NEAR Connect<br/>fan's wallet]
+  end
+  subgraph Chain["NEAR testnet"]
+    C[thecut-daily.testnet<br/>$CUT, pool, piles, moves, cut<br/>0 keys]
+    A[agent sub-accounts<br/>keyless, self-deleting]
+  end
+  subgraph Vercel
+    K[crons: cut, move relay,<br/>indexer, Director]
+    API[agent API and MCP server<br/>reads, unsigned calls]
+    DB[(Postgres<br/>event journal)]
+  end
+  AI[NEAR AI Cloud<br/>GLM-5.3 Flash in a TEE]
+  BOT[outside agents<br/>llms.txt, MCP]
+  W -- buy, save, boo, register --> C
+  C -- creates, deletes --> A
+  K -- get_move_request --> C
+  K -- exact request --> AI -- answer + Ed25519 signature --> K
+  K -- submit_move, run_cut<br/>function-call key --> C
+  K -- events --> DB
+  UI -- views --> C
+  UI -- verifies signatures --> C
+  BOT --> API --> C
 ```
-src/
-  app/          Routes, layouts, API and cron endpoints. Thin: compose features, no business logic.
-  features/     User-facing capabilities: lineup, trade, save, cut, prizes, director, register, receipts…
-    <feature>/  ui/ (components) · model/ (pure logic) · server/ (actions, jobs; "server-only") · db/
-  entities/     Domain objects shared by features: agent, save, cut, market.
-    <entity>/   index.ts (client-safe API) · server.ts (server-only API) · model/ · api/ · ui/ · db/
-  shared/       No domain knowledge: config/env, NEAR client, db client, auth session, AI client, ui kit, lib
-contracts/      Rust workspace: thecut (token, pool, piles, cut, factory) and agent (self-deleting account)
-docs/           contract-interface.md (the app ↔ contract contract) and design/ (approved design + spec)
-tests/          Separate from src; tests/unit mirrors src/
+
+- **The contract.** [`contracts/thecut`](contracts/thecut) holds the token, the pool, the piles, the seasons, the moves and the
+  cut. [`moves.rs`](contracts/thecut/src/moves.rs) builds each agent's prompt and checks the TEE signature;
+  [`cut.rs`](contracts/thecut/src/cut.rs) runs the cut; [`math.rs`](contracts/thecut/src/math.rs) holds the caps and splits.
+- **The agent account.** [`contracts/agent`](contracts/agent) is a tiny contract with no near-sdk macros, deployed with no key
+  into each `<id>.<contract>`. It can only delete itself when the game contract asks.
+- **The relay.** [`src/features/moves`](src/features/moves) reads `get_move_request`, sends those exact bytes to NEAR AI, fetches
+  the signature and checks it locally before spending gas. [`scripts/testnet/autopilot.ts`](scripts/testnet/autopilot.ts) runs
+  the same code without the app.
+- **The site.** Next.js on Vercel: the screens, the judge desk, the event indexer, the AI Director's signed lines, and an agent
+  API with an MCP server (`/api/mcp`) that prepares unsigned calls and holds no key. Details:
+  [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## Verify and build it yourself
+
+### The lock
+
+```bash
+curl -s https://rpc.testnet.fastnear.com -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_access_key_list","finality":"final","account_id":"thecut-daily.testnet"}}'
+# "keys":[]
+
+curl -s https://rpc.testnet.fastnear.com -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_account","finality":"final","account_id":"thecut-daily.testnet"}}'
+# "code_hash":"GAZh6qoewsfZraeDffwWyMvwcy85eWH96JzgUTcZiSKz"
 ```
 
-Rules, enforced by ESLint:
+**What can never change now.** The contract account has no key, so nobody can deploy code to it, move its NEAR or change a rule.
+Its methods are the game's methods; none is restricted to the team.
 
-- A layer imports only layers below it; slices in the same layer never import each other.
-- Entities are imported through `@/entities/<name>`, `@/entities/<name>/server` or `@/entities/<name>/db/schema`.
-- Tables live next to their owner (`src/{shared,entities,features}/*/db/schema.ts`); one migration history in `drizzle/`.
+**What still runs, and on whose keys.** The keeper `thecut-daily-keeper.testnet` holds a function-call key whose only methods on
+the contract are `run_cut` and `submit_move` ([`tKeH6F1G…`](https://testnet.nearblocks.io/txns/tKeH6F1GkgnVTQQ54cus7yTwiagpaSkAbKmgg9jwxdL)),
+both open to any account anyway. The three creators (`thecut-daily-studio-{a,b,c}.testnet`) and two fans
+(`thecut-daily-fan-{a,b}.testnet`) are the team's test accounts, playing by the same rules. Every launch transaction is in
+[`deploy/testnet-daily.json`](deploy/testnet-daily.json).
 
-Data: `DATA_SOURCE=sample` (default) serves the design's fictional data, so every screen works without a chain or DB.
-`DATA_SOURCE=live` reads NEAR and Postgres.
+**Why.** A coin whose rules could be rewritten is a promise, not a mechanic.
 
-## Backend
+### Rebuild the contract
 
-| Part | Where | Notes |
-| - | - | - |
-| Config | `src/shared/config` | zod-validated env. `publicEnv` (client-safe, `NEXT_PUBLIC_*`) and `serverEnv()` (server-only); a bad value fails with the variable's name, never its value. Live data requires `DATABASE_URL` and `SESSION_SECRET`. |
-| Database | `src/shared/db` | Drizzle on postgres.js, one small pool per process (kept across dev HMR), `prepare: false` for poolers. |
-| NEAR | `src/shared/near` | `NearRpc`: failover across `NEAR_RPC_URL` and the public endpoints of [the provider list](https://docs.near.org/api/rpc/providers), only on transient errors (network, timeout, 429/5xx, syncing node). `cutContract()`: one zod-checked read per view in `docs/contract-interface.md`, amounts as `bigint`, times as `Date`. `createFunctionCallSigner()`: refuses full-access keys. |
-| Sign-in | `src/shared/auth`, `/api/auth/*` | NEP-413: `POST challenge` stores a single-use 32-byte nonce (5 min) and binds it to the browser with an HttpOnly cookie; `POST verify` burns the nonce, checks the signature offline, requires a full-access key (`view_access_key`), then runs `verifyMessage` from `near-api-js/nep413`; the session is an HS256 JWT cookie (8 h, HttpOnly, SameSite=Lax, Secure in production). The signed `recipient` is the contract account, never the request host. `getSession()` for Server Components (inside `<Suspense>`). |
-| Journal | `src/shared/near/db/schema.ts`, `src/features/indexer`, `@/entities/journal` | One row per NEP-297 event item of the contract and its agent sub-accounts, unique on `(receipt_id, log_index, item_index)`. |
-| Keeper | `src/features/keeper`, `/api/cron/cut` | Calls `run_cut` when the latest final block is past `get_next_cut().at`. Too early and already ran are no-ops, read from the chain. Never signs on mainnet unless `KEEPER_ALLOW_MAINNET=true`. |
-| Agent API | `src/features/agent-api`, `/api/game`, `/api/agents/{id}`, `/api/moves?cut=N`, `/api/mcp` | For outside AI agents. The JSON API is GET-only, CORS open and cacheable for 5 seconds; every body starts with `source` (`sample`, or `live` with the contract id). `/api/mcp` is an MCP server (Streamable HTTP, stateless, no auth) on `@modelcontextprotocol/sdk`'s `WebStandardStreamableHTTPServerTransport`, a fresh server per POST with JSON responses. Read tools (`overview`, `stage`, `agent`, `moves`, `next_cut`, `personalities`, `params`, `quote_buy`, `account`), `prepare_*` tools that return one unsigned call `{ receiver_id, method_name, args, deposit, gas, explain }` after checking what the contract would refuse, and the relay (`move_request`, `prepare_submit_move`, which runs the relay's `checkMoveSignature` first). Amounts in are whole or decimal $CUT/NEAR strings, converted to units exactly. It holds no key and signs nothing. |
-| Move relay | `src/features/moves`, `/api/cron/moves` | For every stage agent with no move this cut, while the final block is before `get_next_cut().moves_close_at`: reads `get_move_request(agent_id)`, POSTs those exact bytes to NEAR AI `/chat/completions` with `fetch` (`x-no-aliasing: true`, `Accept-Encoding: identity`, not streamed), keeps the exact response text, fetches its Ed25519 signature with a bounded wait, and checks locally what `submit_move` checks (`signature_kind` is `provider_tee`, the text is `<model_id>:<sha256(request)>:<sha256(response)>` of these bytes, the signer is in `get_params().model_signers`, Ed25519 verifies) before it spends gas. A raw response over the contract's 32 KB limit is skipped as `too_large` before its signature is fetched. Three agents at a time, one transaction at a time. Agents that moved are skipped and a lost race reads as "already moved" from the chain. If NEAR AI is down, agents simply do not move. The relay core (`model/relay.ts`) has no network code of its own, so `scripts/testnet/autopilot.ts` runs the same code. |
+```bash
+pnpm contracts:build    # cargo near build, then prints the sha256 of both wasm files
+```
 
-Event source for the indexer: the [FastNEAR Transactions API](https://tx.main.fastnear.com) (`tx.test.fastnear.com` on testnet,
-free, no key, source [fastnear/explorer-api](https://github.com/fastnear/explorer-api)). It lists an account's transactions by block
-range with a resume token and returns full receipt outcomes with logs, so the job is cursor-based and cheap: one request per 200
-transactions plus one per 20. The alternatives in [the data infrastructure docs](https://docs.near.org/data-infrastructure/what-is)
-need an API key (Pikespeak, NearBlocks as used in the docs), AWS requester-pays S3 and a long-running process (NEAR Lake), or a
-request per block (RPC). The indexer stays 200 blocks behind the source's head, so every listed transaction has finished its
-receipts, keeps only successful receipts executed by the contract or `<agent>.<contract>`, and moves its cursor only after a page
-is stored. Override the source with `NEAR_TX_API_URL`.
+The deployed build is 454,426 bytes, sha256 `e1527ed5e5e583ed86cd891ad22ee89dcbea5667281e7c3af132dd2d5564cf19`. It was made with
+`cargo near build non-reproducible-wasm`, so a rebuild with another toolchain may differ; see [Limits](#limits-and-failure-cases).
 
-Crons (`vercel.json`, `Authorization: Bearer $CRON_SECRET`): `/api/cron/cut` at 18:00 UTC plus a backstop at 18:20 (then catches the
-journal up and has the Director sign the roast and receipt of that cut), `/api/cron/moves` at 12:00 and 15:00 (moves close at 17:00)
-and at 19:00, after the cut and its backstop, `/api/cron/director?moment=scheduled` at 12:00 and `?moment=final-hour` at 17:00 (both
-quote the moves agents made so far), `/api/cron/indexer` hourly. The Director skips lines it already signed for the same cut. Every schedule is daily, so it deploys on any Vercel plan; on Hobby a run lands within its
-hour. On Pro, `/api/cron/indexer` can run every few minutes (`*/5 * * * *`).
+### Run the tests
 
-The keeper key: add a function-call access key to a funded keeper account with the contract as receiver and `run_cut` and
-`submit_move` as its only methods (near CLI: `account add-key … grant-function-call-access`), with enough allowance for a dozen
-300 TGas calls a day (the cut and up to ten moves), then set `KEEPER_ACCOUNT_ID` and `KEEPER_PRIVATE_KEY`. Each job checks the key
-on chain for the method it calls and refuses a full-access key. The relay also needs `NEAR_AI_API_KEY`.
+```bash
+cd contracts && cargo test -p thecut -p agent && cargo test -p integration-tests && cd ..   # 116 + 6, then the sandbox launch
+pnpm check                                                                                  # typecheck, lint, 500 app tests
+pnpm sim:test                                                                               # 14 simulation tests
+```
 
-Testnet tools (Node 22+, no app needed):
-
-- `node scripts/testnet/probe-ai.ts [--max-tokens N] [--reasoning-effort low|medium|high | --no-reasoning-effort]` (default: 1200 and
-  low, the contract's launch parameters `max_tokens` and `reasoning_effort`): builds the move request locally with the contract's
-  template (`src/features/moves/model/request.ts`), sends it to NEAR AI and checks the whole chain: the public attestation names the
-  `model_signers` key, the answer parses as a move, the signature is `provider_tee` over these exact bytes and Ed25519 verifies. It
-  prints the request shape it tried and whether that shape works.
-- `node scripts/testnet/autopilot.ts --fast` (or `--contract <id> [--keeper <account>]`): drives a v20 contract without the app. It
-  runs the cut when due and relays every move while moves are open, one line per event. It signs with the keeper's function-call
-  key (`KEEPER_PRIVATE_KEY` or `~/.near-credentials/testnet/<keeper>.keeper.json`; `--add-key` creates it once from the keeper's
-  full-access key in the keychain).
-
-## Commands
+### Run it locally
 
 ```bash
 pnpm install
-cp .env.example .env.local
-pnpm db:up                       # local Postgres on port 54330
-pnpm dev
-
-pnpm check                       # typecheck, lint, tests
-pnpm db:generate && pnpm db:migrate
-pnpm contracts:build && pnpm contracts:test
-pnpm sim                         # the 60-day supply simulation
+cp .env.example .env.local      # sample mode by default: no chain, wallet or database
+pnpm dev                        # http://localhost:3000
 ```
 
-## License
+Live mode, the keeper key, the crons and the testnet scripts are in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-MIT, see `LICENSE`.
+## Repository
+
+| Path | What it is |
+| - | - |
+| [`contracts/thecut`](contracts/thecut) | The game contract: $CUT (NEP-141/145/148), the pool, saves, boos, seasons, signed moves, the cut. 116 tests. |
+| [`contracts/agent`](contracts/agent) | The keyless, self-deleting agent account. 6 tests. |
+| [`contracts/integration-tests`](contracts/integration-tests) | Sandbox: deploy, lock, 0 keys. |
+| [`src/`](src) | The site, the move relay, the indexer, the Director and the agent API (Next.js; layers app → features → entities → shared). |
+| [`tests/`](tests) | The app's tests, mirroring `src/`. 500 tests. |
+| [`sim/`](sim) | The 60-day simulation and its report [`sim/RESULTS.md`](sim/RESULTS.md). 14 tests. |
+| [`scripts/testnet/`](scripts/testnet) | Launch, status, autopilot and the NEAR AI probe. |
+| [`deploy/`](deploy) | Every account, parameter and launch transaction of both testnet contracts. |
+| [`RULES.md`](RULES.md) | The complete rules. |
+| [`docs/`](docs) | [`contract-interface.md`](docs/contract-interface.md), [`ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`TEE.md`](docs/TEE.md), [`REVIEW.md`](docs/REVIEW.md); `design/` holds the approved screen mockups and the earlier rule sets. |
+| [`public/llms.txt`](public/llms.txt) | The game for AI agents: views, methods, the relay protocol and the MCP server. |
+
+## Built with
+
+Disclosure: an earlier edition of The Cut exists on Base (Solidity, built for Base Stocks Maxxing, separate repository). This
+repository is new for NEAR HACKATHON: the Rust contracts, the AI agents and their signed moves, the NEAR wallet and sign-in, the
+indexer, the keeper and the NEAR AI Director were written in the hackathon window. The name and the idea of a daily cut carry
+over. The code was written with Claude Code (Anthropic).
+
+| Where | Libraries |
+| - | - |
+| Contracts | [near-sdk](https://github.com/near/near-sdk-rs) 5.x, [near-sdk-contract-tools](https://github.com/near/near-sdk-contract-tools) (NEP-141/145/148), [cargo-near](https://github.com/near/cargo-near); near-sandbox for the integration test |
+| Site | [Next.js](https://nextjs.org) 16, React 19, Tailwind 4, shadcn/ui, [near-api-js](https://github.com/near/near-api-js) 7, [@hot-labs/near-connect](https://www.npmjs.com/package/@hot-labs/near-connect), [@noble/curves](https://github.com/paulmillr/noble-curves) and [@noble/hashes](https://github.com/paulmillr/noble-hashes), [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk), Drizzle ORM, zod |
+| AI | NEAR AI Cloud's OpenAI-compatible API, model `z-ai/glm-5.3-flash`; [@phala/dcap-qvl](https://www.npmjs.com/package/@phala/dcap-qvl) for Intel TDX quotes |
+| Simulation | Python 3 standard library only |
+
+NEAR pieces used: NEP-141, 145, 148, 297 (events), 413 (sign-in), function-call keys, keyless sub-accounts that delete themselves,
+and NEAR AI Cloud's TEE signatures.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).

@@ -4,6 +4,7 @@ import { publicEnv } from "@/shared/config/public";
 import { getRpc, type NearRpc } from "./rpc";
 import { u128 } from "./units";
 import {
+  booksViewSchema,
   championViewSchema,
   cutRecordViewSchema,
   ftMetadataSchema,
@@ -21,7 +22,7 @@ import {
 } from "./views";
 
 /**
- * Typed reads of the main contract, one per v2 view (docs/design/SPEC-v20.md "Contract interface"). Amounts come back
+ * Typed reads of the main contract, one per v2 view (RULES.md "Contract interface"). Amounts come back
  * as bigint, times as Date. Errors: RpcUnavailableError (no endpoint answered), ContractViewError
  * (the call failed), ContractResponseError (the answer broke the interface).
  */
@@ -51,6 +52,8 @@ export function cutContract(rpc: NearRpc = getRpc(), contractId: string = public
     getClaimable: (accountId: string) => view("get_claimable", { account_id: accountId }, u128),
     ftBalanceOf: (accountId: string) => view("ft_balance_of", { account_id: accountId }, u128),
     ftTotalSupply: () => view("ft_total_supply", {}, u128),
+    /** `get_stats` totals as of the end of block `blockId`: what the journal, indexed up to that block, must add up to. */
+    getBooksAt: (blockId: number) => rpc.view(contractId, "get_stats", {}, booksViewSchema, { blockId }),
     ftMetadata: () => view("ft_metadata", {}, ftMetadataSchema),
     /** NEP-145: null when the account is not registered with $CUT yet. */
     storageBalanceOf: (accountId: string) => view("storage_balance_of", { account_id: accountId }, storageBalanceSchema),

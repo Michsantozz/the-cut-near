@@ -4,8 +4,10 @@ import { units } from "@/shared/lib/amount";
 import {
   formatAmount,
   formatCount,
+  formatCountOf,
   formatCountdown,
   formatDuration,
+  formatSignificant,
   formatUsd,
   formatUtcDate,
   formatUtcTime,
@@ -48,11 +50,31 @@ describe("formatAmount", () => {
   });
 });
 
+describe("formatSignificant", () => {
+  it("keeps three significant digits under 1 instead of printing 0", () => {
+    expect(formatSignificant(10_712n * 10n ** 15n, { decimals: 24, maxFractionDigits: 3 })).toBe("0.0000107");
+    expect(formatSignificant(5n * 10n ** 22n, { decimals: 24, maxFractionDigits: 1 })).toBe("0.05");
+    expect(formatSignificant(-units(1) / 4_000n)).toBe("-0.00025");
+  });
+
+  it("formats 0 and amounts from 1 up like formatAmount", () => {
+    expect(formatSignificant(0n)).toBe("0");
+    expect(formatSignificant(12_345n * 10n ** 15n, { maxFractionDigits: 2 })).toBe("12.35");
+    expect(formatSignificant(units(1_052_400))).toBe("1,052,400");
+  });
+});
+
 describe("formatUsd and formatCount", () => {
   it("prints cents as dollars", () => {
     expect(formatUsd(124_053n)).toBe("$1,240.53");
     expect(formatUsd(5n)).toBe("$0.05");
     expect(formatUsd(-1_000n)).toBe("-$10.00");
+  });
+
+  it("pluralizes a counted noun unless it is 1", () => {
+    expect(formatCountOf(1, "saver")).toBe("1 saver");
+    expect(formatCountOf(0, "saver")).toBe("0 savers");
+    expect(formatCountOf(12_000, "agent")).toBe("12,000 agents");
   });
 
   it("groups whole counts", () => {

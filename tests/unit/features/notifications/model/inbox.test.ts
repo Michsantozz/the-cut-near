@@ -11,8 +11,8 @@ const base: InboxInput = {
   now: NOW,
   cutAt: CUT_AT,
   ranked: [
-    { id: "velvet", name: "Velvet Vee", pile: units(74_200) },
-    { id: "onyx", name: "Onyx Moon", pile: units(61_800) },
+    { id: "velvet", name: "Velvet Vee", score: units(74_200), joinedAt: new Date("2026-11-09T12:00:00Z") },
+    { id: "onyx", name: "Onyx Moon", score: units(61_800), joinedAt: new Date("2026-11-09T13:00:00Z") },
   ],
   savedOn: new Set(),
   claimable: 0n,
@@ -26,7 +26,7 @@ describe("buildInbox", () => {
   it("warns about the lowest agent and says no cut has run", () => {
     const notices = buildInbox(base);
     expect(notices[0]).toMatchObject({ kind: "danger", title: "Onyx Moon is on the block", at: NOW });
-    expect(notices[0].text).toBe("Lowest pile: 61,800 $CUT, 12,401 short of Velvet Vee. The cut runs at 18:00 UTC.");
+    expect(notices[0].text).toBe("Lowest score: 61,800, 12,401 $CUT short of Velvet Vee. The cut runs at 18:00 UTC.");
     expect(notices.some((n) => n.key === "no-cut")).toBe(true);
     expect(buildInbox({ ...base, savedOn: new Set(["onyx"]) })[0].title).toBe("Your agent Onyx Moon is on the block");
   });

@@ -8,6 +8,7 @@ import { getParams } from "@/entities/market/server";
 import { rankByPile, type Agent } from "@/entities/agent";
 import { getBench, getStage } from "@/entities/agent/server";
 import { getSaves } from "@/entities/save/server";
+import { getSeason } from "@/entities/season/server";
 import { dataSource } from "@/shared/config/data-source";
 
 import { SAMPLE_CLUB, type ClubPoints, type Perk, type TopSaver } from "../model/club";
@@ -35,7 +36,8 @@ export type ClubMember = {
 export type Club = {
   renderedAt: number;
   cutAt: Date;
-  day: number;
+  /** Day of the running season; null between seasons. */
+  day: number | null;
   /** Null when the count is not known (live: no holder index yet). */
   members: number | null;
   /** Agents on the stage, for the faces row and the visitor's perks. */
@@ -49,7 +51,7 @@ export type Club = {
 export async function loadClub(accountId: string | null): Promise<Club> {
   await connection();
   const sample = dataSource() === "sample";
-  const [stage, bench, nextCut, params, saves] = await Promise.all([getStage(), getBench(), getNextCut(), getParams(), accountId ? getSaves(accountId) : []]);
+  const [stage, bench, nextCut, params, season, saves] = await Promise.all([getStage(), getBench(), getNextCut(), getParams(), getSeason(), accountId ? getSaves(accountId) : []]);
   const ranked = rankByPile(stage);
   const lowest = ranked.find((agent) => agent.id === nextCut.lowestId) ?? ranked.at(-1) ?? null;
   const slice = lowest ? sliceIfCut(lowest.pile, nextCut.prizeSoFar, params) : 0n;
@@ -72,7 +74,7 @@ export async function loadClub(accountId: string | null): Promise<Club> {
   return {
     renderedAt: Date.now(),
     cutAt: nextCut.at,
-    day: nextCut.index + 1,
+    day: season.active ? season.day : null,
     members: sample ? SAMPLE_CLUB.members : null,
     stage: ranked,
     perks: sample ? SAMPLE_CLUB.perks : [],

@@ -1,4 +1,4 @@
-// A TypeScript mirror of the contract's `moves::request_body` (SPEC-v20, "Agents"). The relay never uses it:
+// A TypeScript mirror of the contract's `moves::request_body` (RULES.md, "Agents"). The relay never uses it:
 // it posts the bytes `get_move_request` returns. It exists so scripts/testnet/probe-ai.ts can try the template
 // against NEAR AI before the contract is deployed, and so tests can build realistic requests.
 // Node-loadable on purpose (no imports), so scripts/testnet can import it directly.

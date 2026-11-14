@@ -1,7 +1,7 @@
 //! The daily cut and the seasons.
 //!
 //! `run_cut` does every state change synchronously, in one receipt, in the order of
-//! SPEC-v20: pacts, attacks, score, rescues, the cut agent, the day prize, resets, the
+//! RULES.md: pacts, attacks, score, rescues, the cut agent, the day prize, resets, the
 //! champion, a season start, then the brief for the next cut. Only then does it ask the cut
 //! agent's account to delete itself. That deletion is the one asynchronous step and nothing
 //! depends on it: the callback only records whether it worked. If it failed (the agent

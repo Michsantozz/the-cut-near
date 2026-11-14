@@ -29,7 +29,7 @@ describe("trade loaders on the sample world", () => {
   it("show where the supply is and when trading began", async () => {
     const data = await loadValue("mika.near", "week");
     expect(data.supply).toEqual({ launch: units(10_000_000), saved: units(191_660), free: units(9_785_430), burned: units(22_910) });
-    expect(valueSubtitle(data)).toMatch(/^Day \d+ · trading since \w{3}, \w{3} \d+, \d\d:\d\d UTC$/);
+    expect(valueSubtitle(data)).toMatch(/^Day 4 · trading since \w{3}, \w{3} \d+, \d\d:\d\d UTC$/);
     expect(data.prices).toHaveLength(13);
   });
 

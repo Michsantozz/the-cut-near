@@ -5,7 +5,7 @@ import { cutContract } from "@/shared/near/contract";
 import { sampleMoves } from "./api/sample";
 import type { Move } from "./model/types";
 
-/** How many cuts of moves the contract keeps (SPEC-v20 `MOVE_HISTORY`). */
+/** How many cuts of moves the contract keeps (RULES.md `MOVE_HISTORY`). */
 export const MOVE_HISTORY = 30;
 
 /** The moves signed for one cut, in the order they came in (`get_moves`). Reads the clock in sample mode. */

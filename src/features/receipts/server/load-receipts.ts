@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { getNextCut } from "@/entities/cut/server";
 import type { JournalEntry } from "@/entities/journal";
 import { getJournal, getJournalStats, SAMPLE_CONTRACT_ID } from "@/entities/journal/server";
-import { getParams, getPool, getTotalSupply, getUsdCentsPerNear } from "@/entities/market/server";
+import { getBooksAt, getParams, getPool, getTotalSupply, getUsdCentsPerNear } from "@/entities/market/server";
 import { gapToPass, rankByScore, type Agent } from "@/entities/agent";
 import { getBench, getStage } from "@/entities/agent/server";
 import { getSeason } from "@/entities/season/server";
@@ -119,7 +119,9 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
   const cutDone = (index: number) => lastCuts.entries.some((entry) => entry.cutIndex !== null && entry.cutIndex >= index);
   const lastCutEntry = deletingCuts[0];
 
-  const checks = runAudit({ contractId, sample: !isLive(), fullAccessKeys, stats, totalSupply, agents, params });
+  const booksAt = stats.latestBlock === null ? null : await getBooksAt(stats.latestBlock);
+  const books = booksAt && stats.latestBlock !== null ? { block: stats.latestBlock, ...booksAt } : null;
+  const checks = runAudit({ contractId, sample: !isLive(), fullAccessKeys, stats, totalSupply, books, agents, params });
 
   return {
     renderedAt: now.getTime(),

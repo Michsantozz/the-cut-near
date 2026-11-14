@@ -16,7 +16,7 @@ import { booCalls } from "../model/calls";
 import { BOO_PRESETS, booEffect, checkBoo } from "../model/boo";
 import { classifyTxError, failedTxHash, type TxFailure } from "../model/errors";
 import type { BooData } from "../server/load";
-import { cutText, cutWhole } from "./copy";
+import { cutText, cutTyped, cutWhole } from "./copy";
 import { FieldLabel, Row, TradeFrame } from "./frame";
 import { FailedStep, TxLink } from "./status";
 
@@ -24,11 +24,12 @@ type Step =
   | { kind: "amount"; note?: string }
   | { kind: "confirm"; amount: bigint }
   | { kind: "pending"; amount: bigint }
-  | { kind: "success"; amount: bigint; txHash: string }
+  /** `scoreAfter` is counted when the boo is sent: the refresh after it already lowers the agent's score. */
+  | { kind: "success"; amount: bigint; scoreAfter: bigint; txHash: string }
   | { kind: "failed"; reason: TxFailure; txHash: string | null };
 
 /**
- * Boo a stage agent (SPEC-v20 `boo`): pick the agent and an amount, then confirm a burn. The confirm step says
+ * Boo a stage agent (RULES.md `boo`): pick the agent and an amount, then confirm a burn. The confirm step says
  * plainly that the $CUT is gone for good; nothing is sent until the fan agrees to that.
  */
 export function BooScreen({ data }: { data: BooData }) {
@@ -47,10 +48,11 @@ export function BooScreen({ data }: { data: BooData }) {
   async function boo(burn: bigint) {
     if (!target) return;
     if (status !== "signed-in") return openConnect();
+    const scoreAfter = target.score - burn;
     setStep({ kind: "pending", amount: burn });
     try {
       const { txHash } = await callContract(booCalls({ agentId: target.id, amount: burn }));
-      setStep({ kind: "success", amount: burn, txHash });
+      setStep({ kind: "success", amount: burn, scoreAfter, txHash });
       router.refresh();
     } catch (error) {
       const reason = classifyTxError(error);
@@ -74,7 +76,7 @@ export function BooScreen({ data }: { data: BooData }) {
         <div role="status" aria-live="polite" className="flex flex-col items-center pt-[52px] text-center lg:pt-6 lg:pb-4">
           <p className="text-[13px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">Confirming on NEAR</p>
           <p className="mt-2 font-heading text-[34px] leading-[38px] font-extrabold tracking-[-1px] text-balance">
-            Burning {cutText(step.amount)} $CUT at {target.name}
+            Burning {cutTyped(step.amount)} $CUT at {target.name}
           </p>
           <Flame aria-hidden="true" className="mt-8 size-16 text-danger" strokeWidth={2.2} />
         </div>
@@ -91,7 +93,7 @@ export function BooScreen({ data }: { data: BooData }) {
           </span>
           <p className="mt-6 font-heading text-[44px] leading-[48px] font-extrabold tracking-[-1.5px]">Booed.</p>
           <p className="mt-2 text-[17px] leading-6">
-            {cutText(step.amount)} $CUT burned. {target.name}’s score is {cutWhole(target.score - step.amount)} until the cut at {cutAt}.
+            {cutTyped(step.amount)} $CUT burned. {target.name}’s score is {cutWhole(step.scoreAfter)} until the cut at {cutAt}.
           </p>
           <p className="mt-3 text-[13px] font-semibold">
             Receipt on NEAR: <TxLink txHash={step.txHash} />
@@ -130,7 +132,7 @@ export function BooScreen({ data }: { data: BooData }) {
       <TradeFrame title="Burn to boo?" icon={Flame} iconTile="bg-danger text-paper" nav={{ kind: "back", onClick: () => setStep({ kind: "amount" }), label: "Change the amount" }}>
         <div role="alertdialog" aria-labelledby="burn-title" aria-describedby="burn-body" className="flex grow flex-col pt-4 lg:pt-0">
           <p id="burn-title" className="font-heading text-[30px] leading-[34px] font-extrabold tracking-[-1px] text-balance lg:text-[36px] lg:leading-10">
-            Burn {cutText(step.amount)} $CUT to boo {target.name}?
+            Burn {cutTyped(step.amount)} $CUT to boo {target.name}?
           </p>
           <div id="burn-body" className="mt-4 rounded-2xl border-2 border-danger bg-danger-soft px-4 py-3 text-[15px] leading-[22px] font-semibold">
             <p className="flex items-start gap-2">
@@ -144,7 +146,7 @@ export function BooScreen({ data }: { data: BooData }) {
           <dl className="mt-4 rounded-2xl border-2 border-ink bg-paper px-4 py-2.5">
             <Row label={`${target.name}’s score`} value={`${cutWhole(target.score)} → ${cutWhole(effect.scoreAfter)}`} />
             <Row label="Lasts until" value={`the cut at ${cutAt}`} />
-            <Row label="Your free $CUT after" value={`${cutText(free - step.amount)} $CUT`} />
+            <Row label="Your free $CUT after" value={`${cutTyped(free - step.amount)} $CUT`} />
           </dl>
           <p className="mt-3 text-[13.5px] leading-[19px] text-ink-3">
             {effect.wasLowest
@@ -155,7 +157,7 @@ export function BooScreen({ data }: { data: BooData }) {
           </p>
           <div className="mt-auto flex flex-col gap-2.5 pt-6 lg:flex-row-reverse">
             <Button variant="black" size="xl" className="h-14 flex-1 rounded-2xl text-base shadow-[4px_4px_0_var(--color-danger)]" onClick={() => void boo(step.amount)}>
-              Burn {cutText(step.amount)} $CUT for good
+              Burn {cutTyped(step.amount)} $CUT for good
             </Button>
             <Button variant="outline" size="xl" elevated className="h-14 flex-1 rounded-2xl text-base" onClick={() => setStep({ kind: "amount" })}>
               Keep my $CUT
@@ -167,11 +169,11 @@ export function BooScreen({ data }: { data: BooData }) {
   }
 
   const error =
-    check.ok || check.reason === "empty"
+    check.ok || (check.reason === "empty" && amount !== 0n)
       ? null
-      : check.reason === "too-small"
+      : check.reason !== "too-much"
         ? "The smallest boo is 0.1 $CUT."
-        : `You have ${cutText(free)} free $CUT. Saved $CUT stays locked until the cut.`;
+        : `You have ${cutText(free)} free $CUT. Saved $CUT can be spent only after you take the save back.`;
 
   return (
     <TradeFrame title="Boo an agent" icon={ThumbsDown} iconTile="bg-danger text-paper" nav={{ kind: "close" }}>
@@ -217,7 +219,7 @@ export function BooScreen({ data }: { data: BooData }) {
               placeholder="0"
               onChange={(event) => {
                 const next = event.target.value.replaceAll(",", "");
-                if (next === "" || /^\d{0,12}(\.\d{0,1})?$/.test(next)) setText(next);
+                if (next === "" || /^\d{0,12}(\.\d{0,2})?$/.test(next)) setText(next);
               }}
               className={cn("w-full min-w-0 bg-transparent font-heading text-[52px] leading-[58px] font-extrabold tracking-[-2px] outline-none", error && "text-burn")}
             />

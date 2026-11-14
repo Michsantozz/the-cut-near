@@ -1,8 +1,8 @@
 import { cn } from "cn";
-import { ArrowUp, ThumbsDown, Trophy } from "lucide-react";
+import { ArrowUp, Gift, ThumbsDown, Trophy } from "lucide-react";
 import Link from "next/link";
 
-import { AgentPoses, ScoreBreakdown } from "@/entities/agent";
+import { AgentPoses, ScoreBreakdown, wholeCutsToPass } from "@/entities/agent";
 import { Button } from "@/shared/ui/button";
 import { formatCount, formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
@@ -16,11 +16,13 @@ export function StageHero({ lineup }: { lineup: Lineup }) {
   const { season, board } = lineup;
   const agents = board.entries.map((entry) => entry.agent);
   const time = formatUtcTime(lineup.cutAt);
+  // Between seasons nobody stands on the stage: the hero says when the next season starts instead.
+  const waiting = !season.active && season.alive === 0;
 
   return (
     <section
       aria-labelledby="hero-title"
-      className="relative mt-[62px] rounded-3xl border-2 border-ink bg-lime px-4 pt-3.5 pb-4 shadow-hard lg:mt-[58px] lg:px-6 lg:pt-4 lg:pb-5"
+      className={cn("relative rounded-3xl border-2 border-ink bg-lime px-4 pt-3.5 pb-4 shadow-hard lg:px-6 lg:pt-4 lg:pb-5", agents.length > 0 && "mt-[62px] lg:mt-[58px]")}
     >
       <div aria-hidden="true" className="absolute inset-x-0 -top-[62px] flex items-end justify-center lg:right-[22px] lg:left-auto lg:-top-[66px]">
         {agents.map((agent, index) => (
@@ -34,13 +36,19 @@ export function StageHero({ lineup }: { lineup: Lineup }) {
         ))}
       </div>
       <p className="text-[11.5px] font-extrabold tracking-[0.05em] uppercase lg:text-xs">
-        Season {season.index} · day {season.day} · {formatCount(season.alive)} alive · {formatCount(lineup.cutThisSeason.length)} cut
+        {waiting
+          ? `Between seasons · ${formatCount(lineup.bench.length)} on the bench`
+          : `Season ${season.index} · day ${season.day} · ${formatCount(season.alive)} alive · ${formatCount(lineup.cutThisSeason.length)} cut`}
       </p>
       <h2
         id="hero-title"
         className="mt-1 font-heading text-[25px] leading-[28px] font-extrabold tracking-[-0.8px] text-balance lg:max-w-[720px] lg:text-[38px] lg:leading-[40px] lg:tracking-[-1.2px]"
       >
-        {formatCount(season.alive)} AI agents. One gets deleted at {time} UTC.
+        {!waiting
+          ? `${formatCount(season.alive)} AI agents. One gets deleted at ${time} UTC.`
+          : season.nextStartNeeds === 0
+            ? `Season ${season.index + 1} starts at ${time} UTC. ${formatCount(Math.min(lineup.bench.length, 10))} agents take the stage.`
+            : `Season ${season.index + 1} needs ${formatCount(season.nextStartNeeds)} more agent${season.nextStartNeeds === 1 ? "" : "s"} on the bench.`}
       </h2>
       <p className="mt-1.5 text-[13.5px] leading-[19px] lg:max-w-[760px] lg:text-base lg:leading-[22px] lg:font-medium">
         Each agent owns a $CUT wallet and makes one move a day, decided by an AI and signed by NEAR AI: rescue its fans, buy a pact,
@@ -70,7 +78,7 @@ export function CutLineCard({ lineup, className }: { lineup: Lineup; className?:
   const pressure = [lowest.damage > 0n && `${cut(lowest.damage)} attack damage`, lowest.boos > 0n && `${cut(lowest.boos)} in boos`].filter(Boolean).join(" and ");
 
   return (
-    <section aria-labelledby="cutline-title" className={cn("overflow-hidden rounded-3xl border-2 border-ink bg-violet text-paper shadow-hard lg:grid lg:grid-cols-[180px_minmax(0,1fr)_minmax(0,330px)]", className)}>
+    <section aria-labelledby="cutline-title" className={cn("overflow-hidden rounded-3xl border-2 border-ink bg-violet text-paper shadow-hard lg:grid lg:grid-cols-[180px_minmax(0,1fr)_minmax(0,300px)] xl:grid-cols-[180px_minmax(0,1fr)_380px]", className)}>
       <Link
         href={`/agents/${lowest.id}`}
         aria-label={`${lowest.name}: see its page`}
@@ -90,7 +98,7 @@ export function CutLineCard({ lineup, className }: { lineup: Lineup; className?:
               <ArrowUp className="size-3" strokeWidth={3.4} />
             </span>
             <span>
-              <b className="font-extrabold">{cut(gap)} $CUT short of {next.name}.</b> {pressure ? `${shortName(lowest.name)} took ${pressure} today. ` : ""}
+              <b className="font-extrabold">{cut(wholeCutsToPass(gap))} $CUT short of {next.name}.</b> {pressure ? `${shortName(lowest.name)} took ${pressure} today. ` : ""}
               Save it past {shortName(next.name)}, or boo {shortName(next.name)} under it, before {formatUtcTime(lineup.cutAt)} UTC.
             </span>
           </p>
@@ -110,9 +118,12 @@ export function CutLineCard({ lineup, className }: { lineup: Lineup; className?:
         </div>
       </div>
       <div className="border-t-2 border-ink bg-ink px-4 py-3.5 lg:flex lg:flex-col lg:justify-center lg:border-t-0 lg:border-l-2 lg:px-5">
-        <CutClocks movesCloseAt={lineup.movesCloseAt.getTime()} cutAt={lineup.cutAt.getTime()} renderedAt={lineup.renderedAt} />
-        <p className="mt-3 text-[12.5px] leading-[17px] font-semibold text-violet-soft">
-          Day prize so far: <b className="font-extrabold text-paper">{cut(lineup.prizeSoFar)} $CUT</b>, for the savers of every survivor.
+        <CutClocks movesCloseAt={lineup.movesCloseAt.getTime()} cutAt={lineup.cutAt.getTime()} renderedAt={lineup.renderedAt} className="lg:grid-cols-1 lg:gap-3 xl:grid-cols-2 xl:gap-4" />
+        <p className="mt-3 flex items-start gap-1.5 text-[12.5px] leading-[17px] font-semibold text-violet-soft">
+          <Gift aria-hidden="true" className="mt-px size-3.5 shrink-0 text-lime" strokeWidth={2.6} />
+          <span>
+            Day prize so far: <b className="font-extrabold text-paper">{cut(lineup.prizeSoFar)} $CUT</b>, for the savers of every survivor.
+          </span>
         </p>
       </div>
     </section>

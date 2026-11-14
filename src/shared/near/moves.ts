@@ -4,7 +4,7 @@ import { publicEnv } from "@/shared/config/public";
 import { getRpc, type NearRpc } from "./rpc";
 import { timestampNs, u128, u64Index } from "./units";
 
-// The v20 reads the move relay and the Director need (SPEC-v20, "Agents" and "Contract interface"). Each schema
+// The v20 reads the move relay and the Director need (RULES.md, "Agents" and "Contract interface"). Each schema
 // keeps only the fields it uses, so these reads work whatever else the v20 views carry.
 
 const hexKey = z.string().regex(/^(0x)?[0-9a-fA-F]{64}$/, "must be a 32-byte hex key");

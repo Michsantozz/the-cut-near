@@ -41,7 +41,8 @@ export type Prizes = PrizesPreview & {
   /** The save that keeps riding into the next cut unless the viewer takes it back with the collect. */
   keep: { agentId: string; agentName: string; amount: bigint } | null;
   /** Total saved now, and the agent with the biggest save, for the empty state. */
-  saved: { total: bigint; agentId: string | null; agentName: string | null };
+  /** All your saves; `agentName` is the biggest one, `agents` how many agents you saved on. */
+  saved: { total: bigint; agents: number; agentId: string | null; agentName: string | null };
   registered: boolean;
   /** Claims already collected, newest first. */
   past: PastPrize[];
@@ -91,6 +92,7 @@ export async function loadPrizes(accountId: string): Promise<Prizes> {
     keep: keepSave ? { agentId: keepSave.agentId, agentName: names[keepSave.agentId] ?? keepSave.agentId, amount: keepSave.amount } : null,
     saved: {
       total: saves.reduce((sum, save) => sum + save.amount, 0n),
+      agents: new Set(saves.filter((save) => save.amount > 0n).map((save) => save.agentId)).size,
       agentId: biggest?.agentId ?? null,
       agentName: biggest ? (names[biggest.agentId] ?? biggest.agentId) : null,
     },

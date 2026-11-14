@@ -11,7 +11,7 @@ export { SAMPLE_CONTRACT_ID } from "./api/sample";
 /**
  * Contract events, newest first, filtered by account, agent, cut or event name, one page at a time
  * (pass `next` back as `before`). Live reads the journal the indexer fills (a few minutes behind the
- * chain); sample serves the sample world's history (SPEC-v20, season 1 day 4).
+ * chain); sample serves the sample world's history (v20, season 1 day 4).
  */
 export async function getJournal(filter: JournalFilter = {}): Promise<JournalPage> {
   if (dataSource() === "live") return getLiveJournal(filter);

@@ -41,13 +41,24 @@ export type Market = {
   feesSoFar: bigint;
   /** $CUT the lowest agent needs to pass the next one (`get_next_cut().gap_to_next`). */
   gapToNext: bigint;
+  /** Share of every trade fee that goes to the season pot (`pot_bps`); the rest goes to the next day prize. */
+  potBps: number;
 };
 
 async function loadMarket(): Promise<Market> {
   // Countdowns and "today" start from the request time, never from a prerendered one.
   await connection();
-  const [pool, usdCentsPerNear, nextCut] = await Promise.all([getPool(), getUsdCentsPerNear(), getNextCut()]);
-  return { renderedAt: Date.now(), pool, usdCentsPerNear, cutAt: nextCut.at, cutIndex: nextCut.index, feesSoFar: nextCut.prizeSoFar, gapToNext: nextCut.gapToNext };
+  const [pool, usdCentsPerNear, nextCut, params] = await Promise.all([getPool(), getUsdCentsPerNear(), getNextCut(), getParams()]);
+  return {
+    renderedAt: Date.now(),
+    pool,
+    usdCentsPerNear,
+    cutAt: nextCut.at,
+    cutIndex: nextCut.index,
+    feesSoFar: nextCut.prizeSoFar,
+    gapToNext: nextCut.gapToNext,
+    potBps: params.potBps,
+  };
 }
 
 function heldSaves(saves: Awaited<ReturnType<typeof getSaves>>, agents: readonly Agent[], cutIndex: number): HeldSave[] {
@@ -126,6 +137,8 @@ export type ValueData = Market & {
   prices: PricePoint[];
   /** The first traded price ever: when trading began. */
   launchAt: Date | null;
+  /** Day of the running season; null between seasons. */
+  seasonDay: number | null;
   supply: SupplySplit;
   holders: number | null;
   account: { accountId: string; free: bigint; saves: HeldSave[] } | null;
@@ -135,7 +148,7 @@ export async function loadValue(accountId: string | null, range: PriceRange): Pr
   // Live agents and prices read the clock: reach request time before any of them.
   await connection();
   const market = await loadMarket();
-  const [prices, all, params, current, stage, bench, holders, account] = await Promise.all([
+  const [prices, all, params, current, stage, bench, holders, season, account] = await Promise.all([
     getPriceHistory(range),
     range === "all" ? null : getPriceHistory("all"),
     getParams(),
@@ -143,6 +156,7 @@ export async function loadValue(accountId: string | null, range: PriceRange): Pr
     getStage(),
     getBench(),
     getHolderCount(),
+    getSeason(),
     accountId ? Promise.all([getBalance(accountId), getSaves(accountId)]).then(([free, saves]) => ({ free, saves })) : null,
   ]);
   // Bench queues are locked in the contract like stage piles, the same total Receipts shows.
@@ -152,6 +166,7 @@ export async function loadValue(accountId: string | null, range: PriceRange): Pr
     range,
     prices,
     launchAt: (all ?? prices)[0]?.at ?? null,
+    seasonDay: season.active ? season.day : null,
     supply: splitSupply({ launch: params.totalSupply, current, saved }),
     holders,
     account: account && { accountId: accountId!, free: account.free, saves: heldSaves(account.saves, [...stage, ...bench], market.cutIndex) },

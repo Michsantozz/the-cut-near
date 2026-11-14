@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { Handshake, Plus, ThumbsDown } from "lucide-react";
+import { Gauge, Handshake, Hourglass, Plus, ThumbsDown, Wallet } from "lucide-react";
 import Link from "next/link";
 
 import { AgentPoses, AgentTile, agentPoses, PersonalityChip, ScoreBreakdown, type PersonalityId } from "@/entities/agent";
@@ -47,7 +47,7 @@ export function AgentCard({
       aria-labelledby={`agent-${agent.id}`}
       data-lowest={isLowest || undefined}
       className={cn(
-        "flex flex-col rounded-3xl border-2 bg-paper p-3 shadow-hard lg:p-3.5",
+        "flex flex-col rounded-3xl border-2 bg-paper p-3 shadow-hard transition-transform pointer-fine:hover:-translate-y-0.5 lg:p-3.5",
         isLowest ? "border-danger bg-danger-soft shadow-[4px_4px_0_var(--color-danger)]" : "border-ink",
       )}
     >
@@ -65,7 +65,7 @@ export function AgentCard({
         </Link>
         <div className="min-w-0 grow">
           <h3 id={`agent-${agent.id}`} className="flex items-center gap-1.5 font-heading text-[19px] leading-6 font-extrabold">
-            <Link href={`/agents/${agent.id}`} className="truncate rounded-xs outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50">
+            <Link href={`/agents/${agent.id}`} className="truncate rounded-xs outline-none hover:underline max-sm:-my-2.5 max-sm:py-2.5 focus-visible:ring-3 focus-visible:ring-ring/50">
               {agent.name}
             </Link>
             {saved !== null && (
@@ -87,16 +87,23 @@ export function AgentCard({
 
       <div className="mt-2.5 flex items-end justify-between gap-2 border-t-[1.5px] border-ink/15 pt-2">
         <div className="min-w-0">
-          <p className="text-[10.5px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">Score</p>
+          <p className="flex items-center gap-1 text-[10.5px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">
+            <Gauge aria-hidden="true" className="size-3 shrink-0" strokeWidth={2.8} />
+            Score
+          </p>
           <p className={cn("font-heading text-[28px] leading-8 font-extrabold tracking-[-0.8px]", isLowest && "text-danger")}>{cut(agent.score)}</p>
         </div>
         <div className="text-right">
-          <p className="text-[10.5px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">Wallet</p>
+          <p className="flex items-center justify-end gap-1 text-[10.5px] font-extrabold tracking-[0.05em] text-ink-3 uppercase">
+            <Wallet aria-hidden="true" className="size-3 shrink-0" strokeWidth={2.8} />
+            Wallet
+          </p>
           <p className="font-heading text-[17px] leading-6 font-extrabold">{cut(agent.wallet)} $CUT</p>
         </div>
       </div>
-      <ScoreBreakdown agent={agent} />
-      <p className="mt-0.5 truncate text-[12px] leading-[17px] font-semibold text-ink-3">
+      {/* On a phone the breakdown and the heir line stay on the agent's page, except for the agent on the cut line. */}
+      <ScoreBreakdown agent={agent} className={cn(!isLowest && "max-sm:hidden")} />
+      <p className={cn("mt-0.5 truncate text-[12px] leading-[17px] font-semibold text-ink-3", !isLowest && "max-sm:hidden")}>
         {heir ? `If cut, its wallet goes to ${heir}` : "No heir: if cut, its wallet burns"}
         {agent.bounty > 0n && ` · ${cut(agent.bounty)} $CUT rescue bounty`}
       </p>
@@ -104,8 +111,12 @@ export function AgentCard({
       {move ? (
         <MoveCard move={move} names={names} sample={sample} className="mt-2.5" />
       ) : (
-        <p className="mt-2.5 rounded-lg border-2 border-dashed border-ink/40 px-2.5 py-2 text-[13px] leading-[18px] font-semibold text-ink-3">
-          No move yet. {shortName(agent.name)} can still act until {formatUtcTime(movesCloseAt)} UTC; no move means it holds.
+        <p
+          title={`No move yet. ${shortName(agent.name)} can still act until ${formatUtcTime(movesCloseAt)} UTC; no move means it holds.`}
+          className="mt-2.5 inline-flex h-7 w-fit max-w-full items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-ink/40 px-2.5 text-[12px] font-bold text-ink-3"
+        >
+          <Hourglass aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2.6} />
+          <span className="truncate">Thinking · moves by {formatUtcTime(movesCloseAt)} UTC, or it holds</span>
         </p>
       )}
 

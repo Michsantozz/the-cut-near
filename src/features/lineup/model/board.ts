@@ -1,7 +1,7 @@
 import { gapToPass, rankByPile, rankByScore, type Agent } from "@/entities/agent";
 import type { Move } from "@/entities/move";
 
-// Today's cut (SPEC-v20 "The day"): the stage ranked by score (pile - boos - damage), who is on the cut line,
+// Today's cut (RULES.md "The day"): the stage ranked by score (pile - boos - damage), who is on the cut line,
 // how far it is from the agent above, and each agent's move for this cut.
 
 export type StageEntry = {

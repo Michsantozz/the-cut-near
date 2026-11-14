@@ -5,13 +5,19 @@ import { Button } from "@/shared/ui/button";
 import { formatUsd, formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
 
+import { splitByLock } from "../model/holdings";
 import type { LineupMember } from "../server/load-lineup";
 import { cutFine } from "./copy";
 
 /** What the member holds and what it saved on whom. Kept small so the cut stays the first thing on screen. */
-export function MemberCard({ member, cutAt }: { member: LineupMember; cutAt: Date }) {
+export function MemberCard({ member, cutAt, cutIndex }: { member: LineupMember; cutAt: Date; cutIndex: number }) {
   const { balance, valueUsdCents, saves, savedTotal } = member;
-  const locked = `locked till ${formatUtcTime(cutAt)} UTC`;
+  const till = `locked till ${formatUtcTime(cutAt)} UTC`;
+  // Saves made before the last cut are unlocked (get_saves' `unlocked`): only the rest is locked till the next cut.
+  const split = splitByLock(saves, cutIndex);
+  // Mixed saves keep the line short enough for the card; the full split is in its title.
+  const lockText = split.unlocked === 0n ? till : split.locked === 0n ? "unlocked" : `${cutFine(split.locked)} locked`;
+  const lockTitle = split.unlocked > 0n && split.locked > 0n ? `${cutFine(split.locked)} ${till}, ${cutFine(split.unlocked)} unlocked` : undefined;
   const savedLine =
     saves.length === 1
       ? { bold: `${cutFine(saves[0].amount)} saved on ${saves[0].agentName}`, href: `/agents/${saves[0].agentId}` }
@@ -50,13 +56,13 @@ export function MemberCard({ member, cutAt }: { member: LineupMember; cutAt: Dat
           className="mt-1.5 flex h-7 w-full items-center gap-1.5 rounded-sm border-2 border-ink bg-lime-soft pr-1.5 pl-2.5 text-[12.5px] font-semibold whitespace-nowrap normal-nums outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:mt-2 lg:h-[34px] lg:gap-[7px] lg:rounded-[11px] lg:pr-2.5"
         >
           <Lock aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2.6} />
-          <span className="truncate">
-            <b className="font-extrabold">{savedLine.bold}</b> · {locked}
+          <span className="truncate" title={lockTitle}>
+            <b className="font-extrabold">{savedLine.bold}</b> · {lockText}
           </span>
         </Link>
       ) : (
         <p className="mt-1.5 flex h-7 items-center rounded-sm bg-canvas px-2.5 text-[12.5px] font-semibold text-ink-3 lg:mt-2 lg:h-[34px]">
-          Nothing saved yet. Saves stay {locked}.
+          Nothing saved yet. Saves stay {till}.
         </p>
       )}
     </section>

@@ -1,6 +1,21 @@
 "use client";
 
-import { CircleAlert, CircleCheck, CircleDashed, CircleX, LoaderCircle, RotateCw } from "lucide-react";
+import {
+  Bot,
+  CalendarClock,
+  CircleAlert,
+  CircleCheck,
+  CircleDashed,
+  CircleX,
+  FileCode,
+  Fingerprint,
+  KeyRound,
+  LoaderCircle,
+  RotateCw,
+  Scale,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "cn";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -117,6 +132,17 @@ export function LiveClaims(props: LiveClaimsProps) {
   );
 }
 
+/** One icon per claim, next to its title. */
+const CLAIM_ICON: Record<ClaimId, LucideIcon> = {
+  keys: KeyRound,
+  code: FileCode,
+  books: Scale,
+  moving: Bot,
+  signatures: ShieldCheck,
+  personalities: Fingerprint,
+  season: CalendarClock,
+};
+
 function ClaimRow({ meta, state, network, contractId, build, repoUrl }: { meta: ClaimMeta; state: RowState } & LiveClaimsProps) {
   const ownBuild = build?.contract === contractId ? build : null;
   const chainTx = meta.chain === "deploy-tx" ? ownBuild?.deployTx : meta.chain === "delete-key-tx" ? ownBuild?.deleteKeyTx : null;
@@ -125,7 +151,10 @@ function ClaimRow({ meta, state, network, contractId, build, repoUrl }: { meta: 
   return (
     <div role="listitem" id={`claim-${meta.id}`} className="scroll-mt-4 px-4 py-3.5 lg:grid lg:scroll-mt-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-6 lg:px-6 lg:py-4">
       <div className="min-w-0">
-        <h3 className="text-[16px] leading-[21px] font-extrabold lg:text-[17px]">{meta.claim}</h3>
+        <h3 className="flex items-start gap-2 text-[16px] leading-[21px] font-extrabold lg:text-[17px]">
+          <ClaimIcon id={meta.id} />
+          <span>{meta.claim}</span>
+        </h3>
         <p className="mt-1 text-[13px] leading-[18px] text-ink-3">{meta.how}</p>
       </div>
 
@@ -179,6 +208,11 @@ const TONE = {
   amber: { label: "Can’t confirm now", icon: CircleAlert, pill: "bg-orange text-ink" },
   fails: { label: "Fails", icon: CircleX, pill: "bg-danger text-paper" },
 } as const;
+
+function ClaimIcon({ id }: { id: ClaimId }) {
+  const Icon = CLAIM_ICON[id];
+  return <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0 lg:mt-[3px]" strokeWidth={2.6} />;
+}
 
 function Verdict({ state }: { state: RowState }) {
   if (state.status === "sample") {

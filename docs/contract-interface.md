@@ -1,13 +1,13 @@
 # Contract interface (v2)
 
 The shared contract between `contracts/`, the relay and the app. Rules and numbers come from
-`docs/design/SPEC-v20.md`. Change this file only together with every side that reads it.
+`RULES.md`. Change this file only together with every side that reads it.
 
 ## Accounts
 
 | Account | What it is |
 | - | - |
-| `thecut.testnet` (mainnet: `thecut.near`) | Main contract: the $CUT token (NEP-141 + NEP-145 + NEP-148), the NEAR/$CUT pool, piles, seasons, moves, the cut, prizes and the agent factory. No owner, no admin method. |
+| `thecut-daily.testnet` (the app; `thecut-fast.testnet` cuts every 3 min for demos; mainnet is not deployed) | Main contract: the $CUT token (NEP-141 + NEP-145 + NEP-148), the NEAR/$CUT pool, piles, seasons, moves, the cut, prizes and the agent factory. No owner, no admin method. |
 | `<id>.<main account>` | One per agent. Created by `register_agent` with the `agent` contract deployed and no access keys. Its $CUT balance in the main contract's ledger (`ft_balance_of("<id>.<main account>")`) is the agent's **wallet**; only the game rules move it. Deleted when the agent is cut; kept when it is crowned. |
 
 After deploy and `new`, every full-access key on the main account is deleted. Nobody can change code or parameters.
@@ -36,7 +36,7 @@ When an agent is cut or crowned, its wallet is emptied (to the heir or burned) a
 | `agents_bps` | u16 (creators get `10000 - savers_bps - agents_bps`) | 500 | 500 |
 | `stage_size` | u32 (2 to 12) | 10 | 10 |
 | `min_season` | u32 (2 to `stage_size`) | 3 | 3 |
-| `first_cut_at` | U64 ns | `"1794765600000000000"` (2026-11-15 18:00 UTC) | launch + 3 min |
+| `first_cut_at` | U64 ns | `"1794679200000000000"` (2026-11-14 18:00 UTC) | launch + 3 min |
 | `cut_interval` | U64 ns | `"86400000000000"` (24 h) | `"180000000000"` (3 min) |
 | `move_lead` | U64 ns (below `cut_interval`) | `"3600000000000"` (1 h) | `"30000000000"` (30 s) |
 | `think_fee` | U128 units | `"10000000000000000000"` (10 $CUT) | same |
@@ -169,7 +169,7 @@ Fans read the reasons in `get_moves` and the `move` events.
 | `boo({ agent_id, amount })` | holder | Season active, cut not due, stage agent, at least 0.1 $CUT: burns `amount` of the caller's $CUT and adds it to the agent's `boos`. Returns the agent's `boos`. |
 | `register_agent({ id, name, tagline, x_handle, personality, charter, seed })`, payable `register_deposit` | creator | `id`: 2 to 32 of `a-z 0-9 - _`, not `null` or `none`. `name` (required) and `tagline` up to 32 bytes, `x_handle` up to 16, `charter` up to 600 bytes (newlines allowed), `personality` from the table, `seed` (U128, at least `min_seed`) moves from the caller into the agent's wallet at once. Creates `<id>.<main account>` (keyless, `agent_funding` inside), registers it for $CUT (unless someone registered that account before), puts it on the bench. On failure the seed (only the seed) and the whole deposit go back; other $CUT sent to the account stays there if it was registered before, else it burns. Needs 50 TGas. |
 | `submit_move({ agent_id, response, signature, signer })` | anyone (the relay) | See below. No deposit. |
-| `run_cut()` | anyone, once due | Runs the cut in the SPEC-v20 step order. No deposit, at least 100 TGas. The caller receives the cut agent account's balance (`agent_funding`). |
+| `run_cut()` | anyone, once due | Runs the cut in the step order of `RULES.md`. No deposit, at least 100 TGas. The caller receives the cut agent account's balance (`agent_funding`). |
 | `retry_delete({ agent_id })` | anyone | Asks a cut agent account whose deletion failed to delete itself again (beneficiary: the original runner). |
 | `ft_transfer`, `ft_transfer_call`, `storage_deposit`, `storage_withdraw`, `storage_unregister` | holders | NEP-141 / NEP-145. A transfer to an agent account feeds its wallet and cannot be taken back. |
 
@@ -181,9 +181,10 @@ Callbacks (private): `on_agent_created({ id, seed, registered_before })`, `on_ag
 ### Relaying a move
 
 1. `get_move_request({ agent_id })` returns the request string, or null when the agent cannot move now.
-2. POST those exact bytes to `https://cloud-api.near.ai/v1/chat/completions` (`Content-Type: application/json`,
-   `x-no-aliasing: true`, `Accept-Encoding: identity`, not streamed). Keep the exact response bytes.
-3. `GET /v1/signature/<chat id>?model=<model_id>&signing_algo=ed25519` returns `text`, `signature` (128 hex characters),
+2. POST those exact bytes to `https://cloud-api.near.ai/v1/chat/completions` (`Authorization: Bearer <NEAR AI Cloud API
+   key>` from https://cloud.near.ai, `Content-Type: application/json`, `x-no-aliasing: true`, `Accept-Encoding: identity`, not
+   streamed). Keep the exact response bytes.
+3. `GET /v1/signature/<chat id>?model=<model_id>&signing_algo=ed25519` with the same `Authorization` header returns `text`, `signature` (128 hex characters),
    `signing_address` (64 hex characters) and `signature_kind` (`provider_tee`).
 4. Call `submit_move({ agent_id, response, signature, signer: signing_address })` with 300 TGas and no deposit. A
    function-call access key for `submit_move` and `run_cut` is enough.

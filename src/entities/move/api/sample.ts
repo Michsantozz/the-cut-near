@@ -5,14 +5,14 @@ import { sampleHoursBeforeCut } from "@/shared/config/sample";
 import { units } from "@/shared/lib/amount";
 import type { Move, MoveKind } from "../model/types";
 
-// The sample world's moves (SPEC-v20): days 1 to 3 of season 1 (cuts #2 to #4) and today, day 4 (cut #5).
+// The sample world's moves (v20): days 1 to 3 of season 1 (cuts #2 to #4) and today, day 4 (cut #5).
 // Every hash and chat id here is made up from the move itself: nothing was sent to NEAR AI and nothing was
 // signed. The screens say so next to every sample move.
 
 /** The cut today's moves are for. Season 1 started at cut #1, so day N moves for cut #N + 1. */
 export const SAMPLE_MOVES_CUT = 5;
 
-/** NEAR AI's TEE key for the model (SPEC-v20 `model_signers`): a public value, shown so the proof reads right. */
+/** NEAR AI's TEE key for the model (RULES.md `model_signers`): a public value, shown so the proof reads right. */
 export const SAMPLE_SIGNER = "5a0210f2442c79355784f9de021985429561da5bacc3a4424b01ac52b7e0caff";
 
 export const SAMPLE_RELAY = "relay.thecut.sample";

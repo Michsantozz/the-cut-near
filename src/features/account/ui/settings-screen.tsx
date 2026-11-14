@@ -38,10 +38,7 @@ export function SettingsScreen({ accountId, network, cutTime, finalHour, prefs }
             <li className="flex h-[50px] items-center gap-3 border-t-[1.5px] border-canvas lg:h-[62px] lg:gap-3.5">
               <SettingIcon icon={Globe} tone="bg-pink" />
               <span className="grow text-[14.5px] font-semibold lg:text-[15px]">Language</span>
-              <span className="flex items-center gap-1 text-sm text-ink-3 lg:gap-1.5 lg:text-[14.5px]">
-                English
-                <ChevronRight aria-hidden="true" className="size-4" strokeWidth={2.6} />
-              </span>
+              <span className="text-sm text-ink-3 lg:text-[14.5px]">English only, for now</span>
             </li>
           </Group>
           <Group title="History" className="order-3 lg:order-none" listClassName="py-0 lg:py-1">

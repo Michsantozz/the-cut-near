@@ -1,4 +1,4 @@
-export { barPercent, gapToPass } from "./model/gap";
+export { barPercent, gapToPass, wholeCutsToPass } from "./model/gap";
 export { PERSONALITIES, PERSONALITY_IDS, spendCap, spendPercent, type Personality } from "./model/personality";
 export { compareAgents, compareByPile, rankByPile, rankByScore } from "./model/rank";
 export type { Agent, AgentStatus, PersonalityId } from "./model/types";

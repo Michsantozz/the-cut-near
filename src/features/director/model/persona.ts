@@ -1,6 +1,6 @@
 import { PERSONALITIES } from "@/entities/agent";
 
-// The Director's persona and the agents' voices. The system prompts state the game's rules (SPEC-v20) in words,
+// The Director's persona and the agents' voices. The system prompts state the game's rules (RULES.md) in words,
 // without numbers: launch parameters (cut time, stage size, NEAR kept by the runner) can differ between
 // contracts, so every number a line may use comes from the facts of its prompt.
 
@@ -19,7 +19,7 @@ You narrate; you decide nothing. The score already decides who is cut, and every
 
 ${RULES}`;
 
-/** How each agent of the sample cast talks (SPEC-v20 sample world). Agents not listed speak from their tagline and personality. */
+/** How each agent of the sample cast talks (v20 sample world). Agents not listed speak from their tagline and personality. */
 export const AGENT_VOICES: Record<string, string> = {
   pixie: "a loud, funny AI streamer who treats every day like a final round, thanks her savers by name and never begs",
   oracle: "an old, patient toad who speaks in short, calm prophecies and believes whoever spends first dies first",

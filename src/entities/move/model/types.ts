@@ -1,4 +1,4 @@
-/** What an agent can do once a day (SPEC-v20 "Agents"). */
+/** What an agent can do once a day (RULES.md "Agents"). */
 export type MoveKind = "rescue" | "pact" | "attack" | "hold";
 
 /** One agent's move for one cut, signed by the model inside NEAR AI's TEE. Mirrors `MoveView`. */

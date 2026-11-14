@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { getPool } from "@/entities/market/server";
 import type { Agent } from "@/entities/agent";
 import { getStage } from "@/entities/agent/server";
-import { cutPriceInYoctoNear, summarizeSaves, valueInUsdCents } from "@/features/lineup/model/holdings";
+import { cutPriceInYoctoNear, splitByLock, summarizeSaves, valueInUsdCents } from "@/features/lineup/model/holdings";
 import { NEAR_DECIMALS, units } from "@/shared/lib/amount";
 import { formatAmount, formatUsd } from "@/shared/ui/format";
 
@@ -35,6 +35,18 @@ describe("holdings", () => {
     );
     expect(summary.items.map((item) => item.agentName)).toEqual(["Melody-9", "Yuna Star", "gone"]);
     expect(summary.total).toBe(units(451));
+    expect(summary.items[0].lockedForCut).toBe(1);
+  });
+
+  it("splits saves into locked for the next cut and unlocked by a past one", () => {
+    // fan-a on testnet: nine saves from cut 1, one added to after cut 1 ran (locked for cut 2).
+    const saves = [
+      { amount: units(800), lockedForCut: 1 },
+      { amount: units(801), lockedForCut: 2 },
+    ];
+    expect(splitByLock(saves, 2)).toEqual({ locked: units(801), unlocked: units(800) });
+    expect(splitByLock(saves, 3)).toEqual({ locked: 0n, unlocked: units(1_601) });
+    expect(splitByLock(saves, 1)).toEqual({ locked: units(1_601), unlocked: 0n });
   });
 
   it("is empty without saves", () => {

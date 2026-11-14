@@ -2,7 +2,7 @@ import { ed25519 } from "@noble/curves/ed25519.js";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex, hexToBytes, utf8ToBytes } from "@noble/hashes/utils.js";
 
-// The check `submit_move` makes on a move's signature (SPEC-v20, "Agents"), as pure functions shared by the relay
+// The check `submit_move` makes on a move's signature (RULES.md, "Agents"), as pure functions shared by the relay
 // (before it spends gas) and the judge desk (after the fact, in the browser). Node-loadable on purpose: npm imports only,
 // so scripts/testnet/*.ts can load it through src/features/moves/model/relay.ts.
 

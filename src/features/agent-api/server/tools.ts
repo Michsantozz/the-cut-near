@@ -167,17 +167,17 @@ export async function account(accountId: string) {
 
 // ---- Prepare tools ------------------------------------------------------------------------------------------
 
-export async function prepareBuy(near: AmountInput, slippagePercent: number | undefined, accountId: string | undefined) {
+export async function prepareBuy(near: AmountInput, slippagePercent: number | undefined, accountId: string) {
   const nearIn = nearYocto(near, "near");
   const bps = slippageBps(slippagePercent);
-  // Unknown or unregistered accounts pay 0.01 NEAR of storage first: quote what is left.
-  const registered = accountId ? (await getStorageBalance(accountArg(accountId))) !== null : false;
+  // An unregistered account pays 0.01 NEAR of storage first: quote what is left.
+  const registered = (await getStorageBalance(accountArg(accountId))) !== null;
   const swapped = registered ? nearIn : nearIn - STORAGE_MIN;
   if (swapped <= 0n) throw new InputError(`near must be more than ${nearText(STORAGE_MIN)}: a first buy keeps 0.01 NEAR for storage.`);
   const q = await quoteBuy(swapped);
   if (q.amountOut <= 0n) throw new InputError("That buys 0 $CUT. Attach more NEAR.");
   const min = minOut(q.amountOut, bps);
-  const storageNote = registered ? "" : accountId ? " Your account is not registered yet: 0.01 NEAR of it pays storage." : " Without account_id this assumes a first buy (0.01 NEAR to storage), so min_out is a little lower.";
+  const storageNote = registered ? "" : " Your account is not registered yet: 0.01 NEAR of it pays storage.";
   return prepared(
     call(contractId(), "buy", { min_out: min.toString() }, nearIn, GAS.standard,
       `Swap ${nearText(nearIn)} NEAR for about ${cutText(q.amountOut)} $CUT (fee ${cutText(q.fee)} $CUT). Fails unless you get at least ${cutText(min)} $CUT (${bps / 100}% slippage).${storageNote} Quote it again if it fails.`),
@@ -187,8 +187,9 @@ export async function prepareBuy(near: AmountInput, slippagePercent: number | un
 export async function prepareSave(accountId: string, agentId: string, amount: AmountInput) {
   const id = accountArg(accountId);
   const units = cutUnits(amount);
-  const found = await agentArg(agentId);
+  const [found, next] = await Promise.all([agentArg(agentId), readNextCut()]);
   if (found.status !== "stage" && found.status !== "bench") throw new InputError(`${agentId} is ${found.status}: you can save only on a stage or bench agent.`);
+  if (next.due) throw new InputError("The cut is due: piles are frozen until it runs. Try again after the cut (prepare_run_cut runs it).");
   const [balance, saves, storage] = await Promise.all([getBalance(id), getSaves(id), getStorageBalance(id)]);
   const existing = saves.some((s) => s.agentId === agentId);
   if (units <= 0n) throw new InputError("amount must be more than 0.");
@@ -196,10 +197,14 @@ export async function prepareSave(accountId: string, agentId: string, amount: Am
   if (!existing && saves.length >= MAX_SAVES) throw new InputError(`${id} already has ${MAX_SAVES} saves, the most an account may hold. Unsave one first (prepare_unsave).`);
   if (units > balance) throw new InputError(`${id} holds ${cutText(balance)} free $CUT, less than ${cutText(units)}. Buy first (prepare_buy).`);
   const topUp = storage !== null && storage.available >= SAVE_STORAGE.enough ? 0n : SAVE_STORAGE.topUp;
-  const where = found.status === "stage" ? "pile" : "bench queue";
+  const outcome =
+    found.status === "stage"
+      ? `Lock ${cutText(units)} $CUT in ${found.name}'s pile until the next cut. If ${found.name} survives, you share its slice of the prize; if it is cut, your save goes with its pile (half burns).`
+      : `Lock ${cutText(units)} $CUT in ${found.name}'s bench queue until the next cut. When a season starts, the biggest queues take the stage and each queue becomes that agent's pile.`;
+  const relock = existing ? " Adding to an existing save locks the whole save again until the next cut." : "";
   return prepared(
     call(contractId(), "save", { agent_id: agentId, amount: units.toString() }, topUp, GAS.standard,
-      `Lock ${cutText(units)} $CUT in ${found.name}'s ${where} until the next cut. If ${found.name} survives, you share its slice of the prize; if it is cut, half its pile burns.${topUp > 0n ? ` Attaches ${nearText(topUp)} NEAR for the save's storage; it stays in your storage balance.` : ""}`),
+      `${outcome}${relock}${topUp > 0n ? ` Attaches ${nearText(topUp)} NEAR for the save's storage; it stays in your storage balance.` : ""}`),
   );
 }
 
@@ -220,9 +225,11 @@ export async function prepareBoo(accountId: string, agentId: string, amount: Amo
 
 export async function prepareUnsave(accountId: string, agentId: string) {
   const id = accountArg(accountId);
-  const [saves, next] = await Promise.all([getSaves(id), readNextCut()]);
+  const [saves, next, found] = await Promise.all([getSaves(id), readNextCut(), getAgent(agentId)]);
   const save = saves.find((s) => s.agentId === agentId);
   if (!save) throw new InputError(`${id} has no save on ${agentId}. Call account to see its saves.`);
+  if (found?.status === "deleted") throw new InputError(`${agentId} was cut: its saves are gone. prepare_claim collects the prizes it earned before and clears the save.`);
+  if (next.due) throw new InputError("The cut is due: saves are frozen until it runs. Try again after the cut.");
   if (save.lockedForCut >= next.index) throw new InputError(`That save is locked until cut #${save.lockedForCut} runs (${next.at.toISOString()}). Unsave after it.`);
   return prepared(
     call(contractId(), "unsave", { agent_id: agentId }, 0n, GAS.standard, `Take back your ${cutText(save.amount)} $CUT saved on ${agentId}, with the prize it earned.`),
@@ -287,8 +294,8 @@ export async function prepareRunCut() {
 
 const RELAY_STEPS = (agentId: string, modelId: string) => [
   "1. Take `request` exactly as given (do not reformat or re-serialize it).",
-  "2. POST those exact bytes to https://cloud-api.near.ai/v1/chat/completions with Content-Type: application/json, x-no-aliasing: true, Accept-Encoding: identity, not streamed. Keep the exact response text.",
-  `3. GET https://cloud-api.near.ai/v1/signature/<chat id from the response>?model=${modelId}&signing_algo=ed25519. It returns text, signature, signing_address and signature_kind (provider_tee).`,
+  "2. POST those exact bytes to https://cloud-api.near.ai/v1/chat/completions with Authorization: Bearer <your NEAR AI Cloud API key> (from https://cloud.near.ai), Content-Type: application/json, x-no-aliasing: true, Accept-Encoding: identity, not streamed. Keep the exact response text.",
+  `3. GET https://cloud-api.near.ai/v1/signature/<chat id from the response>?model=${modelId}&signing_algo=ed25519 with the same Authorization header. It returns text, signature, signing_address and signature_kind (provider_tee).`,
   `4. Call prepare_submit_move with agent_id "${agentId}", the exact response text, signature and signer = signing_address. Sign the call it returns with your wallet (300 TGas, no deposit).`,
 ];
 
