@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  app:
+    name: App (typecheck, lint, tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Route types (PageProps) are generated, not committed.
+      - run: pnpm exec next typegen
+      - run: pnpm check
+
+  contracts:
+    name: Contracts (unit tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contracts
+      # The near-sandbox integration test downloads a node binary and builds the wasm with cargo-near;
+      # it runs locally with `pnpm contracts:test`.
+      - name: cargo test
+        working-directory: contracts
+        run: cargo test -p thecut -p agent
+
+  simulation:
+    name: Simulation (tests, published results reproduce)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python3 -B -m unittest discover -s sim
+      - name: sim/RESULTS.md and the app's data file match a fresh run
+        run: |
+          python3 -B sim/thecut_sim.py --write
+          git diff --exit-code -- sim/RESULTS.md src/features/inside/data/sim-v20.json
