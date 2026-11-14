@@ -32,7 +32,7 @@ describe("buildInbox", () => {
   });
 
   it("reports the cut and the prize waiting, newest first", async () => {
-    const cuts = (await getJournal({ events: ["cut"], limit: 3 })).entries;
+    const cuts = (await getJournal({ events: ["cut"], limit: 3, sampleMoment: "after-cut" })).entries;
     const notices = buildInbox({ ...base, cuts, claimable: units(632) / 100n, lowestPost: { text: "Save me", at: new Date("2026-11-13T14:00:00Z") } });
     expect(notices.map((n) => n.kind)).toEqual(["danger", "prize", "cut", "post"]);
     expect(notices[1].text).toBe("Kiko Bun was deleted. +6.32 $CUT waiting.");

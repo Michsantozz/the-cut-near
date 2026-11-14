@@ -24,7 +24,9 @@ describe("entity getters with sample data (the default)", () => {
 
   it("filter the sample journal", async () => {
     const all = await getJournal();
-    expect(all.entries.map((e) => e.event).slice(0, 4)).toEqual(["delete", "join", "prize", "prize"]);
+    expect(all.entries.map((e) => e.event).slice(0, 4)).toEqual(["save", "fee", "sell", "save"]);
+    const after = await getJournal({ sampleMoment: "after-cut" });
+    expect(after.entries.map((e) => e.event).slice(0, 4)).toEqual(["delete", "join", "prize", "prize"]);
     expect(all.entries.at(-1)?.event).toBe("ft_mint");
     expect((await getJournal({ accountId: "mika.near", events: ["buy"] })).entries).toHaveLength(2);
     expect((await getJournal({ robotId: "melody", events: ["save"] })).entries[0].amount).toBe(400n * 10n ** 18n);

@@ -19,15 +19,16 @@ export type Inbox = { renderedAt: number; fresh: InboxNotice[]; earlier: InboxNo
  */
 export async function loadInbox(accountId: string, postOf: (robotId: string) => Promise<{ text: string; at: Date } | null>): Promise<Inbox> {
   await connection();
+  // An after-cut screen: sample data shows it a minute after cut #1 ran (Notifications.dc.html, 18:01).
   const [stage, bench, nextCut, saves, claimable, cuts, claims, registers] = await Promise.all([
     getStage(),
     getBench(),
     getNextCut(),
     getSaves(accountId),
     getClaimable(accountId),
-    getJournal({ events: ["cut"], limit: 3 }),
-    getJournal({ accountId, events: ["claim"], limit: 3 }),
-    getJournal({ events: ["register"], limit: 200 }),
+    getJournal({ events: ["cut"], limit: 3, sampleMoment: "after-cut" }),
+    getJournal({ accountId, events: ["claim"], limit: 3, sampleMoment: "after-cut" }),
+    getJournal({ events: ["register"], limit: 200, sampleMoment: "after-cut" }),
   ]);
   const now = new Date();
   // A robot whose cut is already in the journal is gone, even if the stage read lags behind it.

@@ -94,8 +94,9 @@ const save = (account: string, robot: string, amount: number, pile: number): Log
 const SLICE = cutTenths(17_754);
 const CREATOR_SLICE = cutTenths(934);
 
-const HISTORY: JournalEntry[] = [
-  // Cut #1, run by bob.near: Kiko Bun's 23,600 is cut, half burns, 9 equal slices, Chartwise takes the seat.
+// Cut #1, run by bob.near at 18:00: Kiko Bun's 23,600 is cut, half burns, 9 equal slices, Chartwise takes the seat.
+// Only the after-cut screens see it (SPEC-v19 §2): everywhere else the sample "now" is 13:48, before it runs.
+const CUT_1: JournalEntry[] = [
   ...tx("delete-1", "2026-11-13T18:00:03Z", [
     { event: "delete", items: [{ cut_index: 1, robot_id: "kiko", account_id: `kiko.${SAMPLE_CONTRACT_ID}`, beneficiary: "bob.near" }] },
   ]),
@@ -134,6 +135,26 @@ const HISTORY: JournalEntry[] = [
     },
     { event: "join", items: [{ cut_index: 1, robot_id: "chartwise", pile: cut(88_400) }] },
   ]),
+];
+
+// Day 1 saves behind the piles and queues (SPEC-v18 §5): with the two saves of day 2 they add up to every pile, so the
+// audit's "sum of piles = saved total" holds on the journal itself.
+const DAY_1_SAVES: [robot: string, amount: number, at: string][] = [
+  ["pixie", 182_400, "2026-11-12T16:40:00Z"],
+  ["lila", 151_200, "2026-11-12T17:05:00Z"],
+  ["oracle", 139_800, "2026-11-12T17:30:00Z"],
+  ["mabel", 121_500, "2026-11-12T17:55:00Z"],
+  ["melody", 111_900, "2026-11-12T18:20:00Z"],
+  ["yuna", 98_700, "2026-11-12T18:45:00Z"],
+  ["gremlin", 86_900, "2026-11-12T19:10:00Z"],
+  ["velvet", 74_200, "2026-11-12T19:35:00Z"],
+  ["onyx", 61_800, "2026-11-12T20:00:00Z"],
+  ["kiko", 23_300, "2026-11-12T20:25:00Z"],
+  ["chartwise", 88_400, "2026-11-12T20:50:00Z"],
+  ["bloop", 31_200, "2026-11-12T21:15:00Z"],
+];
+
+const BEFORE_CUT: JournalEntry[] = [
   // Day 2, before the cut.
   ...tx("save-mika", "2026-11-13T13:41:00Z", [save("mika.near", "melody", 400, 112_300)]),
   ...tx("sell-lumen", "2026-11-13T13:22:00Z", [
@@ -143,7 +164,9 @@ const HISTORY: JournalEntry[] = [
   ...tx("save-bunfan", "2026-11-13T12:58:00Z", [save("bunfan.near", "kiko", 300, 23_600)]),
   ...tx("buy-pixfan", "2026-11-13T11:30:00Z", buy("pixfan.near", 3_568_500, 48_000, 485)),
   ...tx("buy-mika-2", "2026-11-13T09:14:00Z", buy("mika.near", 85_920, 1_200, 12)),
+  ...tx("save-pixelkit", "2026-11-13T08:20:00Z", [save("pixelkit-studio.near", "pixelkit", 12_600, 12_600)]),
   ...tx("register-pixelkit", "2026-11-13T08:02:00Z", [{ event: "register", items: [register("pixelkit")] }]),
+  ...[...DAY_1_SAVES].reverse().flatMap(([id, amount, at]) => tx(`save-${id}-1`, at, [save(`${id}-studio.near`, id, amount, amount)])),
   ...tx("register-bloop", "2026-11-12T19:40:00Z", [{ event: "register", items: [register("bloop")] }]),
   // Day 1: launch.
   ...tx("register-chartwise", "2026-11-12T16:12:00Z", [{ event: "register", items: [register("chartwise")] }]),
@@ -155,9 +178,17 @@ const HISTORY: JournalEntry[] = [
   ]),
 ];
 
-// Heights fall with every entry, newest first, so the sample pages like the live journal.
-HISTORY.forEach((entry, index) => {
+// Heights fall with every entry, newest first, so the sample pages like the live journal: the latest one before the
+// cut is SAMPLE_LATEST_BLOCK, the cut's entries sit above it.
+BEFORE_CUT.forEach((entry, index) => {
   entry.blockHeight = SAMPLE_LATEST_BLOCK - index;
 });
+CUT_1.forEach((entry, index) => {
+  entry.blockHeight = SAMPLE_LATEST_BLOCK + CUT_1.length - index;
+});
 
-export const SAMPLE_JOURNAL: readonly JournalEntry[] = HISTORY;
+/** The design's journal at 13:48 on day 2, before cut #1 runs: what every screen but the after-cut ones reads. */
+export const SAMPLE_JOURNAL: readonly JournalEntry[] = BEFORE_CUT;
+
+/** The same journal a minute after cut #1 ran, for the after-cut screens (Prizes, notifications). */
+export const SAMPLE_JOURNAL_AFTER_CUT: readonly JournalEntry[] = [...CUT_1, ...BEFORE_CUT];

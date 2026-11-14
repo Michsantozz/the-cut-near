@@ -7,7 +7,8 @@ import { units } from "@/shared/lib/amount";
 describe("journalStats", () => {
   it("adds up the sample day", async () => {
     const stats = await getJournalStats();
-    expect(stats).toMatchObject({ minted: units(10_000_000), burned: units(11_800), cuts: 1, latestBlock: 186_920_114 });
+    expect(stats).toMatchObject({ minted: units(10_000_000), burned: 0n, cuts: 0, latestBlock: 186_920_114 });
+    expect(await getJournalStats("after-cut")).toMatchObject({ burned: units(11_800), cuts: 1 });
     expect(stats.entries).toBe((await getJournal({ limit: 200 })).entries.length);
     expect(stats.firstAt?.toISOString()).toBe("2026-11-12T15:01:00.000Z");
     expect(stats.buyers).toBeGreaterThan(0);

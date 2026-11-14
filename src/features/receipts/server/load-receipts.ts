@@ -108,8 +108,6 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
   const above = ranked.at(-2) ?? null;
   const robots = [...stage, ...bench];
   const piles = robots.reduce((sum, robot) => sum + robot.pile, 0n);
-  // The sample journal is an excerpt of the design's day, not every save behind its piles: audit it against the piles.
-  const auditStats = isLive() ? stats : { ...stats, saved: piles };
   const isFirstPage = !before;
   const cutDone = (index: number) => lastCuts.entries.some((entry) => entry.cutIndex !== null && entry.cutIndex >= index);
   const lastCutEntry = lastCuts.entries[0];
@@ -117,7 +115,7 @@ export async function loadReceipts({ filter, before, viewer }: { filter: Receipt
   const checks = runAudit({
     contractId,
     fullAccessKeys,
-    stats: auditStats,
+    stats,
     totalSupply,
     robots,
     params,
