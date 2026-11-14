@@ -36,6 +36,8 @@ import type { AgentProfile } from "../server/load-profile";
 import { MoveHistory } from "./move-history";
 
 const whole = (value: bigint) => formatAmount(value, { maxFractionDigits: 0 });
+// A limit the contract enforces: rounded down, so it never reads higher than what the agent may spend.
+const spendLimit = (value: bigint) => formatAmount(value, { maxFractionDigits: 2, rounding: "down" });
 const near = (yocto: bigint) => formatAmount(yocto, { decimals: NEAR_DECIMALS, maxFractionDigits: 2 });
 
 function Card({ title, children, className, id }: { title: string; children: ReactNode; className?: string; id?: string }) {
@@ -175,7 +177,7 @@ export function AgentProfileScreen({ data }: { data: AgentProfile }) {
             <ul className="mt-1.5 flex flex-col gap-1.5 text-[13.5px] leading-[19px] font-semibold">
               <Limit ok>
                 Spends at most {spendPercent(personality.spendBps)} of its wallet a day
-                {onStage && <span className="text-ink-3"> (up to {whole(data.spendCap)} $CUT on its next move)</span>}
+                {onStage && <span className="text-ink-3"> (up to {spendLimit(data.spendCap)} $CUT on its next move)</span>}
               </Limit>
               <Limit ok={personality.mayAttack}>{personality.mayAttack ? "May attack other agents" : "Can never attack"}</Limit>
               <Limit ok={personality.mayAttackPartner}>
