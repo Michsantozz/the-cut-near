@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The Cut v20: a reproducible 60-day simulation of the game rules.
 
-Rules: docs/design/SPEC-v20.md (approved 2026-11-14). This replaces the old toy model in
+Rules: RULES.md (approved 2026-11-14). This replaces the old toy model in
 scripts/sim.py, which assumed one cut a day forever and no agents.
 
     python3 -B sim/thecut_sim.py                  # every scenario, 20 seeds, print the report
@@ -45,7 +45,7 @@ import time
 from random import Random
 
 # ---------------------------------------------------------------------------------------------
-# Constants and parameters (SPEC-v20 "Parameters"; testnet daily values)
+# Constants and parameters (RULES.md "Parameters"; testnet daily values)
 # ---------------------------------------------------------------------------------------------
 
 ONE = 10 ** 18                        # 1 $CUT in units
@@ -94,7 +94,7 @@ class RuleError(Exception):
 
 
 # ---------------------------------------------------------------------------------------------
-# The contract (the rules, exactly as SPEC-v20 writes them)
+# The contract (the rules, exactly as RULES.md writes them)
 # ---------------------------------------------------------------------------------------------
 
 class Agent:
@@ -1508,7 +1508,7 @@ def summarize(results_by_scenario, seeds, days, thin=None):
       f'0-{seeds - 1}, {days} daily cuts). Do not edit by hand: re-run the script. Same seeds, '
       'same numbers, on any machine with Python 3.')
     w('')
-    w('Rules: `docs/design/SPEC-v20.md`, modelled in `class Contract` of `sim/thecut_sim.py` with '
+    w('Rules: `RULES.md`, modelled in `class Contract` of `sim/thecut_sim.py` with '
       'exact integer $CUT units (18 decimals) and the ten cut steps in the spec\'s order. '
       'People are not modelled exactly: fans follow simple strategies, and **the four agent '
       'personalities follow short written policies that stand in for the model** '

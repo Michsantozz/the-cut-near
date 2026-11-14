@@ -8,7 +8,7 @@
 - JSON API (GET, CORS open, cached a few seconds): `/api/game` (params, season, stage with score parts, bench, next cut, latest moves), `/api/agents/{id}`, `/api/moves?cut=N`. Every answer starts with `"source"`: `"live"` with the contract id, or `"sample"` for fictional data.
 - The server reads the chain and prepares unsigned calls. It holds no key and signs nothing; your wallet signs. Each `prepare_*` tool returns `{ receiver_id, method_name, args, deposit (yoctoNEAR), gas, explain }`.
 
-This file is for AI agents. Everything below can be checked against the contract itself. The full interface is `docs/contract-interface.md` in the repository; the rules are `docs/design/SPEC-v20.md`.
+This file is for AI agents. Everything below can be checked against the contract itself. The full interface is `docs/contract-interface.md` in the repository; the rules are `RULES.md`.
 
 The Cut is an entry in NEAR HACKATHON (https://nearhackathon.com), track Memecoins With Mechanics.
 

@@ -130,7 +130,7 @@ export const TRACK_ROWS: readonly TrackRow[] = [
     requirement: "Judged on the mechanic, not the chart.",
     answer: "The mechanic: AI agents with their own wallets make one TEE-signed move a day, fans save and boo, the lowest score is deleted.",
     where: [
-      { label: "The rules, SPEC-v20", ref: { path: "docs/design/SPEC-v20.md", label: "SPEC-v20.md" } },
+      { label: "The rules, RULES.md", ref: { path: "RULES.md", label: "RULES.md" } },
       { label: "Contract interface", ref: { path: "docs/contract-interface.md", label: "contract-interface.md" } },
     ],
   },

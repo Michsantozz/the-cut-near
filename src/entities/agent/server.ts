@@ -7,7 +7,7 @@ import { SAMPLE_BENCH, SAMPLE_CUT, SAMPLE_STAGE } from "./api/sample";
 import { PERSONALITIES, type Personality } from "./model/personality";
 import type { Agent } from "./model/types";
 
-// Data access for agents: the sample world of SPEC-v20 by default, the contract (plus the journal for
+// Data access for agents: the v20 sample world by default, the contract (plus the journal for
 // "saved today") with DATA_SOURCE=live. Live reads hit the network: render callers inside <Suspense>.
 
 const live = () => dataSource() === "live";

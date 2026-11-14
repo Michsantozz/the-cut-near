@@ -12,7 +12,7 @@ import { afterCutReceiptPrompt, afterCutRoastPrompt, allowedNumbersFor, finalHou
 import { sampleDirectorLines } from "@/features/director/model/sample";
 import { validateLine } from "@/features/director/model/validate";
 
-// The SPEC-v20 sample world: season 1, day 4, two hours before cut #5. Yuna Star is on the cut line, Glitch Gremlin
+// The v20 sample world: season 1, day 4, two hours before cut #5. Yuna Star is on the cut line, Glitch Gremlin
 // right above her, and every agent but Pixie has moved.
 const NOW = new Date("2026-11-14T16:00:00Z");
 const day = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: sampleNextCut(NOW), season: SAMPLE_SEASON, now: NOW, moves: sampleMoves(5, NOW) });

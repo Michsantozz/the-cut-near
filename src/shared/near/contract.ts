@@ -21,7 +21,7 @@ import {
 } from "./views";
 
 /**
- * Typed reads of the main contract, one per v2 view (docs/design/SPEC-v20.md "Contract interface"). Amounts come back
+ * Typed reads of the main contract, one per v2 view (RULES.md "Contract interface"). Amounts come back
  * as bigint, times as Date. Errors: RpcUnavailableError (no endpoint answered), ContractViewError
  * (the call failed), ContractResponseError (the answer broke the interface).
  */

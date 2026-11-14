@@ -65,7 +65,7 @@ describe("the stage board", () => {
   });
 });
 
-describe("the sample lineup (SPEC-v20 season 1, day 4)", () => {
+describe("the sample lineup (v20 sample world, season 1, day 4)", () => {
   it("has seven agents alive, Yuna on the cut line, three cut with their wallets' fate", async () => {
     vi.stubEnv("DATA_SOURCE", "");
     const lineup = await loadLineup(null);

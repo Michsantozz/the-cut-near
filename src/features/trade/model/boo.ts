@@ -1,7 +1,7 @@
 import { rankByScore, type Agent } from "@/entities/agent";
 import { units } from "@/shared/lib/amount";
 
-// Booing (SPEC-v20 "Fans"): burn your own $CUT to push a stage agent's score down until the cut.
+// Booing (RULES.md "Fans"): burn your own $CUT to push a stage agent's score down until the cut.
 
 /** The smallest boo the contract takes: 0.1 $CUT. */
 export const MIN_BOO = units(1) / 10n;

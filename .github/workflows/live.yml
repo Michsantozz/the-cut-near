@@ -1,0 +1,51 @@
+# Reads both testnet contracts every six hours and on every push: each must have 0 access keys and run the code hash
+# recorded at deploy in deploy/testnet-*.json. The badge in the README is this workflow's status.
+name: Live contracts
+
+on:
+  push:
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lock:
+    name: Lock and code hash, ${{ matrix.mode }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [daily, fast]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Count access keys and compare the code hash
+        run: |
+          set -euo pipefail
+          record=deploy/testnet-${{ matrix.mode }}.json
+          contract=$(jq -r .contract "$record")
+          expected=$(jq -r .wasm.bs58 "$record")
+          query() {
+            for rpc in https://rpc.testnet.fastnear.com https://test.rpc.fastnear.com https://near-testnet.drpc.org; do
+              if body=$(curl -sf -m 20 "$rpc" -H 'content-type: application/json' \
+                -d "{\"jsonrpc\":\"2.0\",\"id\":\"ci\",\"method\":\"query\",\"params\":{\"request_type\":\"$1\",\"finality\":\"final\",\"account_id\":\"$contract\"}}") \
+                && [ "$(echo "$body" | jq 'has("result")')" = "true" ]; then
+                echo "$body"
+                return 0
+              fi
+            done
+            echo "No RPC answered $1 for $contract" >&2
+            return 1
+          }
+          keys=$(query view_access_key_list | jq '.result.keys | length')
+          code=$(query view_account | jq -r .result.code_hash)
+          echo "### $contract" >> "$GITHUB_STEP_SUMMARY"
+          echo "- access keys: $keys" >> "$GITHUB_STEP_SUMMARY"
+          echo "- code hash: $code (recorded at deploy: $expected)" >> "$GITHUB_STEP_SUMMARY"
+          echo "$contract: $keys access key(s), code hash $code"
+          [ "$keys" = "0" ] || { echo "FAIL: $contract has $keys access key(s)"; exit 1; }
+          [ "$code" = "$expected" ] || { echo "FAIL: code hash $code is not the recorded $expected"; exit 1; }
+          echo "PASS: nobody can deploy other code to $contract, and it runs the recorded build"

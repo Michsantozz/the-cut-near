@@ -15,7 +15,7 @@ afterEach(() => vi.unstubAllEnvs());
 
 const sum = (values: bigint[]) => values.reduce((total, value) => total + value, 0n);
 
-// Every screen reads one sample world (SPEC-v20): season 1, day 4, before cut #5. The journal, the cut records, the
+// Every screen reads one sample world (v20): season 1, day 4, before cut #5. The journal, the cut records, the
 // piles, the supply and the member's saves must tell the same story.
 describe("the sample world", () => {
   it("adds up: supply = minted − burned = saved + free + pool", async () => {

@@ -25,7 +25,7 @@ export type AuditInput = {
 
 const cut = (value: bigint) => formatAmount(value, { maxFractionDigits: 1 });
 
-/** The launch values of SPEC-v20 "Parameters": the same for both testnet contracts except the schedule. */
+/** The launch values of RULES.md "Parameters": the same for both testnet contracts except the schedule. */
 export const LAUNCH_PARAMS = {
   totalSupply: units(10_000_000),
   feeBps: 100,

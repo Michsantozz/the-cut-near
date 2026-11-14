@@ -8,7 +8,7 @@ import { FAN_STRATEGIES, SIM, SIM_REPORT, type FanStrategy } from "../model/sim"
 
 import { SupplyModel } from "./supply-model";
 
-// The simulation page: the 60-day supply model of SPEC-v20 under six scenarios, which fans come out ahead, and what the
+// The simulation page: the 60-day supply model of RULES.md under six scenarios, which fans come out ahead, and what the
 // per-unit prize cap does to a sniper. Static: the numbers come from python3 sim/thecut_sim.py --write.
 
 /** "The simulation": supply over 60 simulated days under a few scenarios, and what it does and does not show. */

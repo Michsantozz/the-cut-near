@@ -1,7 +1,7 @@
 import { units } from "@/shared/lib/amount";
 import type { Champion, Season } from "../model/types";
 
-/** Season 1 of the sample world (SPEC-v20): day 4, seven of ten agents alive, three on the bench for season 2. */
+/** Season 1 of the v20 sample world: day 4, seven of ten agents alive, three on the bench for season 2. */
 export const SAMPLE_SEASON: Season = {
   index: 1,
   active: true,

@@ -2,7 +2,7 @@ import { sampleCutAt } from "@/shared/config/sample";
 import { units } from "@/shared/lib/amount";
 import type { CutRecord, NextCut } from "../model/types";
 
-// The sample world's cuts (SPEC-v20): cut #1 started season 1 with ten agents and cut nobody; cuts #2 to #4
+// The sample world's cuts (v20): cut #1 started season 1 with ten agents and cut nobody; cuts #2 to #4
 // cut Kiko, Onyx and Velvet. Cut #5 is today's. Times are laid out from the coming 18:00 UTC, so the sample
 // day always counts down.
 

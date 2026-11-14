@@ -3,7 +3,7 @@ import { NEAR_DECIMALS, units } from "@/shared/lib/amount";
 import { CUT_STANDARD, eventRefs, FT_STANDARD } from "@/shared/near/events";
 import type { JournalEntry } from "../model/types";
 
-// The sample world's public log (SPEC-v20), newest first, as the indexer would store it: every `data` item has the
+// The sample world's public log (v20), newest first, as the indexer would store it: every `data` item has the
 // fields the v2 contract logs (docs/contract-interface.md "Events"), and the account, agent, cut and amount columns
 // come from the same `eventRefs` the indexer uses. NEP-141 transfers (trades, pacts, rescues sent back, the agents'
 // share) are left out; mints and burns are in.

@@ -10,7 +10,7 @@ import { units } from "@/shared/lib/amount";
 import { buildCutFacts, buildDayFacts } from "@/features/director/model/facts";
 import { countdownParts, formatCut, formatRatio } from "@/features/director/model/format";
 
-// The SPEC-v20 sample world: season 1, day 4, two hours before cut #5 at 18:00 UTC. Yuna Star is on the cut line.
+// The v20 sample world: season 1, day 4, two hours before cut #5 at 18:00 UTC. Yuna Star is on the cut line.
 const NOW = new Date("2026-11-14T16:00:00Z");
 const day = (now = NOW) => buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: sampleNextCut(now), season: SAMPLE_SEASON, now, moves: sampleMoves(5, now) });
 const cut = (index: number) => sampleCuts(NOW).find((record) => record.index === index) as DeletingCut;

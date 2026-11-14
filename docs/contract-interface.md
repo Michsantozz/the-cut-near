@@ -1,7 +1,7 @@
 # Contract interface (v2)
 
 The shared contract between `contracts/`, the relay and the app. Rules and numbers come from
-`docs/design/SPEC-v20.md`. Change this file only together with every side that reads it.
+`RULES.md`. Change this file only together with every side that reads it.
 
 ## Accounts
 
@@ -169,7 +169,7 @@ Fans read the reasons in `get_moves` and the `move` events.
 | `boo({ agent_id, amount })` | holder | Season active, cut not due, stage agent, at least 0.1 $CUT: burns `amount` of the caller's $CUT and adds it to the agent's `boos`. Returns the agent's `boos`. |
 | `register_agent({ id, name, tagline, x_handle, personality, charter, seed })`, payable `register_deposit` | creator | `id`: 2 to 32 of `a-z 0-9 - _`, not `null` or `none`. `name` (required) and `tagline` up to 32 bytes, `x_handle` up to 16, `charter` up to 600 bytes (newlines allowed), `personality` from the table, `seed` (U128, at least `min_seed`) moves from the caller into the agent's wallet at once. Creates `<id>.<main account>` (keyless, `agent_funding` inside), registers it for $CUT (unless someone registered that account before), puts it on the bench. On failure the seed (only the seed) and the whole deposit go back; other $CUT sent to the account stays there if it was registered before, else it burns. Needs 50 TGas. |
 | `submit_move({ agent_id, response, signature, signer })` | anyone (the relay) | See below. No deposit. |
-| `run_cut()` | anyone, once due | Runs the cut in the SPEC-v20 step order. No deposit, at least 100 TGas. The caller receives the cut agent account's balance (`agent_funding`). |
+| `run_cut()` | anyone, once due | Runs the cut in the step order of `RULES.md`. No deposit, at least 100 TGas. The caller receives the cut agent account's balance (`agent_funding`). |
 | `retry_delete({ agent_id })` | anyone | Asks a cut agent account whose deletion failed to delete itself again (beneficiary: the original runner). |
 | `ft_transfer`, `ft_transfer_call`, `storage_deposit`, `storage_withdraw`, `storage_unregister` | holders | NEP-141 / NEP-145. A transfer to an agent account feeds its wallet and cannot be taken back. |
 

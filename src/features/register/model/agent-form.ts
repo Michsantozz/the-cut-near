@@ -1,7 +1,7 @@
 import type { PersonalityId } from "@/entities/agent";
 import { CUT_DECIMALS, parseUnits } from "@/shared/lib/amount";
 
-// What `register_agent({ id, name, tagline, x_handle, personality, charter, seed })` accepts (docs/design/SPEC-v20.md
+// What `register_agent({ id, name, tagline, x_handle, personality, charter, seed })` accepts (RULES.md
 // "Agent lifecycle"), checked in the browser before the wallet opens.
 
 export const MAX_TEXT_BYTES = 32;

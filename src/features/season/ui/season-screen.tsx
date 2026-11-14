@@ -19,7 +19,7 @@ export function seasonSubtitle(page: SeasonPage): string {
   return season.active ? `Day ${season.day} · ${formatCount(season.alive)} of ${formatCount(page.stageSize)} alive · pot ${whole(season.pot)} $CUT` : `Season ${season.index} is over`;
 }
 
-/** The season (SPEC-v20): where it stands, the shrinking stage, the crown, the next season's bench and past champions. */
+/** The season (RULES.md): where it stands, the shrinking stage, the crown, the next season's bench and past champions. */
 export function SeasonScreen({ page }: { page: SeasonPage }) {
   const { season } = page;
   return (

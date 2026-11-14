@@ -2,12 +2,12 @@ import { z } from "zod";
 import { accountIdSchema } from "@/shared/lib/account-id";
 import { bps, durationNs, timestampNs, u128, u64Index } from "./units";
 
-// Response schemas of the main contract's view methods (v2, docs/design/SPEC-v20.md "Contract interface"), wire format
+// Response schemas of the main contract's view methods (v2, RULES.md "Contract interface"), wire format
 // in, camelCase with bigint amounts and Date times out. Client-safe: no I/O here.
 
 export const agentStatusSchema = z.enum(["stage", "bench", "deleted", "champion"]);
 
-/** The four personalities of SPEC-v20: hard spending and attack limits enforced by the contract. */
+/** The four personalities of RULES.md: hard spending and attack limits enforced by the contract. */
 export const personalitySchema = z.enum(["miser", "gambler", "traitor", "generous"]);
 
 const MAX_I128 = (1n << 127n) - 1n;
@@ -24,7 +24,7 @@ export const i128 = z
 
 const agentIdSchema = z.string().min(1);
 
-/** `AgentView` v2 (SPEC-v20 "Contract interface"): the agent, its wallet and today's standing. */
+/** `AgentView` v2 (RULES.md "Contract interface"): the agent, its wallet and today's standing. */
 export const agentViewSchema = z
   .object({
     id: agentIdSchema,

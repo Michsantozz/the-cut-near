@@ -28,7 +28,7 @@ type Step =
   | { kind: "failed"; reason: TxFailure; txHash: string | null };
 
 /**
- * Boo a stage agent (SPEC-v20 `boo`): pick the agent and an amount, then confirm a burn. The confirm step says
+ * Boo a stage agent (RULES.md `boo`): pick the agent and an amount, then confirm a burn. The confirm step says
  * plainly that the $CUT is gone for good; nothing is sent until the fan agrees to that.
  */
 export function BooScreen({ data }: { data: BooData }) {

@@ -1,7 +1,7 @@
 import { units, NEAR_DECIMALS } from "@/shared/lib/amount";
 import type { Params, Pool, PricePoint, PriceRange, StorageBalance } from "../model/types";
 
-/** SPEC-v20 "Parameters", testnet daily. */
+/** RULES.md "Parameters", testnet daily. */
 export const SAMPLE_PARAMS: Params = {
   totalSupply: units(10_000_000),
   feeBps: 100,

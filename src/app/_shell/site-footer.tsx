@@ -66,7 +66,7 @@ export function SiteFooter() {
   const { network, contractId } = publicEnv;
   const source: FooterLink[] = [
     { label: "GitHub", href: GITHUB_URL, external: true },
-    { label: "The rules in full", ...repoFileHref("docs/design/SPEC-v20.md", "/inside") },
+    { label: "The rules in full", ...repoFileHref("RULES.md", "/inside") },
     { label: "The simulation report", ...repoFileHref("sim/RESULTS.md", SIMULATION_HREF) },
     { label: "The contract interface", ...repoFileHref("docs/contract-interface.md", "/llms.txt"), file: !GITHUB_URL },
   ];

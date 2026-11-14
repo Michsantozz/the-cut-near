@@ -6,7 +6,7 @@ import type { Season } from "@/entities/season";
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
 import { countdownParts, formatCut, formatRatio, utcClock } from "./format";
 
-// What the Director is allowed to know, already formatted the way the design writes numbers (SPEC-v20).
+// What the Director is allowed to know, already formatted the way the design writes numbers (RULES.md).
 // The Director decides nothing: the agent on the cut line comes from the contract (`NextCut.lowestId`, `CutRecord`),
 // ranked by score (pile - boos - damage), and the agents' moves come signed from their own AI.
 

@@ -1,6 +1,6 @@
 import type { Agent } from "@/entities/agent";
 
-// The season (SPEC-v20 "Agent lifecycle"): a stage that shrinks by one agent a day until one is left and crowned.
+// The season (RULES.md "Agent lifecycle"): a stage that shrinks by one agent a day until one is left and crowned.
 
 /** One seat of the season's stage: still alive, cut on a day, or the crowned champion. */
 export type Seat = { agent: Agent; state: "alive" | "champion" } | { agent: Agent; state: "cut"; day: number };

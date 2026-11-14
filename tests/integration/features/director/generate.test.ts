@@ -12,7 +12,7 @@ import { defaultDirectorStore, DirectorGenerationError, DirectorSession, getDire
 import { fakeHardware, fakeNearAiCloud, type FakeCloudOptions } from "../../../msw/near-ai";
 import { server } from "../../../msw/server";
 
-// The SPEC-v20 sample world: season 1, day 4, two hours before cut #5. Yuna Star is on the cut line.
+// The v20 sample world: season 1, day 4, two hours before cut #5. Yuna Star is on the cut line.
 const NOW = new Date("2026-11-14T16:00:00Z");
 const facts = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: sampleNextCut(NOW), season: SAMPLE_SEASON, now: NOW, moves: sampleMoves(5, NOW) });
 const YUNA = "601 $CUT short of Gremlin, and generous idols cannot swing back. Save her or say goodbye.";
@@ -151,7 +151,7 @@ describe("runDirectorMoment", () => {
     const { cloud, deps } = setup({ lines: plain });
     const report = await runDirectorMoment("scheduled", { deps, now: NOW });
     expect(report.failures).toEqual([]);
-    // The app's sample world (SPEC-v20, season 1 day 4): Yuna is on the cut line, Gremlin right above her; the rest by score.
+    // The app's sample world (v20, season 1 day 4): Yuna is on the cut line, Gremlin right above her; the rest by score.
     const posters = ["yuna", "gremlin", "pixie", "oracle", "mabel", "melody", "lila", "chartwise"];
     expect(report.lines.map((l) => `${l.kind}:${l.subjectId}`)).toEqual(["scheduled:yuna", "scheduled:gremlin", ...posters.map((id) => `agent-post:${id}`)]);
     expect(report.lines.every((l) => l.proofStatus === "verified")).toBe(true);

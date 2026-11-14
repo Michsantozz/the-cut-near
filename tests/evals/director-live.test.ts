@@ -45,7 +45,7 @@ describe.skipIf(!withKey)("NEAR AI Cloud signed line, live", () => {
       reasoningEffort: env.NEAR_AI_REASONING_EFFORT === "none" ? undefined : env.NEAR_AI_REASONING_EFFORT,
       maxAttempts: 3,
     });
-    // The SPEC-v20 sample world's cut line: Yuna Star, two hours before cut #5.
+    // The v20 sample world's cut line: Yuna Star, two hours before cut #5.
     const now = new Date("2026-11-14T16:00:00Z");
     const facts = buildDayFacts({ stage: SAMPLE_STAGE, bench: SAMPLE_BENCH, nextCut: sampleNextCut(now), season: SAMPLE_SEASON, now, moves: sampleMoves(5, now) });
     const line = await session.generate(scheduledPrompt(facts, "lowest"));

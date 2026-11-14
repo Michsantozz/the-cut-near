@@ -8,7 +8,7 @@ import { AppHeader } from "../_shell/app-header";
 
 export const metadata = { title: "Inside the cut · The Cut" };
 
-// Inside the cut: the rules (docs/design/SPEC-v20.md) in plain words, where the $CUT goes, the parameters and the known limits.
+// Inside the cut: the rules (RULES.md) in plain words, where the $CUT goes, the parameters and the known limits.
 export default function InsidePage() {
   return (
     <>

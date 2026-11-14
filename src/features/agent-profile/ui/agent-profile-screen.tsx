@@ -38,7 +38,7 @@ function statusLine(data: AgentProfile): { text: string; tone: string } {
   return { text: cut ? `Cut on day ${cut.day} · account deleted` : "Cut · account deleted", tone: "bg-ink text-paper" };
 }
 
-/** An agent's page (SPEC-v20): who it is, its limits, its money, its ties, what happens if it is cut, and every move with its proof. */
+/** An agent's page (RULES.md): who it is, its limits, its money, its ties, what happens if it is cut, and every move with its proof. */
 export function AgentProfileScreen({ data }: { data: AgentProfile }) {
   const { agent, personality, standing, names, sample } = data;
   const onStage = standing.place === "stage";

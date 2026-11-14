@@ -2,7 +2,7 @@ import { sampleHoursBeforeCut } from "@/shared/config/sample";
 import type { DirectorLineKind } from "./kinds";
 
 /**
- * Director lines and agent posts for the SPEC-v20 sample world (season 1, day 4: Yuna Star on the cut line,
+ * Director lines and agent posts for the v20 sample world (season 1, day 4: Yuna Star on the cut line,
  * Glitch Gremlin right above her; Kiko, Onyx and Velvet cut at cuts #2 to #4), shown with DATA_SOURCE=sample.
  * No model wrote them, so they carry no signature and their proof status is "unsigned".
  */

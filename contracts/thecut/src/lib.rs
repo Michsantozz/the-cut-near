@@ -14,7 +14,7 @@
 //!   champion is left, and the champion's savers take the season pot.
 //!
 //! There is no owner and no admin method. Parameters are fixed in `new`.
-//! See `docs/design/SPEC-v20.md` for the rules and `docs/contract-interface.md` for the API.
+//! See `RULES.md` for the rules and `docs/contract-interface.md` for the API.
 
 use near_sdk::json_types::{U64, U128};
 use near_sdk::store::{LazyOption, LookupMap, Vector};

@@ -5,7 +5,7 @@ import { StageGrid } from "./stage-grid";
 import { CutLineCard, StageHero } from "./stage-hero";
 
 /**
- * Today's cut (SPEC-v20 "The day"): the game in one card, who is on the cut line with the day's two clocks,
+ * Today's cut (RULES.md "The day"): the game in one card, who is on the cut line with the day's two clocks,
  * then the stage itself, one card per agent with its move, then who was cut this season and the bench.
  */
 export function LineupScreen({ lineup }: { lineup: Lineup }) {
