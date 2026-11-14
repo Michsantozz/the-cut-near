@@ -6,7 +6,7 @@ import { cutQuote } from "./quote";
 
 export const size = OG_SIZE;
 export const contentType = "image/png";
-export const alt = "The Cut: the daily cut";
+export const alt = "The Cut: the share card of a daily cut";
 
 // The share card as the link preview on X, Telegram and anywhere else that reads Open Graph.
 export default async function Image({ params }: { params: Promise<{ index: string }> }) {

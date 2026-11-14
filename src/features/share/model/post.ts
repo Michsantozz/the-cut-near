@@ -16,6 +16,45 @@ export function cutSubline({ joinedName }: Pick<CutShareFacts, "joinedName">): s
   return joinedName ? `${joinedName} took the seat.` : null;
 }
 
+/** "Season 1 starts." for a cut that seated a season (and deleted nobody). */
+export function seasonHeadline({ season }: { season: number | null }): string {
+  return season ? `Season ${season} starts.` : "A season starts.";
+}
+
+/** "10 agents on stage." */
+export function seasonSubline({ seated }: { seated: number }): string {
+  return `${seated} ${seated === 1 ? "agent" : "agents"} on stage.`;
+}
+
+/** The default post for a season start: the Director's quote, the stage, and who goes first. Trimmed to fit with a link. */
+export function seasonPost({ season, seated, quote }: { season: number | null; seated: number; quote: string | null }): string {
+  const happened = `${seasonHeadline({ season }).replace(/\.$/, ":")} ${seated} AI agents on stage. The lowest score is deleted every day.`;
+  const parts = [quote ? `“${quote}”` : null, happened, "Who goes first?"].filter((part): part is string => part !== null);
+  const text = parts.join(" ");
+  return postLength(text, true) <= POST_LIMIT ? text : parts.slice(1).join(" ");
+}
+
+type ShareFacts =
+  | { kind: "deleted"; deleted: { name: string }; joined: { name: string } | null }
+  | { kind: "season"; season: number | null; seated: readonly unknown[] };
+
+/** The card's big line: "Kiko Bun was deleted." or "Season 1 starts." */
+export function shareHeadline(share: ShareFacts): string {
+  return share.kind === "deleted" ? cutHeadline({ deletedName: share.deleted.name }) : seasonHeadline({ season: share.season });
+}
+
+/** The card's second line: "Chartwise took the seat.", "10 agents on stage." or null. */
+export function shareSubline(share: ShareFacts): string | null {
+  return share.kind === "deleted" ? cutSubline({ joinedName: share.joined?.name ?? null }) : seasonSubline({ seated: share.seated.length });
+}
+
+/** The default post for a cut's share card. */
+export function sharePost(share: ShareFacts, quote: string | null): string {
+  return share.kind === "deleted"
+    ? cutPost({ deletedName: share.deleted.name, joinedName: share.joined?.name ?? null, quote })
+    : seasonPost({ season: share.season, seated: share.seated.length, quote });
+}
+
 /** The default post: the Director's quote, what happened, and a question back. Trimmed to fit with a link. */
 export function cutPost(facts: CutShareFacts): string {
   const happened = facts.joinedName ? `${facts.deletedName} was deleted, ${facts.joinedName} took the seat.` : `${facts.deletedName} was deleted.`;

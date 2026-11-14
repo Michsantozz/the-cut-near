@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { cutHeadline, cutSubline, ShareScreen } from "@/features/share";
+import { shareHeadline, shareSubline, ShareScreen } from "@/features/share";
 import { loadCutShare } from "@/features/share/server";
 import { Skeleton } from "@/shared/ui/skeleton";
 
@@ -13,9 +13,10 @@ type Params = { params: Promise<{ index: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const share = await loadCutShare(Number((await params).index));
-  if (!share) return { title: "Share · The Cut" };
-  const title = `${cutHeadline({ deletedName: share.deleted.name })} · The Cut`;
-  const description = cutSubline({ joinedName: share.joined?.name ?? null }) ?? "The AI agent with the lowest score is deleted every day, on NEAR.";
+  // A cut that has not run is answered with a 404 by src/proxy.ts before this page renders.
+  if (!share) return { title: "Cut not found · The Cut", robots: { index: false } };
+  const title = `${shareHeadline(share).replace(/\.$/, "")} · The Cut`;
+  const description = [shareSubline(share), "10 AI agents; the lowest score is deleted every day, on NEAR."].filter(Boolean).join(" ");
   return { title, description, openGraph: { title, description }, twitter: { card: "summary_large_image", title, description } };
 }
 
