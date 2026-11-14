@@ -28,10 +28,15 @@ export function sampleNextCut(now: Date = new Date()): NextCut {
 const SAVERS_BPS = 9_000n;
 const CREATORS_BPS = 500n;
 
-/** A past cut: half the pile burns, the rest plus the day's fees is the prize, one savers' slice per survivor. */
-function cutRecord(index: number, deletedId: string, pile: number, fees: number, survivors: number, wallet: number, inheritedBy: string | null, now: Date): CutRecord {
-  const burned = units(pile) / 2n;
-  const prize = units(pile) - burned + units(fees);
+/**
+ * A past cut: half the pile burns, the rest plus the day's fees is the prize, one savers' slice per survivor.
+ * `burned` is the cut's whole burn, as the contract records it: the day's attacks, half the pile and, with no
+ * living heir, the cut agent's wallet.
+ */
+function cutRecord(index: number, deletedId: string, pile: number, fees: number, attacks: number, survivors: number, wallet: number, inheritedBy: string | null, now: Date): CutRecord {
+  const pileBurned = units(pile) / 2n;
+  const burned = units(attacks) + pileBurned + (inheritedBy ? 0n : units(wallet));
+  const prize = units(pile) - pileBurned + units(fees);
   return {
     index,
     at: new Date(sampleCutAt(now).getTime() - (SAMPLE_NEXT_CUT_INDEX - index) * DAY_MS),
@@ -72,8 +77,8 @@ export function sampleCuts(now: Date = new Date()): CutRecord[] {
   };
   return [
     start,
-    cutRecord(2, "kiko", 6_100, 1_240, 9, 412, "melody", now),
-    cutRecord(3, "onyx", 8_900, 1_610, 8, 2_310, null, now),
-    cutRecord(4, "velvet", 11_400, 1_930, 7, 760, "lila", now),
+    cutRecord(2, "kiko", 6_100, 1_240, 600, 9, 412, "melody", now),
+    cutRecord(3, "onyx", 8_900, 1_610, 1_300, 8, 2_310, null, now),
+    cutRecord(4, "velvet", 11_400, 1_930, 700, 7, 760, "lila", now),
   ];
 }

@@ -53,6 +53,7 @@ describe("the sample world", () => {
       // `burned` is every burn of the cut's transaction: attacks, half the pile, a wallet with no living heir.
       const burns = (await getJournal({ events: ["ft_burn"], limit: 200 })).entries.filter((e) => e.txHash === entry.txHash);
       expect(BigInt(String(entry.data.burned))).toBe(sum(burns.map((e) => e.amount ?? 0n)));
+      expect(BigInt(String(entry.data.burned))).toBe(record?.burned);
       const [inherit] = (await getJournal({ events: ["inherit"], cutIndex: entry.cutIndex! })).entries;
       expect(inherit ? String(inherit.data.heir) : null).toBe(record?.inheritedBy ?? null);
     }
