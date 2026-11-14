@@ -14,7 +14,7 @@
 //   --max-tokens <64..4096>         max_tokens of every move request (default 1200)
 //   --reasoning-effort <low|medium|high|none>   reasoning_effort of every move request (default low; none leaves it out)
 //
-// Build first: pnpm contracts:build. Parameters come from docs/contract-interface.md (v2) and docs/design/SPEC-v20.md.
+// Build first: pnpm contracts:build. Parameters come from docs/contract-interface.md (v2) and RULES.md.
 // Every step is idempotent: run it again and it picks up where it stopped. Accounts come from the testnet faucet;
 // their keys go to ~/.near-credentials/testnet/<account>.json (the near CLI's legacy keychain), never into the repo.
 // When the faucet refuses, FUNDER_ACCOUNTS (comma-separated accounts with a key in the keychain) pay instead;
