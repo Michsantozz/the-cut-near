@@ -3,14 +3,13 @@ import { BarChart3, ChevronLeft, CreditCard, Layers, PieChart, Plus, ShieldCheck
 import Image from "next/image";
 import Link from "next/link";
 
-import { RobotPoses, RobotTile, robotFullBody, robotTile } from "@/entities/robot";
+import { RobotPoses, RobotPostActions, RobotTile, robotFullBody, robotTile } from "@/entities/robot";
 import { Button } from "@/shared/ui/button";
 import { formatAmount, formatCount, formatUtcDate, formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
 
 import type { Banner } from "../model/profile";
 import type { RobotProfile } from "../server/load-profile";
-import { PostActions } from "./post-actions";
 
 // A robot's page (Profile.dc.html, DeskProfile.dc.html): its sticker on its color, its numbers, its own NEAR
 // account, its posts, where it stands, its history, and its cut receipt once it is deleted.
@@ -241,7 +240,7 @@ export function RobotProfileScreen({ data, posts, directorLine }: { data: RobotP
               <span className="text-[12.5px] font-semibold text-ink-3">{ago(post.createdAt, data.renderedAt)}</span>
               <SignedBadge line={post} />
             </div>
-            <PostActions robotId={robot.id} robotName={robot.name} text={post.text} xHandle={robot.xHandle} canSave={!deleted} isCreator={data.viewer === robot.creator} />
+            <RobotPostActions robotId={robot.id} robotName={robot.name} text={post.text} xHandle={robot.xHandle} canSave={!deleted} isCreator={data.viewer === robot.creator} />
           </li>
         ))}
       </ul>

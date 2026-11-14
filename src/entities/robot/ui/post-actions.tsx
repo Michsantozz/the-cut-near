@@ -12,7 +12,7 @@ import { WalletGatedLink } from "@/shared/wallet";
  * the robot, and, for the robot's creator, the same post ready to publish from the robot's X account.
  * Every X link only opens X's composer; nothing is posted for anyone.
  */
-export function PostActions({ robotId, robotName, text, xHandle, canSave, isCreator }: { robotId: string; robotName: string; text: string; xHandle: string; canSave: boolean; isCreator: boolean }) {
+export function RobotPostActions({ robotId, robotName, text, xHandle, canSave, isCreator }: { robotId: string; robotName: string; text: string; xHandle: string; canSave: boolean; isCreator: boolean }) {
   const robotUrl = useAbsoluteUrl(`/robots/${robotId}`);
   return (
     <div className="mt-2 flex flex-wrap gap-1.5">
