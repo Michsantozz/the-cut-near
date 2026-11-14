@@ -1,7 +1,7 @@
 // Prints the live state of the testnet launch from deploy/testnet.json: keys left on the contract, the next cut,
 // the stage and the bench. Read-only.
 //
-//   node scripts/testnet/status.ts
+//   node scripts/testnet/status.ts [--fast]
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -9,7 +9,8 @@ import { fileURLToPath } from "node:url";
 import { JsonRpcProvider } from "near-api-js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const { contract } = JSON.parse(readFileSync(join(ROOT, "deploy", "testnet.json"), "utf8")) as { contract: string };
+const mode = process.argv.includes("--fast") ? "fast" : "daily";
+const { contract } = JSON.parse(readFileSync(join(ROOT, "deploy", `testnet-${mode}.json`), "utf8")) as { contract: string };
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com" });
 
 type RobotView = { id: string; pile: string; savers: number };

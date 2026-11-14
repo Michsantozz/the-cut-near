@@ -1,0 +1,33 @@
+{
+  "network": "testnet",
+  "contract": "thecut-d9jicr.testnet",
+  "creators": [
+    "thecut-d9jicr-studio-a.testnet",
+    "thecut-d9jicr-studio-b.testnet"
+  ],
+  "keeper": "thecut-d9jicr-keeper.testnet",
+  "fans": [
+    "thecut-d9jicr-fan-a.testnet",
+    "thecut-d9jicr-fan-b.testnet"
+  ],
+  "wasmSha256": "df0961f4790cc4e97ddabb9f6de75f9aff6285f870f4dafe1720e959e169ff75",
+  "firstCutAt": "2026-11-14T18:00:00.000Z",
+  "deployedAt": "2026-11-14T03:29:23.138Z",
+  "registered": [
+    "pixie",
+    "lila",
+    "oracle",
+    "mabel",
+    "melody",
+    "yuna",
+    "gremlin",
+    "velvet",
+    "onyx",
+    "kiko",
+    "chartwise",
+    "bloop"
+  ],
+  "seeded": true,
+  "keeperKey": "ed25519:GnfD9SDjDYT1GVArMD4GcHbwrNDPZHigpuiwUBXA8Xow",
+  "locked": true
+}

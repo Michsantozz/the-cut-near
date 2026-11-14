@@ -1,7 +1,9 @@
-// Launches The Cut on NEAR testnet, end to end, and records what it did in deploy/testnet.json.
+// Launches The Cut on NEAR testnet, end to end, and records what it did in deploy/testnet-<mode>.json.
 //
-//   node scripts/testnet/launch.ts            # build first: pnpm contracts:build
+//   node scripts/testnet/launch.ts           # daily: a cut every day at 18:00 UTC, the app's public contract
+//   node scripts/testnet/launch.ts --fast    # fast: a cut every 2 minutes, to watch robots get deleted
 //
+// Build first: pnpm contracts:build.
 // Every step is idempotent: run it again and it picks up where it stopped. Accounts come from the testnet
 // faucet; their keys go to ~/.near-credentials/testnet/<account>.json (the near CLI's legacy keychain), never
 // into the repo. After `new`, the contract account's only full-access key is deleted, so nobody can change
@@ -13,24 +15,35 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Account, JsonRpcProvider, KeyPair, KeyPairSigner, actions, nearToYocto, teraToGas, type KeyPairString } from "near-api-js";
 
-const RPC_URL = process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com";
+const RPC_URL = process.env.NEAR_RPC_URL ?? "https://near-testnet.drpc.org";
 const FAUCET_URL = "https://helper.nearprotocol.com/account";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const STATE_FILE = join(ROOT, "deploy", "testnet.json");
+const MODE = process.argv.includes("--fast") ? "fast" : "daily";
+const STATE_FILE = join(ROOT, "deploy", `testnet-${MODE}.json`);
 const WASM = join(ROOT, "contracts", "target", "near", "thecut", "thecut.wasm");
 const KEYCHAIN = join(homedir(), ".near-credentials", "testnet");
 
-// Testnet parameters (docs/contract-interface.md): a 2-minute day, cheaper robots so the faucet covers them.
+// Testnet parameters (docs/contract-interface.md): cheaper robots so the faucet covers them.
+const NS_PER_SECOND = 1_000_000_000n;
 const PARAMS = {
   fee_bps: 100,
   burn_bps: 5_000,
   savers_bps: 9_500,
   stage_size: 10,
-  cut_interval: String(120n * 1_000_000_000n),
+  cut_interval: String((MODE === "fast" ? 120n : 86_400n) * NS_PER_SECOND),
   robot_funding: nearToYocto("0.5").toString(),
   register_deposit: nearToYocto("1").toString(),
 };
-const FIRST_CUT_DELAY_NS = 5n * 60n * 1_000_000_000n;
+
+/** Fast: 5 minutes from now, time to register and seed. Daily: the next 18:00 UTC at least 15 minutes away. */
+function firstCutAtNs(): bigint {
+  const now = Date.now();
+  if (MODE === "fast") return BigInt(now + 5 * 60_000) * 1_000_000n;
+  const at = new Date(now);
+  at.setUTCHours(18, 0, 0, 0);
+  if (at.getTime() < now + 15 * 60_000) at.setUTCDate(at.getUTCDate() + 1);
+  return BigInt(at.getTime()) * 1_000_000n;
+}
 const POOL_NEAR = nearToYocto("4");
 
 // The design's robots (src/entities/robot/api/sample.ts), split between two creator accounts.
@@ -103,6 +116,11 @@ async function exists(accountId: string): Promise<boolean> {
   }
 }
 
+// The faucet allows a handful of accounts per IP every 12 hours. Past that, FUNDER_ACCOUNT (any account with a
+// key in the keychain) pays for new accounts through the `testnet` registrar instead.
+const FUNDER = process.env.FUNDER_ACCOUNT;
+const FUNDED_NEAR = nearToYocto((process.env.FUNDED_NEAR ?? "3") as `${number}`);
+
 /** A new top-level testnet account funded by the faucet. Its key is written to the keychain before the request. */
 async function createFaucetAccount(accountId: string): Promise<string> {
   if (existsSync(keyFile(accountId)) && (await exists(accountId))) return accountId;
@@ -115,7 +133,19 @@ async function createFaucetAccount(accountId: string): Promise<string> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ newAccountId: accountId, newAccountPublicKey: publicKey }),
   });
-  if (!response.ok) throw new Error(`Faucet refused ${accountId}: HTTP ${response.status} ${(await response.text()).slice(0, 200)}`);
+  if (!response.ok) {
+    const reason = `HTTP ${response.status} ${(await response.text()).slice(0, 200)}`;
+    if (!FUNDER) throw new Error(`Faucet refused ${accountId}: ${reason}. Set FUNDER_ACCOUNT to pay for it instead.`);
+    const outcome = await account(FUNDER).callFunctionRaw({
+      contractId: "testnet",
+      methodName: "create_account",
+      args: { new_account_id: accountId, new_public_key: publicKey },
+      deposit: FUNDED_NEAR,
+      gas: teraToGas("100"),
+    });
+    if (JSON.stringify(outcome.status).includes("Failure")) throw new Error(`testnet.create_account failed for ${accountId}`);
+    log(`faucet refused (${response.status}); ${FUNDER} paid for ${accountId}`);
+  }
   for (let i = 0; i < 30 && !(await exists(accountId)); i++) await new Promise((r) => setTimeout(r, 1_000));
   if (!(await exists(accountId))) throw new Error(`${accountId} did not appear on chain`);
   log(`created ${accountId}`);
@@ -137,19 +167,22 @@ const STATE = loadState();
 
 async function main() {
   if (!RPC_URL.includes("testnet")) throw new Error("This script only launches on testnet.");
-  const suffix = STATE.contract?.split(".")[0].replace("thecut-", "") ?? Math.random().toString(36).slice(2, 8);
+  const suffix = STATE.contract?.split(".")[0].replace("thecut-", "") ?? `${MODE === "fast" ? "f" : "d"}${Math.random().toString(36).slice(2, 7)}`;
 
-  // 1. Accounts.
-  STATE.contract = await createFaucetAccount(`thecut-${suffix}.testnet`);
-  STATE.creators = [await createFaucetAccount(`thecut-${suffix}-studio-a.testnet`), await createFaucetAccount(`thecut-${suffix}-studio-b.testnet`)];
-  STATE.keeper = await createFaucetAccount(`thecut-${suffix}-keeper.testnet`);
-  STATE.fans = [await createFaucetAccount(`thecut-${suffix}-fan-a.testnet`), await createFaucetAccount(`thecut-${suffix}-fan-b.testnet`)];
+  // 1. Accounts, saved one by one so a refused faucet call resumes with the same names.
+  STATE.contract = `thecut-${suffix}.testnet`;
   saveState(STATE);
+  await createFaucetAccount(STATE.contract);
+  STATE.creators = [`thecut-${suffix}-studio-a.testnet`, `thecut-${suffix}-studio-b.testnet`];
+  STATE.keeper = `thecut-${suffix}-keeper.testnet`;
+  STATE.fans = [`thecut-${suffix}-fan-a.testnet`, `thecut-${suffix}-fan-b.testnet`];
+  saveState(STATE);
+  for (const id of [...STATE.creators, STATE.keeper, ...STATE.fans]) await createFaucetAccount(id);
 
   // 2. Deploy and initialize in one transaction, so nobody can call `new` in between.
   if (!STATE.deployedAt) {
     const code = readFileSync(WASM);
-    const firstCutAt = BigInt(Date.now()) * 1_000_000n + FIRST_CUT_DELAY_NS;
+    const firstCutAt = firstCutAtNs();
     const args = { ...PARAMS, first_cut_at: firstCutAt.toString() };
     const outcome = await account(STATE.contract).signAndSendTransaction({
       receiverId: STATE.contract,
@@ -168,6 +201,12 @@ async function main() {
   STATE.registered ??= [];
   for (const [index, [id, name, kind]] of ROBOTS.entries()) {
     if (STATE.registered.includes(id)) continue;
+    // A call can land even when its RPC answer is lost (a 429 on the way back): ask the contract first.
+    const known = await provider.callFunction({ contractId: STATE.contract, method: "get_robot", args: { id } });
+    if (known) {
+      STATE.registered.push(id);
+      continue;
+    }
     const creator = account(STATE.creators[index % 2]);
     await call(creator, "register_robot", { id, name, kind, x_handle: xHandle(id, name) }, BigInt(PARAMS.register_deposit), teraToGas("100"));
     STATE.registered.push(id);
