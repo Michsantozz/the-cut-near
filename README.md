@@ -236,7 +236,7 @@ flowchart LR
     UI[Next.js site<br/>Today, agents, judge desk]
     W[NEAR Connect<br/>fan's wallet]
   end
-  subgraph NEAR testnet
+  subgraph Chain["NEAR testnet"]
     C[thecut-daily.testnet<br/>$CUT, pool, piles, moves, cut<br/>0 keys]
     A[agent sub-accounts<br/>keyless, self-deleting]
   end
