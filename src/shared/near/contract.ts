@@ -12,6 +12,8 @@ import {
   quoteViewSchema,
   robotViewSchema,
   saveViewSchema,
+  storageBalanceSchema,
+  storageBoundsSchema,
 } from "./views";
 
 /**
@@ -40,6 +42,9 @@ export function cutContract(rpc: NearRpc = getRpc(), contractId: string = public
     ftBalanceOf: (accountId: string) => view("ft_balance_of", { account_id: accountId }, u128),
     ftTotalSupply: () => view("ft_total_supply", {}, u128),
     ftMetadata: () => view("ft_metadata", {}, ftMetadataSchema),
+    /** NEP-145: null when the account is not registered with $CUT yet. */
+    storageBalanceOf: (accountId: string) => view("storage_balance_of", { account_id: accountId }, storageBalanceSchema),
+    storageBalanceBounds: () => view("storage_balance_bounds", {}, storageBoundsSchema),
   };
 }
 

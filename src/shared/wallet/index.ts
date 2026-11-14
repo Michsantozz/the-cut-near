@@ -1,6 +1,6 @@
 // Client-safe wallet API. Server code reads the viewer with `@/shared/wallet/server`.
 export { AccountChip, AccountDot } from "./account-chip";
-export { DEFAULT_GAS, ONE_YOCTO, toActions, type ContractCall } from "./contract-call";
+export { DEFAULT_GAS, ONE_YOCTO, type ContractCall } from "./contract-call";
 export { NEAR_NETWORK, resolveNetwork, type NearNetwork } from "./network";
 export { isNearAccountId } from "./viewer";
 export { ConnectButton, DisconnectButton, WalletGatedLink } from "./wallet-actions";

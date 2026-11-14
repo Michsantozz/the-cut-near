@@ -121,3 +121,16 @@ export const ftMetadataSchema = z
   })
   .transform((m) => ({ spec: m.spec, name: m.name, symbol: m.symbol, icon: m.icon ?? null, decimals: m.decimals }));
 export type FtMetadataView = z.output<typeof ftMetadataSchema>;
+
+/** NEP-145 `storage_balance_of`: null when the account is not registered with the token. */
+export const storageBalanceSchema = z
+  .object({ total: u128, available: u128 })
+  .transform((b) => ({ total: b.total, available: b.available }))
+  .nullable();
+export type StorageBalanceView = z.output<typeof storageBalanceSchema>;
+
+/** NEP-145 `storage_balance_bounds`. */
+export const storageBoundsSchema = z
+  .object({ min: u128, max: u128.nullish() })
+  .transform((b) => ({ min: b.min, max: b.max ?? null }));
+export type StorageBoundsView = z.output<typeof storageBoundsSchema>;

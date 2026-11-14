@@ -1,12 +1,25 @@
-import { PlaceholderPage } from "../../_shell/placeholder-page";
+import { Suspense } from "react";
+
+import { SaveScreen, TradeSkeleton } from "@/features/trade";
+import { loadSave } from "@/features/trade/server";
+import { getViewerAccountId } from "@/shared/wallet/server";
+
+import { LineupBackdrop } from "../../_trade/lineup-backdrop";
 
 export const metadata = { title: "Save a robot · The Cut" };
 
-export default function SavePage() {
+export default function SavePage({ params }: PageProps<"/save/[id]">) {
   return (
-    <PlaceholderPage
-      title="Save a robot"
-      about="Pick an amount and lock it in the robot’s pile until the next cut. If it survives, its savers share an equal slice of the prize; if it is cut, half the pile burns."
-    />
+    <>
+      <LineupBackdrop />
+      <Suspense fallback={<TradeSkeleton label="Save a robot" />}>
+        <Save params={params} />
+      </Suspense>
+    </>
   );
+}
+
+async function Save({ params }: Pick<PageProps<"/save/[id]">, "params">) {
+  const { id } = await params;
+  return <SaveScreen data={await loadSave(await getViewerAccountId(), id)} />;
 }

@@ -22,3 +22,12 @@ export type Params = {
   robotFunding: bigint;
   registerDeposit: bigint;
 };
+
+/** NEP-145 storage balance of an account with the $CUT token, in yoctoNEAR. */
+export type StorageBalance = { total: bigint; available: bigint };
+
+/** One traded price of $CUT: yoctoNEAR paid per whole $CUT. */
+export type PricePoint = { at: Date; yoctoNearPerCut: bigint };
+
+/** Ranges of the price chart (the design's 1D / 1W / All). */
+export type PriceRange = "day" | "week" | "all";
