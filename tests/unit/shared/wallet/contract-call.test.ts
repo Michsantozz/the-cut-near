@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_GAS, ONE_YOCTO, toActions } from "@/shared/wallet/contract-call";
+import { DEFAULT_GAS, ONE_YOCTO } from "@/shared/wallet/contract-call";
+import { toActions } from "@/shared/wallet/to-actions";
 
 describe("toActions", () => {
   it("turns calls into function-call actions in order, with default gas and no deposit", () => {
