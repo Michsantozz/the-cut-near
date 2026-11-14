@@ -59,6 +59,63 @@
      next to the board once the board has room for all of its columns. */
   --breakpoint-desk: 85rem;
 
+  /* The landing's ticker: two copies of the line, scrolled by one copy. */
+  --animate-ticker: cut-ticker 60s linear infinite;
+  @keyframes cut-ticker {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* The landing stage: the scissors snip twice now and then, and the agent on the block trembles. */
+  --animate-snip-left: snip-left 3.6s ease-in-out infinite;
+  --animate-snip-right: snip-right 3.6s ease-in-out infinite;
+  --animate-tremble: tremble 1.8s linear infinite;
+  @keyframes snip-left {
+    0%,
+    70%,
+    80%,
+    90%,
+    100% {
+      transform: rotate(0deg);
+    }
+    75%,
+    85% {
+      transform: rotate(-11deg);
+    }
+  }
+  @keyframes snip-right {
+    0%,
+    70%,
+    80%,
+    90%,
+    100% {
+      transform: rotate(0deg);
+    }
+    75%,
+    85% {
+      transform: rotate(11deg);
+    }
+  }
+  @keyframes tremble {
+    0%,
+    50%,
+    100% {
+      transform: translateX(0);
+    }
+    10%,
+    30% {
+      transform: translateX(-1.5px);
+    }
+    20%,
+    40% {
+      transform: translateX(1.5px);
+    }
+  }
+
   /* Agent art motion: each agent switches between its two poses. Not in the static design; used
      only behind motion-safe, so reduced motion keeps the first pose. */
   --animate-pose-a: pose-a 2.8s steps(1) infinite;

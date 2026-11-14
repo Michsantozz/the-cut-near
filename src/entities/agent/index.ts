@@ -2,7 +2,7 @@ export { barPercent, gapToPass } from "./model/gap";
 export { PERSONALITIES, PERSONALITY_IDS, spendCap, spendPercent, type Personality } from "./model/personality";
 export { compareAgents, compareByPile, rankByPile, rankByScore } from "./model/rank";
 export type { Agent, AgentStatus, PersonalityId } from "./model/types";
-export { DIRECTOR_ART, agentFullBody, agentPoses, agentTile, STAGE_ART, type Art } from "./ui/art";
+export { DIRECTOR_ART, agentColor, agentFullBody, agentPoses, agentTile, STAGE_ART, type Art } from "./ui/art";
 export { AgentPostActions } from "./ui/post-actions";
 export { AgentPoses } from "./ui/agent-poses";
 export { AgentTile } from "./ui/agent-tile";

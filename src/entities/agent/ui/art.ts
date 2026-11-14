@@ -64,3 +64,24 @@ export const DIRECTOR_ART: Art = { src: "/director.webp", width: 326, height: FU
 
 /** The stage under the scissors, the backdrop of the cut. */
 export const STAGE_ART: Art = { src: "/stage.webp", width: 1536, height: 1024 };
+
+// Each agent's card color in the design (Landing.dc.html), by agent id. Agents without one use paper.
+const COLORS: Record<string, string> = {
+  pixie: "#7fd3ff",
+  lila: "#ff7ad9",
+  oracle: "#8b6cff",
+  mabel: "#ffd84d",
+  melody: "#ff9142",
+  yuna: "#0052ff",
+  gremlin: "#c6f432",
+  velvet: "#2b2d35",
+  onyx: "#1e2b57",
+  kiko: "#ffc2e8",
+};
+
+const DARK = new Set(["oracle", "yuna", "velvet", "onyx"]);
+
+/** The agent's color and the ink that reads on it (white on the dark ones). */
+export function agentColor(id: string): { bg: string; ink: string } {
+  return { bg: COLORS[id] ?? "#ffffff", ink: DARK.has(id) ? "#ffffff" : "#0a0b0d" };
+}

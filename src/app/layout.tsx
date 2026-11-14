@@ -1,16 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
 
-import { publicEnv } from "@/shared/config";
-import { isLive } from "@/shared/config/data-source";
 import { cn } from "@/shared/lib/cn";
 import { WalletProvider } from "@/shared/wallet";
 
-import { SideNav } from "./_shell/side-nav";
-import { LiveTestnetBanner } from "./_shell/live-testnet-banner";
-import { SampleWorldBanner } from "./_shell/sample-world-banner";
-import { SiteFooter } from "./_shell/site-footer";
-import { TabBar } from "./_shell/tab-bar";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -27,21 +20,12 @@ export const viewport: Viewport = {
   colorScheme: "light",
 };
 
+// The document, fonts and wallet. The app shell lives in (app)/layout.tsx; the public landing in (public)/ has its own top bar.
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={cn(inter.variable, bricolage.variable)}>
       <body>
-        <WalletProvider>
-          <div className="lg:flex">
-            <SideNav />
-            <main className="min-w-0 flex-1 pb-24 lg:pb-0 [body:has([data-fullscreen-flow])_&]:pb-0">
-              {isLive() ? publicEnv.network === "testnet" && <LiveTestnetBanner /> : <SampleWorldBanner />}
-              {children}
-              <SiteFooter />
-            </main>
-          </div>
-          <TabBar />
-        </WalletProvider>
+        <WalletProvider>{children}</WalletProvider>
       </body>
     </html>
   );
