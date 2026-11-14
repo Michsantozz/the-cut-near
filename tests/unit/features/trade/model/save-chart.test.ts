@@ -11,14 +11,15 @@ import { formatAmount } from "@/shared/ui/format";
 const two = (v: bigint | null) => (v === null ? null : formatAmount(v, { maxFractionDigits: 2, minFractionDigits: 2 }));
 
 describe("save picker", () => {
-  it("ranks the stage and prices it with the fees so far, like the lineup", async () => {
+  it("ranks the stage by score and prices it with the fees so far, like the lineup", async () => {
     const picker = buildPicker(await getStage(), (await getNextCut()).prizeSoFar, await getParams());
     const byId = new Map(picker.choices.map((c) => [c.agent.id, c]));
-    expect(picker.choices.at(-1)?.agent.id).toBe("kiko");
-    expect(byId.get("kiko")?.isLowest).toBe(true);
-    expect(byId.get("kiko")?.paysPer100).toBeNull();
-    expect(two(byId.get("onyx")!.paysPer100)).toBe("2.72");
-    expect(byId.get("melody")?.rank).toBe(5);
+    expect(picker.choices.at(-1)?.agent.id).toBe("yuna");
+    expect(byId.get("yuna")?.isLowest).toBe(true);
+    expect(byId.get("yuna")?.paysPer100).toBeNull();
+    // Lila's pile (19,800) is bigger than Gremlin's (16,300), but boos put her score lower: she still pays less per $CUT.
+    expect(byId.get("gremlin")!.paysPer100! > byId.get("lila")!.paysPer100!).toBe(true);
+    expect(byId.get("melody")?.rank).toBe(4);
   });
 
   it("shares the slice once the save is in the pile", () => {

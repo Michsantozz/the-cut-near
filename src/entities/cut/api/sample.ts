@@ -43,7 +43,10 @@ function cutRecord(index: number, deletedId: string, pile: number, fees: number,
     creatorSlice: (prize * CREATORS_BPS) / 10_000n / BigInt(survivors),
     joinedId: null,
     inheritedBy,
-    wallet: units(wallet),
+    wallet: inheritedBy ? units(wallet) : null,
+    championId: null,
+    potPaid: 0n,
+    seatedIds: [],
     runner: "keeper.thecut.sample",
   };
 }
@@ -62,6 +65,9 @@ export function sampleCuts(now: Date = new Date()): CutRecord[] {
     joinedId: null,
     inheritedBy: null,
     wallet: null,
+    championId: null,
+    potPaid: 0n,
+    seatedIds: ["pixie", "oracle", "mabel", "melody", "lila", "gremlin", "yuna", "velvet", "onyx", "kiko"],
     runner: "keeper.thecut.sample",
   };
   return [

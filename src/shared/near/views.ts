@@ -50,6 +50,13 @@ export const agentViewSchema = z
     score: i128,
     /** A move is in for the coming cut. */
     moved: z.boolean(),
+    /** Registration order: breaks score ties (the newer agent is cut). */
+    seq: u64Index.optional(),
+    stage_at: timestampNs.nullish(),
+    season: u64Index.nullish(),
+    /** The cut that deleted or crowned it. */
+    cut_index: u64Index.nullish(),
+    delete_state: z.enum(["requested", "done", "failed"]).nullish(),
   })
   .transform((r) => ({
     id: r.id,
@@ -136,10 +143,28 @@ export const seasonViewSchema = z
   .transform((s) => ({ index: s.index, active: s.active, day: s.day, alive: s.alive, pot: s.pot, champion: s.champion, nextStartNeeds: s.next_start_needs }));
 export type SeasonView = z.output<typeof seasonViewSchema>;
 
-/** One entry of `get_champions`: a crowned agent, the season it won and the pot its savers split. */
+/** `ChampionRecord` of `get_champions`: a crowned agent, the season it won and the pot its savers split. */
 export const championViewSchema = z
-  .object({ season: u64Index, agent_id: agentIdSchema, cut_index: u64Index, pot: u128 })
-  .transform((c) => ({ season: c.season, agentId: c.agent_id, cutIndex: c.cut_index, pot: c.pot }));
+  .object({
+    season: u64Index,
+    agent_id: agentIdSchema,
+    account_id: accountIdSchema,
+    name: z.string(),
+    cut_index: u64Index,
+    crowned_at: timestampNs,
+    pot: u128,
+    wallet_burned: u128,
+  })
+  .transform((c) => ({
+    season: c.season,
+    agentId: c.agent_id,
+    accountId: c.account_id,
+    name: c.name,
+    cutIndex: c.cut_index,
+    crownedAt: c.crowned_at,
+    pot: c.pot,
+    walletBurned: c.wallet_burned,
+  }));
 export type ChampionView = z.output<typeof championViewSchema>;
 
 export const paramsViewSchema = z
@@ -163,6 +188,8 @@ export const paramsViewSchema = z
     register_deposit: u128,
     model_id: z.string(),
     model_signers: z.array(z.string()),
+    max_tokens: u64Index.optional(),
+    reasoning_effort: z.enum(["low", "medium", "high"]).nullish(),
     pool_cut_reserve: u128.optional(),
     pool_near_reserve: u128.optional(),
   })
@@ -190,7 +217,7 @@ export const paramsViewSchema = z
 export type ParamsView = z.output<typeof paramsViewSchema>;
 
 export const saveViewSchema = z
-  .object({ agent_id: z.string().min(1), amount: u128, since_cut: u64Index })
+  .object({ agent_id: z.string().min(1), amount: u128, since_cut: u64Index, unlocked: z.boolean().optional(), prize: u128.optional() })
   .transform((s) => ({ agentId: s.agent_id, amount: s.amount, lockedForCut: s.since_cut }));
 export type SaveView = z.output<typeof saveViewSchema>;
 
@@ -212,6 +239,12 @@ export const nextCutViewSchema = z
     lowest_id: z.string().min(1).nullable(),
     gap_to_next: u128,
     prize_so_far: u128,
+    slice_so_far: u128.optional(),
+    /** What each survivor's wallet would get from the day prize if the cut ran now. */
+    agent_slice_so_far: u128.optional(),
+    creator_slice_so_far: u128.optional(),
+    survivors: u64Index.optional(),
+    due: z.boolean().optional(),
   })
   .transform((n) => ({
     index: n.index,
@@ -220,6 +253,8 @@ export const nextCutViewSchema = z
     lowestId: n.lowest_id,
     gapToNext: n.gap_to_next,
     prizeSoFar: n.prize_so_far,
+    agentSliceSoFar: n.agent_slice_so_far ?? null,
+    due: n.due ?? null,
   }));
 export type NextCutView = z.output<typeof nextCutViewSchema>;
 
@@ -227,18 +262,30 @@ export const cutRecordViewSchema = z
   .object({
     index: u64Index,
     at: timestampNs,
-    /** Null for a cut that ran with the stage not full: it only seated bench agents. */
+    ran_at: timestampNs.optional(),
+    season: u64Index.optional(),
+    /** The season day this cut closed; 0 when no season was active. */
+    day: u64Index.optional(),
+    /** Null for a cut that deleted nobody: a season start, or no season running. */
     deleted_id: z.string().min(1).nullable(),
+    score: i128.optional(),
     pile: u128,
+    /** Every $CUT the cut burned: attacks, part of the pile, prize excess, an heirless or champion wallet. */
     burned: u128,
     prize: u128,
     slice: u128,
+    agent_slice: u128.optional(),
     creator_slice: u128,
-    joined_id: z.string().min(1).nullish(),
-    /** v2: the heir that received the cut agent's wallet; null when it burned. */
+    survivors: u64Index.optional(),
+    /** The heir that received the cut agent's wallet; null when it burned. */
     inherited_by: z.string().min(1).nullish(),
-    /** v2: the cut agent's wallet, moved to its heir or burned. */
-    wallet: u128.nullish(),
+    /** The wallet the heir received. */
+    inherited: u128.optional(),
+    champion_id: z.string().min(1).nullish(),
+    pot_paid: u128.optional(),
+    seated_ids: z.array(z.string().min(1)).optional(),
+    /** v1 only: the bench agent that took the empty seat. */
+    joined_id: z.string().min(1).nullish(),
     runner: accountIdSchema,
   })
   .transform((c) => ({
@@ -252,7 +299,11 @@ export const cutRecordViewSchema = z
     creatorSlice: c.creator_slice,
     joinedId: c.joined_id ?? null,
     inheritedBy: c.inherited_by ?? null,
-    wallet: c.wallet ?? null,
+    // The record keeps the inherited amount; a burned wallet is only part of `burned`.
+    wallet: c.inherited_by ? (c.inherited ?? null) : null,
+    championId: c.champion_id ?? null,
+    potPaid: c.pot_paid ?? 0n,
+    seatedIds: c.seated_ids ?? [],
     runner: c.runner,
   }));
 export type CutRecordView = z.output<typeof cutRecordViewSchema>;

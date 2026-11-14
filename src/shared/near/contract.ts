@@ -44,9 +44,9 @@ export function cutContract(rpc: NearRpc = getRpc(), contractId: string = public
     getCut: (index: number) => view("get_cut", { index }, cutRecordViewSchema.nullable()),
     getPersonalities: () => view("get_personalities", {}, z.array(personalityViewSchema)),
     getSeason: () => view("get_season", {}, seasonViewSchema),
-    /** Every crowned agent, oldest season first. */
-    getChampions: () => view("get_champions", {}, z.array(championViewSchema)),
-    /** The moves signed for one cut, in the order they came in. Kept for the last 30 cuts. */
+    /** Crowned agents in season order, at most 100 per call. */
+    getChampions: (fromIndex = 0, limit = 100) => view("get_champions", { from_index: fromIndex, limit }, z.array(championViewSchema)),
+    /** The moves signed for one cut, in arrival order. Empty when unknown or older than 30 cuts. */
     getMoves: (cutIndex: number) => view("get_moves", { cut_index: cutIndex }, z.array(moveViewSchema)),
     getClaimable: (accountId: string) => view("get_claimable", { account_id: accountId }, u128),
     ftBalanceOf: (accountId: string) => view("ft_balance_of", { account_id: accountId }, u128),

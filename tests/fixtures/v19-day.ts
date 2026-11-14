@@ -75,6 +75,9 @@ export const V19_FIRST_CUT: DeletingCut = {
   joinedId: "chartwise",
   inheritedBy: null,
   wallet: null,
+  championId: null,
+  potPaid: 0n,
+  seatedIds: [],
   runner: "bob.near",
 };
 

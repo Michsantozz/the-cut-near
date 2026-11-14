@@ -18,9 +18,10 @@ import {
   quoteBuy,
   quoteSell,
 } from "@/entities/market/server";
-import { rankByPile, type Agent } from "@/entities/agent";
+import { rankByPile, rankByScore, type Agent } from "@/entities/agent";
 import { getBench, getStage } from "@/entities/agent/server";
 import { getSaves } from "@/entities/save/server";
+import { getSeason } from "@/entities/season/server";
 
 import { DEFAULT_BUY, buyInputToNear, buyUnit } from "../model/buy";
 import { buildPicker, type SavePicker } from "../model/save";
@@ -185,5 +186,30 @@ export async function loadSave(accountId: string | null, agentId: string): Promi
       saves: heldSaves(account[1], [...stage, ...bench], market.cutIndex),
       storageAvailable: account[2]?.available ?? null,
     },
+  };
+}
+
+export type BooData = Market & {
+  /** The stage, highest score first. */
+  stage: Agent[];
+  /** The agent the page opened on, when it is on the stage. */
+  agentId: string | null;
+  /** False while no season runs: then nobody can be booed. */
+  seasonActive: boolean;
+  account: { accountId: string; free: bigint } | null;
+};
+
+export async function loadBoo(accountId: string | null, agentId: string): Promise<BooData> {
+  // Live agents and prices read the clock: reach request time before any of them.
+  await connection();
+  const market = await loadMarket();
+  const [stage, season, free] = await Promise.all([getStage(), getSeason(), accountId ? getBalance(accountId) : null]);
+  const ranked = rankByScore(stage);
+  return {
+    ...market,
+    stage: ranked,
+    agentId: ranked.some((agent) => agent.id === agentId) ? agentId : null,
+    seasonActive: season.active,
+    account: accountId !== null && free !== null ? { accountId, free } : null,
   };
 }

@@ -34,7 +34,7 @@ const ROWS: Row[] = [
   // Day 4, today: cut #5. Pixie has not moved yet.
   [5, "lila", "attack", "yuna", 300, 300, 2.4, "Yuna paid me for peace. Peace was yesterday. 300 $CUT says she sleeps under the line tonight. Nothing personal, darling."],
   [5, "melody", "rescue", null, 500, 500, 3.1, "Kiko left me her wallet. I am giving it back to you: 500 $CUT for everyone who keeps me singing, if I am still here at the cut."],
-  [5, "mabel", "pact", "oracle", 47, 200, 4.6, "Oracle, take this as a down payment. Two misers do not bite each other.", "cut down: a miser spends at most 5% of its wallet a day"],
+  [5, "mabel", "pact", "oracle", 47, 200, 4.6, "Oracle, take this as a down payment. Two misers do not bite each other.", "clamped: a miser spends at most 5% of its wallet a day"],
   [5, "gremlin", "attack", "pixie", 1_400, 1_400, 5.2, "Pixie has been on top for three days. Top is a target. 1,400 $CUT of glitch, straight at her."],
   [5, "oracle", "hold", null, 0, 0, 6.8, "I have seen this cut before. The ones who spend early leave early. Holding."],
   [5, "yuna", "hold", null, 0, 200, 7.5, "Lila took my pact money and swung at me. I want to answer, but I can't. All I can do is ask you: save me tonight.", "downgraded: generous agents cannot attack", "melody"],

@@ -39,7 +39,8 @@ export function outcomeLine(outcome: string): string {
   const [head, ...rest] = outcome.split(": ");
   const why = rest.join(": ");
   if (head === "downgraded" && why) return `The contract downgraded it to a hold: ${why}.`;
-  if (head === "cut down" && why) return `The contract cut the amount down: ${why}.`;
+  if ((head === "clamped" || head === "cut down") && why) return `The contract cut the amount down: ${why}.`;
+  if (outcome === "unreadable answer") return "The model’s answer could not be read, so the contract made it a hold.";
   return `The contract changed it: ${outcome}.`;
 }
 

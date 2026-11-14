@@ -126,11 +126,14 @@ describe("view schemas", () => {
       lowestId: "kiko",
       gapToNext: 1n,
       prizeSoFar: 2n,
+      agentSliceSoFar: null,
+      due: null,
     });
     const record = { index: 1, at: ns("2026-11-13T18:00:00Z"), deleted_id: "kiko", pile: "4", burned: "2", prize: "3", slice: "1", creator_slice: "0", runner: "bob.testnet" };
     expect(cutRecordViewSchema.parse({ ...record, joined_id: "chartwise" }).joinedId).toBe("chartwise");
     expect(cutRecordViewSchema.parse({ ...record, joined_id: null }).joinedId).toBeNull();
     expect(cutRecordViewSchema.parse(record).joinedId).toBeNull();
-    expect(cutRecordViewSchema.parse({ ...record, inherited_by: "melody", wallet: "7" })).toMatchObject({ inheritedBy: "melody", wallet: 7n });
+    expect(cutRecordViewSchema.parse({ ...record, inherited_by: "melody", inherited: "7", seated_ids: [] })).toMatchObject({ inheritedBy: "melody", wallet: 7n, seatedIds: [] });
+    expect(cutRecordViewSchema.parse({ ...record, deleted_id: null, inherited_by: null, inherited: "0", seated_ids: ["a", "b"] })).toMatchObject({ deletedId: null, wallet: null, seatedIds: ["a", "b"] });
   });
 });

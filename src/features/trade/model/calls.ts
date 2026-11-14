@@ -51,3 +51,11 @@ export function unsaveCalls(agentId: string): ContractCall[] {
 export function storageTopUp(available: bigint | null, { enough, topUp }: { enough: bigint; topUp: bigint }): bigint {
   return available !== null && available >= enough ? 0n : topUp;
 }
+
+/**
+ * Boo a stage agent: burns `amount` of the caller's $CUT at once and adds it to the agent's boos for this cut.
+ * Nothing is attached and nothing comes back.
+ */
+export function booCalls({ agentId, amount }: { agentId: string; amount: bigint }): ContractCall[] {
+  return [{ method: "boo", args: { agent_id: agentId, amount: amount.toString() } }];
+}
