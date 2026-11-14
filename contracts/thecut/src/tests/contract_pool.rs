@@ -7,9 +7,13 @@ use near_sdk_contract_tools::ft::Nep148;
 #[test]
 fn launch_mints_the_whole_supply_into_the_pool_once() {
     let mut w = World::daily();
-    assert!(events().iter().any(|(standard, event, data)| standard == "nep141"
-        && event == "ft_mint"
-        && data[0]["amount"] == TOTAL_SUPPLY.to_string()));
+    assert!(
+        events()
+            .iter()
+            .any(|(standard, event, data)| standard == "nep141"
+                && event == "ft_mint"
+                && data[0]["amount"] == TOTAL_SUPPLY.to_string())
+    );
     assert_eq!(w.view(|c| c.ft_total_supply().0), TOTAL_SUPPLY);
     assert_eq!(w.balance("thecut.near"), TOTAL_SUPPLY);
     let pool = w.view(|c| c.get_pool());
@@ -19,7 +23,12 @@ fn launch_mints_the_whole_supply_into_the_pool_once() {
     let params = w.view(|c| c.get_params());
     assert_eq!(params.total_supply.0, cut(10_000_000));
     assert_eq!(
-        (params.fee_bps, params.burn_bps, params.savers_bps, params.stage_size),
+        (
+            params.fee_bps,
+            params.burn_bps,
+            params.savers_bps,
+            params.stage_size
+        ),
         (100, 5_000, 9_500, 10)
     );
     assert_eq!(params.cut_interval.0, DAY);
@@ -60,7 +69,8 @@ fn launch_needs_pool_liquidity() {
 #[test]
 fn first_buy_registers_the_buyer_and_pays_the_quote() {
     let mut w = World::daily();
-    let quote = w.view(|c| c.quote_buy(U128(near(100).as_yoctonear() - STORAGE_MIN.as_yoctonear())));
+    let quote =
+        w.view(|c| c.quote_buy(U128(near(100).as_yoctonear() - STORAGE_MIN.as_yoctonear())));
     let out = w.buy("mika.near", near(100));
     assert_eq!(out, quote.amount_out.0);
     let (_, _, buy) = events().into_iter().find(|(_, e, _)| e == "buy").unwrap();
@@ -111,8 +121,12 @@ fn sell_pays_near_and_feeds_the_prize() {
     assert_eq!(event("fee").unwrap()[0]["source"], "sell");
     assert_eq!(w.balance("mika.near"), bought - bought / 2);
     let after = w.view(|c| c.get_pool());
-    let expected = math::quote_sell(pool.near_reserve.0, pool.cut_reserve.0, bought / 2, 100).unwrap();
-    assert_eq!(after.near_reserve.0, pool.near_reserve.0 - expected.near_out);
+    let expected =
+        math::quote_sell(pool.near_reserve.0, pool.cut_reserve.0, bought / 2, 100).unwrap();
+    assert_eq!(
+        after.near_reserve.0,
+        pool.near_reserve.0 - expected.near_out
+    );
     assert_eq!(after.cut_reserve.0, pool.cut_reserve.0 + expected.net_in);
     assert_eq!(
         w.view(|c| c.get_stats().fees_since_cut.0),
@@ -126,7 +140,9 @@ fn sell_pays_near_and_feeds_the_prize() {
 fn sell_respects_min_out() {
     let mut w = World::daily();
     let bought = w.buy("mika.near", near(100));
-    w.call("mika.near", zero(), |c| c.sell(U128(bought), U128(near(1_000).as_yoctonear())));
+    w.call("mika.near", zero(), |c| {
+        c.sell(U128(bought), U128(near(1_000).as_yoctonear()))
+    });
 }
 
 #[test]

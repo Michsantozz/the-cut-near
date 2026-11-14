@@ -18,9 +18,7 @@
 
 use near_sdk::json_types::U128;
 use near_sdk::store::LookupMap;
-use near_sdk::{
-    AccountId, BorshStorageKey, Gas, NearToken, PanicOnDefault, env, near, require,
-};
+use near_sdk::{AccountId, BorshStorageKey, Gas, NearToken, PanicOnDefault, env, near, require};
 use near_sdk_contract_tools::ft::{
     FungibleToken, Nep141Controller, Nep141Mint, Nep141Transfer, Nep145Controller,
     Nep148Controller, StorageBalanceBounds, nep148::ContractMetadata,
@@ -271,8 +269,11 @@ impl Contract {
         }
         self.require_registered(to);
         let me = env::current_account_id();
-        Nep141Controller::transfer(self, &Nep141Transfer::new(amount, me, to.clone()).memo(memo))
-            .unwrap_or_else(|e| env::panic_str(&e.to_string()));
+        Nep141Controller::transfer(
+            self,
+            &Nep141Transfer::new(amount, me, to.clone()).memo(memo),
+        )
+        .unwrap_or_else(|e| env::panic_str(&e.to_string()));
     }
 
     /// Moves $CUT from `from` to the contract (an NEP-141 transfer with its event).
@@ -283,8 +284,11 @@ impl Contract {
             format!("Not enough $CUT: you have {balance} units, this needs {amount}")
         );
         let me = env::current_account_id();
-        Nep141Controller::transfer(self, &Nep141Transfer::new(amount, from.clone(), me).memo(memo))
-            .unwrap_or_else(|e| env::panic_str(&e.to_string()));
+        Nep141Controller::transfer(
+            self,
+            &Nep141Transfer::new(amount, from.clone(), me).memo(memo),
+        )
+        .unwrap_or_else(|e| env::panic_str(&e.to_string()));
     }
 
     /// Charges (or credits) `account_id` for the storage its own records used since
@@ -332,7 +336,6 @@ impl Contract {
 pub(crate) fn checked<T>(value: Option<T>) -> T {
     value.unwrap_or_else(|| env::panic_str("Math overflow"))
 }
-
 
 #[cfg(test)]
 mod tests;

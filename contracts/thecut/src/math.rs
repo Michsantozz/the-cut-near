@@ -196,8 +196,9 @@ pub fn pick_biggest(robots: &[Contender]) -> Option<usize> {
     let mut best: Option<usize> = None;
     for (i, robot) in robots.iter().enumerate() {
         match best {
-            Some(b) if !(robot.pile > robots[b].pile
-                || (robot.pile == robots[b].pile && robot.seq < robots[b].seq)) => {}
+            Some(b)
+                if !(robot.pile > robots[b].pile
+                    || (robot.pile == robots[b].pile && robot.seq < robots[b].seq)) => {}
             _ => best = Some(i),
         }
     }

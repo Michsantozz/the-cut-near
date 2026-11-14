@@ -38,7 +38,10 @@ fn sell_takes_the_fee_from_the_input() {
     let q = quote_sell(x, y, cut(100_000), 100).unwrap();
     assert_eq!(q.fee, cut(1_000));
     assert_eq!(q.net_in, cut(99_000));
-    assert_eq!(q.near_out, mul_div(x, cut(99_000), y + cut(99_000)).unwrap());
+    assert_eq!(
+        q.near_out,
+        mul_div(x, cut(99_000), y + cut(99_000)).unwrap()
+    );
     assert!(k(x - q.near_out, y + q.net_in) >= k(x, y));
 }
 
@@ -80,14 +83,20 @@ fn spec_sample_cut_numbers() {
     assert_eq!(split.slice, cut(15_979) / 9);
     assert_eq!(split.slice * 10 / crate::ONE_CUT, 17_754); // 1,775.4
     assert_eq!(split.creator_slice * 10 / crate::ONE_CUT, 934); // 93.4
-    assert_eq!(split.slice * 9 + split.creator_slice * 9 + split.dust, prize);
+    assert_eq!(
+        split.slice * 9 + split.creator_slice * 9 + split.dust,
+        prize
+    );
 
     // mika's share of Melody-9's slice.
     let increment = reward_increment(split.slice, cut(112_300)).unwrap();
     let mika = pending_reward(cut(400), increment, 0).unwrap();
     assert_eq!(mika * 100 / crate::ONE_CUT, 632); // 6.32
     let exact = split.slice * 400 / 112_300;
-    assert!(exact - mika <= 1, "accumulator rounding stays within one unit");
+    assert!(
+        exact - mika <= 1,
+        "accumulator rounding stays within one unit"
+    );
 
     // "Pays per 100 $CUT saved, if the cut ran now".
     let pays_per_100 = |pile: u128| split.slice * 100 * 100 / pile;

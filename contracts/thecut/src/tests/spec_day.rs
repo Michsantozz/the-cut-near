@@ -69,8 +69,13 @@ fn the_sample_cut() {
     // The sample day's fees: exactly 5,020 $CUT.
     let dust = w.view(|c| c.get_stats().fees_since_cut.0);
     assert!(dust < 18, "only rounding dust carried from cut 2");
-    w.call("whale.near", zero(), |c| c.sell(U128(cut(502_000)), U128(0)));
-    assert_eq!(w.view(|c| c.get_stats().fees_since_cut.0), dust + cut(5_020));
+    w.call("whale.near", zero(), |c| {
+        c.sell(U128(cut(502_000)), U128(0))
+    });
+    assert_eq!(
+        w.view(|c| c.get_stats().fees_since_cut.0),
+        dust + cut(5_020)
+    );
 
     // The stage matches the sample, Kiko on the block.
     let stage = w.view(|c| c.get_stage());
@@ -127,13 +132,19 @@ fn the_sample_cut() {
     );
 
     // Half the pile burned: supply drops by 11,800.
-    assert_eq!(w.view(|c| c.ft_total_supply().0), supply_before - cut(11_800));
+    assert_eq!(
+        w.view(|c| c.ft_total_supply().0),
+        supply_before - cut(11_800)
+    );
 
     // Kiko is deleted, its account deletion goes to the runner, its creator gets 4.5 NEAR.
     assert_eq!(w.robot("kiko").status, RobotStatusView::Deleted);
     assert_eq!(calls[0].0.as_str(), "kiko.thecut.near");
     assert_eq!(calls[0].2, r#"{"beneficiary":"runner.near"}"#);
-    assert!(refunds.contains(&(creator_of("kiko"), NearToken::from_millinear(4_500).as_yoctonear())));
+    assert!(refunds.contains(&(
+        creator_of("kiko"),
+        NearToken::from_millinear(4_500).as_yoctonear()
+    )));
 
     // Chartwise takes the seat with 88,400; the other queues stay and are unlocked.
     let chartwise = w.robot("chartwise");

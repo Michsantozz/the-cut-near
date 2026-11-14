@@ -32,7 +32,7 @@ fn an_early_cut_is_refused() {
 }
 
 #[test]
-#[should_panic(expected = "Attach at least 100 TGas")]
+#[should_panic(expected = "Attach at least 60 TGas")]
 fn the_cut_needs_enough_gas() {
     let mut w = World::daily();
     w.at_next_cut();
@@ -58,7 +58,10 @@ fn the_first_cut_fills_the_stage_and_carries_the_fees() {
     assert_eq!(record.prize.0, 0, "nobody was on the stage to share it");
     assert_eq!(record.joined_ids, vec!["ra", "rb", "rc"]);
     assert_eq!(record.joined_id.as_deref(), Some("ra"));
-    assert!(get_created_receipts().is_empty(), "no robot to delete, no refund");
+    assert!(
+        get_created_receipts().is_empty(),
+        "no robot to delete, no refund"
+    );
     assert_eq!(w.view(|c| c.get_stats().fees_since_cut.0), fees);
     assert_eq!(w.stage_ids().len(), 3);
     assert_eq!(w.bench_ids(), vec!["rd"]);
@@ -94,7 +97,10 @@ fn the_lowest_pile_is_cut_and_the_runner_gets_the_account() {
     // The creator gets 4.5 NEAR back.
     assert_eq!(
         transfers(),
-        vec![(creator_of("r1"), NearToken::from_millinear(4_500).as_yoctonear())]
+        vec![(
+            creator_of("r1"),
+            NearToken::from_millinear(4_500).as_yoctonear()
+        )]
     );
 
     let r1 = w.robot("r1");
@@ -161,7 +167,10 @@ fn small_piles_pay_more_per_cut() {
     assert_eq!(record.deleted_id.as_deref(), Some("r0"));
     let small = w.claimable("small.near");
     let big = w.claimable("big.near");
-    assert!(small.abs_diff(big) <= 1, "each survivor's savers share one equal slice");
+    assert!(
+        small.abs_diff(big) <= 1,
+        "each survivor's savers share one equal slice"
+    );
     assert!(small * 1_000 / cut(100) > big * 1_000 / cut(10_000) * 99);
     w.assert_books();
 }
@@ -183,7 +192,12 @@ fn empty_pile_slices_burn() {
     assert_eq!(preview.survivors, 2);
     let record = w.run_cut("runner.near");
     let prizes = event("prize").unwrap();
-    let r1 = prizes.as_array().unwrap().iter().find(|p| p["robot_id"] == "r1").unwrap();
+    let r1 = prizes
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["robot_id"] == "r1")
+        .unwrap();
     assert_eq!(r1["burned"], true);
     assert_eq!(record.deleted_id, None);
     assert_eq!(record.survivors, 2);
@@ -226,7 +240,10 @@ fn savers_of_the_cut_robot_lose_the_save_but_keep_earlier_prizes() {
     assert_eq!(claimed, earned);
     assert_eq!(event("claim").unwrap()[0]["amount"], earned.to_string());
     assert_eq!(w.balance("mika.near"), balance + earned);
-    assert!(w.view(|c| c.get_saves(id("mika.near"))).is_empty(), "claim clears cut saves");
+    assert!(
+        w.view(|c| c.get_saves(id("mika.near"))).is_empty(),
+        "claim clears cut saves"
+    );
     w.assert_books();
 }
 
@@ -237,7 +254,9 @@ fn creators_claim_their_slices() {
     let creator = creator_of("r2");
     assert_eq!(w.claimable(creator.as_str()), record.creator_slice.0);
     // A creator that never held $CUT registers by attaching the minimum to claim().
-    let claimed = w.call(creator.as_str(), crate::STORAGE_MIN, |c| c.claim()).0;
+    let claimed = w
+        .call(creator.as_str(), crate::STORAGE_MIN, |c| c.claim())
+        .0;
     assert_eq!(claimed, record.creator_slice.0);
     assert_eq!(w.balance(creator.as_str()), claimed);
     assert_eq!(w.claimable(creator.as_str()), 0);
@@ -296,7 +315,9 @@ fn a_successful_delete_cannot_be_retried() {
     w.callback(PromiseResult::Successful(vec![]), |c| {
         c.on_robot_deleted(record.index, robot.clone())
     });
-    w.call("anyone.near", zero(), |c| c.retry_delete(robot.clone()).detach());
+    w.call("anyone.near", zero(), |c| {
+        c.retry_delete(robot.clone()).detach()
+    });
 }
 
 #[test]
@@ -305,7 +326,9 @@ fn a_failed_delete_changes_nothing_else_and_can_be_retried() {
     let record = w.run_cut("runner.near");
     let robot = record.deleted_id.clone().unwrap();
     let stage = w.stage_ids();
-    assert!(!w.callback(PromiseResult::Failed, |c| c.on_robot_deleted(record.index, robot.clone())));
+    assert!(!w.callback(PromiseResult::Failed, |c| {
+        c.on_robot_deleted(record.index, robot.clone())
+    }));
     assert!(event("delete").is_none());
     assert_eq!(w.robot(&robot).delete_state, Some(DeleteState::Failed));
     // The cut itself stands.
@@ -314,7 +337,9 @@ fn a_failed_delete_changes_nothing_else_and_can_be_retried() {
     w.assert_books();
 
     // Anyone can retry; the balance still goes to the original runner.
-    w.call("anyone.near", zero(), |c| c.retry_delete(robot.clone()).detach());
+    w.call("anyone.near", zero(), |c| {
+        c.retry_delete(robot.clone()).detach()
+    });
     let calls = function_calls();
     assert_eq!(calls[0].0.as_str(), "r0.thecut.near");
     assert_eq!(calls[0].2, r#"{"beneficiary":"runner.near"}"#);

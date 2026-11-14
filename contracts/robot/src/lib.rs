@@ -67,8 +67,8 @@ fn account_arg(key: &str) -> AccountId {
 }
 
 fn stored_owner() -> AccountId {
-    let raw = env::storage_read(OWNER_KEY)
-        .unwrap_or_else(|| env::panic_str("Robot is not initialized"));
+    let raw =
+        env::storage_read(OWNER_KEY).unwrap_or_else(|| env::panic_str("Robot is not initialized"));
     let text = String::from_utf8(raw).unwrap_or_else(|_| env::panic_str("Corrupt owner"));
     text.parse()
         .unwrap_or_else(|_| env::panic_str("Corrupt owner"))
@@ -181,7 +181,10 @@ mod tests {
     fn owner_can_self_delete() {
         call("thecut.near".parse().unwrap(), r#"{"owner":"thecut.near"}"#);
         init();
-        call("thecut.near".parse().unwrap(), r#"{"beneficiary":"runner.near"}"#);
+        call(
+            "thecut.near".parse().unwrap(),
+            r#"{"beneficiary":"runner.near"}"#,
+        );
         delete_self();
         let receipts = get_created_receipts();
         assert_eq!(receipts.len(), 1);

@@ -39,7 +39,9 @@ impl Contract {
 
     /// Asks a cut robot's account to delete itself, sending its balance to `beneficiary`.
     fn request_delete(&self, cut_index: u64, robot_id: RobotId, beneficiary: AccountId) -> Promise {
-        let args = json!({ "beneficiary": beneficiary }).to_string().into_bytes();
+        let args = json!({ "beneficiary": beneficiary })
+            .to_string()
+            .into_bytes();
         Promise::new(Self::robot_account(&robot_id))
             .function_call(
                 "self_delete".to_string(),
@@ -82,7 +84,7 @@ impl Contract {
         );
         require!(
             env::prepaid_gas() >= MIN_GAS_RUN_CUT,
-            "Attach at least 100 TGas to run the cut"
+            "Attach at least 60 TGas to run the cut"
         );
         let index = self.next_cut_index;
         let scheduled_at = self.next_cut_at;
@@ -129,7 +131,8 @@ impl Contract {
                     let empty = robot.pile == 0;
                     if !empty {
                         let increment = checked(math::reward_increment(slice, robot.pile));
-                        robot.reward_per_unit = checked(robot.reward_per_unit.checked_add(increment));
+                        robot.reward_per_unit =
+                            checked(robot.reward_per_unit.checked_add(increment));
                     }
                     let (creator, pile) = (robot.creator.clone(), robot.pile);
                     if empty {
@@ -180,7 +183,9 @@ impl Contract {
             self.creator_deposits_held = self
                 .creator_deposits_held
                 .saturating_sub(creator_refund.as_yoctonear());
-            Promise::new(creator.clone()).transfer(creator_refund).detach();
+            Promise::new(creator.clone())
+                .transfer(creator_refund)
+                .detach();
         }
 
         // 5. Free seats go to the biggest bench queues. Other queues stay and unlock,
@@ -312,12 +317,11 @@ impl Contract {
     pub fn retry_delete(&mut self, robot_id: RobotId) -> Promise {
         require!(
             env::prepaid_gas() >= MIN_GAS_RUN_CUT,
-            "Attach at least 100 TGas"
+            "Attach at least 60 TGas"
         );
         let robot = self.robot_mut(&robot_id);
         require!(
-            robot.status == RobotStatus::Deleted
-                && robot.delete_state == Some(DeleteState::Failed),
+            robot.status == RobotStatus::Deleted && robot.delete_state == Some(DeleteState::Failed),
             "Only a cut robot whose account deletion failed can be retried"
         );
         robot.delete_state = Some(DeleteState::Requested);

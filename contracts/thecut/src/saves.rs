@@ -154,10 +154,7 @@ impl Contract {
         );
         require!(
             self.next_cut_index > record.locked_for,
-            format!(
-                "Locked until cut {} has run",
-                record.locked_for
-            )
+            format!("Locked until cut {} has run", record.locked_for)
         );
         let prize = Self::record_prize(&record, robot.reward_per_unit);
 

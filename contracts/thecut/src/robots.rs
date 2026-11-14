@@ -117,7 +117,7 @@ impl Contract {
         );
         require!(
             env::prepaid_gas() >= MIN_GAS_REGISTER,
-            "Attach at least 100 TGas to register a robot"
+            "Attach at least 50 TGas to register a robot"
         );
         if let Err(message) = validate_robot_id(&id) {
             env::panic_str(message);
@@ -202,8 +202,11 @@ impl Contract {
                 .saturating_add(held.as_yoctonear());
             let robot = self.robot_mut(&id);
             robot.status = RobotStatus::Bench;
-            let (name, kind, x_handle) =
-                (robot.name.clone(), robot.kind.clone(), robot.x_handle.clone());
+            let (name, kind, x_handle) = (
+                robot.name.clone(),
+                robot.kind.clone(),
+                robot.x_handle.clone(),
+            );
             self.bench.push(id.clone());
             events::emit(
                 "register",

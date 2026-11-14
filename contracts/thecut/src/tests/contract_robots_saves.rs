@@ -27,10 +27,16 @@ fn register_creates_a_keyless_robot_account_on_the_bench() {
         .expect("robot account receipt");
     let actions = &robot_receipt.actions;
     assert!(matches!(actions[0], MockAction::CreateAccount { .. }));
-    assert!(matches!(actions[1], MockAction::Transfer { deposit, .. } if deposit == NearToken::from_millinear(500)));
-    assert!(matches!(&actions[2], MockAction::DeployContract { code, .. } if code.as_slice() == ROBOT_WASM));
-    assert!(matches!(&actions[3], MockAction::FunctionCallWeight { method_name, args, .. }
-        if method_name == b"new" && String::from_utf8(args.clone()).unwrap().contains("\"owner\":\"thecut.near\"")));
+    assert!(
+        matches!(actions[1], MockAction::Transfer { deposit, .. } if deposit == NearToken::from_millinear(500))
+    );
+    assert!(
+        matches!(&actions[2], MockAction::DeployContract { code, .. } if code.as_slice() == ROBOT_WASM)
+    );
+    assert!(
+        matches!(&actions[3], MockAction::FunctionCallWeight { method_name, args, .. }
+        if method_name == b"new" && String::from_utf8(args.clone()).unwrap().contains("\"owner\":\"thecut.near\""))
+    );
     // No key is ever added to the robot account.
     assert!(!actions.iter().any(|a| matches!(
         a,
@@ -41,7 +47,9 @@ fn register_creates_a_keyless_robot_account_on_the_bench() {
     assert!(w.view(|c| c.get_robot("kiko".into())).is_none());
     assert!(w.bench_ids().is_empty());
 
-    assert!(w.callback(PromiseResult::Successful(vec![]), |c| c.on_robot_created("kiko".into())));
+    assert!(w.callback(PromiseResult::Successful(vec![]), |c| {
+        c.on_robot_created("kiko".into())
+    }));
     let register = event("register").unwrap();
     assert_eq!(register[0]["robot_id"], "kiko");
     assert_eq!(register[0]["account_id"], "kiko.thecut.near");
@@ -49,7 +57,14 @@ fn register_creates_a_keyless_robot_account_on_the_bench() {
     let kiko = w.robot("kiko");
     assert_eq!(kiko.status, RobotStatusView::Bench);
     assert_eq!(kiko.account_id.as_str(), "kiko.thecut.near");
-    assert_eq!((kiko.name.as_str(), kiko.kind.as_str(), kiko.x_handle.as_str()), ("Kiko Bun", "VTuber", "@KikoBunCut"));
+    assert_eq!(
+        (
+            kiko.name.as_str(),
+            kiko.kind.as_str(),
+            kiko.x_handle.as_str()
+        ),
+        ("Kiko Bun", "VTuber", "@KikoBunCut")
+    );
     assert_eq!(kiko.joined_at.0, LAUNCH);
     assert_eq!(w.bench_ids(), vec!["kiko".to_string()]);
     assert_eq!(
@@ -253,7 +268,10 @@ fn saves_are_paid_by_the_saver_storage_balance() {
         });
     }
     let after = locked(&mut w);
-    assert!(after > before, "the records locked part of mika's storage balance");
+    assert!(
+        after > before,
+        "the records locked part of mika's storage balance"
+    );
 
     // Unsaving frees it again.
     w.run_cut("runner.near");
@@ -278,11 +296,17 @@ fn bench_queue_that_did_not_get_in_unlocks_after_the_cut() {
     w.save("mika.near", "rb", cut(20));
     w.save("mika.near", "ra", cut(10));
     let record = w.run_cut("runner.near");
-    assert_eq!(record.deleted_id, None, "the stage was empty, nobody is cut");
+    assert_eq!(
+        record.deleted_id, None,
+        "the stage was empty, nobody is cut"
+    );
     // The biggest queues take the seats, whatever the registration order.
     assert_eq!(record.joined_ids, vec!["rc".to_string(), "rb".to_string()]);
     assert_eq!(w.bench_ids(), vec!["ra".to_string()]);
     // ra's queue was locked for cut 1, which ran: it can come back.
-    assert_eq!(w.call("mika.near", zero(), |c| c.unsave("ra".into())).0, cut(10));
+    assert_eq!(
+        w.call("mika.near", zero(), |c| c.unsave("ra".into())).0,
+        cut(10)
+    );
     w.assert_books();
 }

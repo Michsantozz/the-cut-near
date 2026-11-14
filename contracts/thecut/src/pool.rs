@@ -40,7 +40,10 @@ impl Contract {
             near_in,
             self.params.fee_bps,
         ));
-        require!(quote.amount_out > 0, "Too little NEAR: you would get 0 $CUT");
+        require!(
+            quote.amount_out > 0,
+            "Too little NEAR: you would get 0 $CUT"
+        );
         require!(
             quote.amount_out >= min_out.0,
             format!(

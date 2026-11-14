@@ -139,7 +139,13 @@ impl Default for Launch {
     }
 }
 
-fn context(predecessor: &AccountId, deposit: NearToken, now: u64, usage: u64, gas: Gas) -> VMContext {
+fn context(
+    predecessor: &AccountId,
+    deposit: NearToken,
+    now: u64,
+    usage: u64,
+    gas: Gas,
+) -> VMContext {
     VMContextBuilder::new()
         .current_account_id(contract_id())
         .predecessor_account_id(predecessor.clone())
@@ -184,7 +190,12 @@ impl World {
     }
 
     /// Calls `f` as `who`, attaching `deposit`, at the current time.
-    pub fn call<R>(&mut self, who: &str, deposit: NearToken, f: impl FnOnce(&mut Contract) -> R) -> R {
+    pub fn call<R>(
+        &mut self,
+        who: &str,
+        deposit: NearToken,
+        f: impl FnOnce(&mut Contract) -> R,
+    ) -> R {
         self.call_with_gas(who, deposit, Gas::from_tgas(300), f)
     }
 
@@ -204,7 +215,13 @@ impl World {
     /// Runs a private callback as the contract itself, with one promise result.
     pub fn callback<R>(&mut self, result: PromiseResult, f: impl FnOnce(&mut Contract) -> R) -> R {
         testing_env!(
-            context(&contract_id(), zero(), self.now, self.usage, Gas::from_tgas(300)),
+            context(
+                &contract_id(),
+                zero(),
+                self.now,
+                self.usage,
+                Gas::from_tgas(300)
+            ),
             near_sdk::test_vm_config(),
             near_sdk::RuntimeFeesConfig::test(),
             Default::default(),
