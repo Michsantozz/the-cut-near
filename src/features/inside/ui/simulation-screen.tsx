@@ -1,7 +1,8 @@
 import { cn } from "cn";
-import { ChartLine, FlaskConical, Scale } from "lucide-react";
+import { ArrowUpRight, ChartLine, FileText, FlaskConical, Scale, Terminal } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { CopyButton } from "@/shared/ui/copy-button";
 import { formatCount } from "@/shared/ui/format";
 
 import { FAN_STRATEGIES, SIM, SIM_REPORT, type FanStrategy } from "../model/sim";
@@ -19,7 +20,10 @@ export function SimulationScreen({ reportHref }: { reportHref: string | null }) 
       <SupplyModel sim={SIM} />
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
         <FanReturns />
-        <Sniper />
+        <div className="flex flex-col gap-3 lg:gap-6">
+          <Sniper />
+          <RunIt reportHref={reportHref} />
+        </div>
       </div>
     </div>
   );
@@ -178,6 +182,41 @@ function Sniper() {
       <p className="mt-2 text-[12px] leading-4 font-semibold text-ink-3">
         $CUT, summed over all {SIM.seeds} runs. The thin crowd runs the same trick with a third of the fans.
       </p>
+    </Card>
+  );
+}
+
+/** How to check the numbers on this page: the command, the report, and what the run is made of. */
+function RunIt({ reportHref }: { reportHref: string | null }) {
+  const facts = [
+    { icon: FlaskConical, text: `${formatCount(SIM.scenarios.length)} scenarios × ${formatCount(SIM.seeds)} seeds × ${formatCount(SIM.days)} daily cuts` },
+    { icon: Scale, text: "The contract’s launch parameters, the same split and burn rules" },
+    { icon: FileText, text: "Every number on this page comes from one run, written to the report" },
+  ];
+  return (
+    <Card aria-labelledby="run-title" className="px-4 pt-3.5 pb-4 lg:px-6 lg:pt-5 lg:pb-6">
+      <Heading id="run-title" className="flex items-center gap-2.5">
+        <Terminal aria-hidden="true" className="size-5 shrink-0 lg:size-6" strokeWidth={2.6} />
+        Run it yourself
+      </Heading>
+      <div className="mt-2.5 flex items-center gap-2 rounded-2xl border-2 border-ink bg-canvas py-1.5 pr-1.5 pl-3.5">
+        <code className="min-w-0 grow truncate font-sans text-[15px] font-extrabold">pnpm sim</code>
+        <CopyButton text="pnpm sim" icon size="sm" variant="lime" />
+      </div>
+      <ul className="mt-3 flex flex-col gap-1.5 text-[13.5px] leading-[19px] font-semibold text-ink-2">
+        {facts.map(({ icon: Icon, text }) => (
+          <li key={text} className="flex items-start gap-2">
+            <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.4} />
+            <span>{text}</span>
+          </li>
+        ))}
+      </ul>
+      {reportHref && (
+        <a href={reportHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-[13.5px] font-extrabold underline underline-offset-2">
+          Read the full report, {SIM_REPORT}
+          <ArrowUpRight aria-hidden="true" className="size-3.5" strokeWidth={2.6} />
+        </a>
+      )}
     </Card>
   );
 }
