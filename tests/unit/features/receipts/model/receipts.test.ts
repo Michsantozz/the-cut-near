@@ -138,7 +138,7 @@ describe("runAudit", () => {
   it("adds up on the sample world and fails on a wrong supply", async () => {
     const [stats, params, stage, bench] = await Promise.all([getJournalStats(), getParams(), getStage(), getBench()]);
     const agents = [...stage, ...bench];
-    const input = { contractId: "thecut.sample", sample: true, fullAccessKeys: null, stats, totalSupply: LAUNCH_PARAMS.totalSupply - stats.burned, agents, params };
+    const input = { contractId: "thecut.sample", sample: true, fullAccessKeys: null, stats, totalSupply: LAUNCH_PARAMS.totalSupply - stats.burned, books: null, agents, params };
     const checks = runAudit(input);
     expect(checks.map((c) => c.pass)).toEqual([true, true, true, true]);
     expect(checks.some((c) => c.title.includes("full-access"))).toBe(false);
@@ -148,9 +148,23 @@ describe("runAudit", () => {
 
   it("checks the contract's keys in live mode", async () => {
     const [stats, params, stage] = await Promise.all([getJournalStats(), getParams(), getStage()]);
-    const input = { contractId: "thecut.testnet", sample: false, fullAccessKeys: 0, stats, totalSupply: LAUNCH_PARAMS.totalSupply - stats.burned, agents: stage, params };
+    const input = { contractId: "thecut.testnet", sample: false, fullAccessKeys: 0, stats, totalSupply: LAUNCH_PARAMS.totalSupply - stats.burned, books: null, agents: stage, params };
     expect(runAudit(input)[0]).toMatchObject({ title: "No full-access key on thecut.testnet", pass: true });
     expect(runAudit({ ...input, fullAccessKeys: 1 })[0].pass).toBe(false);
     expect(runAudit({ ...input, params: { ...params, cutIntervalMs: 180_000, moveLeadMs: 30_000 } }).at(-1)!.pass).toBe(true);
+  });
+
+  it("compares a lagging journal with the contract as it was at the journal's last block", async () => {
+    const [stats, params, stage, bench] = await Promise.all([getJournalStats(), getParams(), getStage(), getBench()]);
+    const agents = [...stage, ...bench];
+    // The chain moved on after the journal's last block: 30 $CUT of think fees burned and 0.5 $CUT saved since.
+    const now = { totalSupply: LAUNCH_PARAMS.totalSupply - stats.burned - units(30), pile: units(1) / 2n };
+    const lagging = { contractId: "thecut.testnet", sample: false, fullAccessKeys: 0, stats, totalSupply: now.totalSupply, params };
+    const atBlock = { block: 277_690_085, totalSupply: LAUNCH_PARAMS.totalSupply - stats.burned, totalSaved: stats.saved };
+    const checks = runAudit({ ...lagging, books: atBlock, agents: agents.map((a, i) => (i === 0 ? { ...a, pile: a.pile + now.pile } : a)) });
+    expect(checks.slice(1, 3).map((c) => c.pass)).toEqual([true, true]);
+    expect(checks[1].detail).toContain("at block 277,690,085");
+    expect(runAudit({ ...lagging, books: { ...atBlock, totalSupply: atBlock.totalSupply - 1n }, agents })[1].pass).toBe(false);
+    expect(runAudit({ ...lagging, books: { ...atBlock, totalSaved: atBlock.totalSaved + 1n }, agents })[2].pass).toBe(false);
   });
 });

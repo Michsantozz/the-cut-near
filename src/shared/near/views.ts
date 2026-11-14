@@ -333,3 +333,8 @@ export const storageBoundsSchema = z
   .object({ min: u128, max: u128.nullish() })
   .transform((b) => ({ min: b.min, max: b.max ?? null }));
 export type StorageBoundsView = z.output<typeof storageBoundsSchema>;
+
+/** The two `get_stats` totals the journal audit compares, at one block. */
+export const booksViewSchema = z
+  .object({ total_supply: u128, total_saved: u128 })
+  .transform((v) => ({ totalSupply: v.total_supply, totalSaved: v.total_saved }));

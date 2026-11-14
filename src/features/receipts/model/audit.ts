@@ -18,6 +18,11 @@ export type AuditInput = {
   stats: JournalStats;
   /** `ft_total_supply` now. */
   totalSupply: bigint;
+  /**
+   * The contract's totals at the journal's last block, so a journal that lags the chain is compared with the chain as it
+   * was then. Null in sample mode or when that block could not be read: then the checks compare with now.
+   */
+  books: { block: number; totalSupply: bigint; totalSaved: bigint } | null;
   /** Every agent on the stage and the bench. */
   agents: readonly Agent[];
   params: Params;
@@ -66,8 +71,10 @@ function paramsMatch(params: Params): boolean {
 }
 
 export function runAudit(input: AuditInput): AuditCheck[] {
-  const { stats, params, agents } = input;
-  const piles = agents.reduce((sum, agent) => sum + agent.pile, 0n);
+  const { stats, params, agents, books } = input;
+  const piles = books ? books.totalSaved : agents.reduce((sum, agent) => sum + agent.pile, 0n);
+  const supply = books ? books.totalSupply : input.totalSupply;
+  const asOf = books ? ` at block ${formatCount(books.block)}, the last the journal reached` : "";
   const unregistered = agents.filter((agent) => !stats.registered.includes(agent.id));
   const where = input.sample ? "the sample contract" : input.contractId;
 
@@ -86,12 +93,14 @@ export function runAudit(input: AuditInput): AuditCheck[] {
     ...(input.sample ? [] : [keys]),
     {
       title: "Minted − burned = supply",
-      detail: `${cut(stats.minted)} − ${cut(stats.burned)} burned by cuts, boos, attacks and think fees = ${cut(stats.minted - stats.burned)} $CUT; ${where} holds ${cut(input.totalSupply)}`,
-      pass: stats.minted - stats.burned === input.totalSupply,
+      detail: `${cut(stats.minted)} − ${cut(stats.burned)} burned by cuts, boos, attacks and think fees = ${cut(stats.minted - stats.burned)} $CUT; ${where} held ${cut(supply)}${asOf}.`,
+      pass: stats.minted - stats.burned === supply,
     },
     {
       title: "Sum of piles = saved total",
-      detail: `The ${formatCount(agents.length)} piles and queues add up to ${cut(piles)} $CUT; the journal says ${cut(stats.saved)}.`,
+      detail: books
+        ? `${where} held ${cut(piles)} $CUT in piles and queues${asOf}; the journal says ${cut(stats.saved)}.`
+        : `The ${formatCount(agents.length)} piles and queues add up to ${cut(piles)} $CUT; the journal says ${cut(stats.saved)}.`,
       pass: piles === stats.saved,
     },
     {

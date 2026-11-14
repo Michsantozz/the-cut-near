@@ -59,6 +59,20 @@ export async function getStorageMin(): Promise<bigint> {
   return live() ? (await cutContract().storageBalanceBounds()).min : SAMPLE_STORAGE_MIN;
 }
 
+/**
+ * The contract's supply and saved total at the end of `blockHeight`, or null in sample mode or when the RPC no longer
+ * keeps that block. The audit reads them at the journal's last block so a journal that lags the chain still adds up.
+ */
+export async function getBooksAt(blockHeight: number): Promise<{ totalSupply: bigint; totalSaved: bigint } | null> {
+  if (!live()) return null;
+  try {
+    return await cutContract().getBooksAt(blockHeight);
+  } catch (error) {
+    console.warn(`[market] get_stats at block ${blockHeight} failed`, error);
+    return null;
+  }
+}
+
 /** $CUT in existence (`ft_total_supply`): the launch supply minus every burn. */
 export async function getTotalSupply(): Promise<bigint> {
   return live() ? cutContract().ftTotalSupply() : SAMPLE_TOTAL_SUPPLY;
