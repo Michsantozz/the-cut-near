@@ -23,7 +23,7 @@ import {
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { AgentPoses, AgentTile, agentPoses, PersonalityChip, ScoreBreakdown, spendPercent } from "@/entities/agent";
+import { AgentPoses, AgentTile, agentPoses, PersonalityChip, ScoreBreakdown, spendPercent, wholeCutsToPass } from "@/entities/agent";
 import { moveHeadline } from "@/entities/move";
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
 import { Badge } from "@/shared/ui/badge";
@@ -154,7 +154,7 @@ export function AgentProfileScreen({ data }: { data: AgentProfile }) {
           <p className="-mt-1 flex items-start gap-2 rounded-2xl border-2 border-danger bg-danger-soft px-4 py-2.5 text-[13.5px] leading-[19px] font-bold text-danger">
             <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.6} />
             <span>
-              On the cut line: {whole(standing.gap)} $CUT short of {standing.above.name}. If nothing moves by {formatUtcTime(data.cutAt)} UTC, it is cut.
+              On the cut line: {whole(wholeCutsToPass(standing.gap))} $CUT short of {standing.above.name}. If nothing moves by {formatUtcTime(data.cutAt)} UTC, it is cut.
             </span>
           </p>
         )}

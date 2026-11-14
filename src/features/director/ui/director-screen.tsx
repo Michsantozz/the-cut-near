@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { DIRECTOR_ART, AgentTile, STAGE_ART, type Agent } from "@/entities/agent";
+import { DIRECTOR_ART, AgentTile, STAGE_ART, wholeCutsToPass, type Agent } from "@/entities/agent";
 import { formatAmount, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 import { Button } from "@/shared/ui/button";
 
@@ -163,10 +163,10 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
           <div className="mt-2.5 flex items-baseline justify-between gap-3 lg:mt-4">
             <p className="text-[13px] font-extrabold lg:text-[15px]">
               <span className="lg:hidden">
-                {lowest.name} is {cut(screen.gap)} short of {next.name}
+                {lowest.name} is {cut(wholeCutsToPass(screen.gap))} short of {next.name}
               </span>
               <span className="hidden lg:inline">
-                {lowest.name} needs {cut(screen.gap)} $CUT to pass {next.name}
+                {lowest.name} needs {cut(wholeCutsToPass(screen.gap))} $CUT to pass {next.name}
               </span>
             </p>
             <p className="text-xs font-bold text-ink-3 lg:text-[13px] lg:font-semibold">
@@ -183,7 +183,7 @@ function OnTheBlock({ screen, lowest, next }: { screen: Screen; lowest: Agent; n
             <span>
               {lowest.name} · {cut(lowest.score)}
             </span>
-            <span className="text-ink-3">gap {cut(screen.gap)}</span>
+            <span className="text-ink-3">gap {cut(wholeCutsToPass(screen.gap))}</span>
             <span>
               {next.name} · {cut(next.score)}
             </span>

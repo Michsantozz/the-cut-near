@@ -19,7 +19,7 @@ import { cutToUsdCents, spotPrice } from "../model/money";
 import { defaultSave, ordinal, SAVE_STORAGE, saveProblem, shareIfCutNow, type SaveChoice } from "../model/save";
 import { cutToInput } from "../model/sell";
 import type { SaveData } from "../server/load";
-import { agentFullBody as agentSticker, agentTile } from "@/entities/agent";
+import { agentFullBody as agentSticker, agentTile, wholeCutsToPass } from "@/entities/agent";
 import { cutText, cutWhole, dayWord, nearText } from "./copy";
 import { TradeFrame } from "./frame";
 import { FailedStep, PendingStep, TxLink } from "./status";
@@ -358,7 +358,7 @@ export function SaveScreen({ data }: { data: SaveData }) {
                   body={
                     picked.isLowest
                       ? above && lowest
-                        ? `Lift ${picked.agent.name.split(" ")[0]} past ${above.agent.name} (${cutWhole(data.gapToNext)} $CUT) and it survives with the smallest pile: it pays the most per $CUT.`
+                        ? `Lift ${picked.agent.name.split(" ")[0]} past ${above.agent.name} (${cutWhole(wholeCutsToPass(data.gapToNext))} $CUT) and it survives with the smallest pile: it pays the most per $CUT.`
                         : "Its savers share its slice of the prize."
                       : share !== null && amount
                         ? `Its savers share its slice: about ${formatAmount(share, { maxFractionDigits: 2, minFractionDigits: 2 })} for your ${cutText(amount)}, if the cut ran now.`

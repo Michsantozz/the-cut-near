@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { gapToPass, rankByScore, type Agent } from "@/entities/agent";
+import { gapToPass, rankByScore, wholeCutsToPass, type Agent } from "@/entities/agent";
 import { getStage } from "@/entities/agent/server";
 import { getNextCut } from "@/entities/cut/server";
 import { getMoves } from "@/entities/move/server";
@@ -42,15 +42,22 @@ describe("the stage board", () => {
     expect(board.lowest?.id).toBe("big");
     expect(board.next?.id).toBe("small");
     // Same age counts as newer: a tie is never sold as a pass.
-    expect(board.gap).toBe(units(201));
+    expect(board.gap).toBe(units(200) + 1n);
   });
 
-  it("cuts the newer agent on a tied score, so the newer one needs one $CUT more to pass", () => {
+  it("cuts the newer agent on a tied score, so the newer one needs one unit more to pass", () => {
     const older = agent("older", 500, 0, 0, "2026-11-09T12:00:00Z");
     const newer = agent("newer", 500, 0, 0, "2026-11-09T13:00:00Z");
     expect(rankByScore([newer, older]).map((a) => a.id)).toEqual(["older", "newer"]);
-    expect(gapToPass(newer, older)).toBe(units(1));
+    expect(gapToPass(newer, older)).toBe(1n);
     expect(gapToPass(older, newer)).toBe(0n);
+  });
+
+  it("shows a gap rounded up to whole $CUT, so the number shown is always enough to pass", () => {
+    expect(wholeCutsToPass(units(191) + units(4) / 10n)).toBe(units(192));
+    expect(wholeCutsToPass(units(600) + 1n)).toBe(units(601));
+    expect(wholeCutsToPass(units(600))).toBe(units(600));
+    expect(wholeCutsToPass(0n)).toBe(0n);
   });
 
   it("puts each agent's move next to it", async () => {
@@ -74,7 +81,7 @@ describe("the sample lineup (v20 sample world, season 1, day 4)", () => {
     expect(lineup.board.entries).toHaveLength(7);
     expect(lineup.board.lowest?.id).toBe("yuna");
     expect(lineup.board.next?.id).toBe("gremlin");
-    expect(lineup.board.gap).toBe(units(601));
+    expect(lineup.board.gap).toBe(units(600) + 1n);
     expect(lineup.movesCloseAt.getTime()).toBe(lineup.cutAt.getTime() - 3_600_000);
     expect(lineup.cutThisSeason.map((entry) => [entry.day, entry.agent.id, entry.heir?.id ?? null])).toEqual([
       [3, "velvet", "lila"],

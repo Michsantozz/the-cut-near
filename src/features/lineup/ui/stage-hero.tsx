@@ -2,7 +2,7 @@ import { cn } from "cn";
 import { ArrowUp, ThumbsDown, Trophy } from "lucide-react";
 import Link from "next/link";
 
-import { AgentPoses, ScoreBreakdown } from "@/entities/agent";
+import { AgentPoses, ScoreBreakdown, wholeCutsToPass } from "@/entities/agent";
 import { Button } from "@/shared/ui/button";
 import { formatCount, formatUtcTime } from "@/shared/ui/format";
 import { WalletGatedLink } from "@/shared/wallet";
@@ -90,7 +90,7 @@ export function CutLineCard({ lineup, className }: { lineup: Lineup; className?:
               <ArrowUp className="size-3" strokeWidth={3.4} />
             </span>
             <span>
-              <b className="font-extrabold">{cut(gap)} $CUT short of {next.name}.</b> {pressure ? `${shortName(lowest.name)} took ${pressure} today. ` : ""}
+              <b className="font-extrabold">{cut(wholeCutsToPass(gap))} $CUT short of {next.name}.</b> {pressure ? `${shortName(lowest.name)} took ${pressure} today. ` : ""}
               Save it past {shortName(next.name)}, or boo {shortName(next.name)} under it, before {formatUtcTime(lineup.cutAt)} UTC.
             </span>
           </p>

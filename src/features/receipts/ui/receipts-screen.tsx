@@ -2,6 +2,7 @@ import { cn } from "cn";
 import { Check, Clock, Scissors, TrendingUp, TriangleAlert, Trophy, Wallet, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
+import { wholeCutsToPass } from "@/entities/agent";
 import { NEAR_DECIMALS } from "@/shared/lib/amount";
 import { formatAmount, formatCount, formatDuration, formatSignificant, formatUsd, formatUtcDate, formatUtcTime, relativeUtcDay } from "@/shared/ui/format";
 import { ConnectButton } from "@/shared/wallet";
@@ -155,7 +156,7 @@ function StatCards({ data, now }: { data: Receipts; now: Date }) {
     {
       label: "ON THE CUT LINE",
       value: stats.lowest?.name ?? "Nobody",
-      sub: stats.lowest ? `Score ${cutWhole(stats.lowest.score)}${stats.gap > 0n ? ` · ${cutWhole(stats.gap)} short` : ""}` : "No season on the stage",
+      sub: stats.lowest ? `Score ${cutWhole(stats.lowest.score)}${stats.gap > 0n ? ` · ${cutWhole(wholeCutsToPass(stats.gap))} short` : ""}` : "No season on the stage",
       icon: TriangleAlert,
       bg: "bg-[#ffc2e8]",
     },

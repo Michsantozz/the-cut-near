@@ -19,8 +19,8 @@ export function sampleNextCut(now: Date = new Date()): NextCut {
     at,
     movesCloseAt: new Date(at.getTime() - HOUR_MS),
     lowestId: "yuna",
-    // Yuna (14,900) to Gremlin (15,500): Yuna is the newer agent, so she needs one $CUT more than the difference.
-    gapToNext: units(601),
+    // Yuna (14,900) to Gremlin (15,500): Yuna is the newer agent, so she needs one unit more than the difference.
+    gapToNext: units(600) + 1n,
     prizeSoFar: units(2_180),
   };
 }
