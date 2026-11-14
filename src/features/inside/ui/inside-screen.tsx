@@ -402,7 +402,7 @@ function RulesTab({ inside }: { inside: Inside }) {
     "Savers counts and club points are for show. They never touch money.",
     "A whale can keep a robot alive alone. Allowed, and every save is public in Receipts.",
     `Last-minute saves count. The cut reads ${time}:00 block time; nobody picks.`,
-    `A fake robot costs a ${near(params.registerDeposit)} NEAR deposit and a proved X account. A rich group can still protect its robot every day.`,
+    `A fake robot locks a ${near(params.registerDeposit)} NEAR deposit and loses ${near(params.robotFunding)} NEAR of it for good. A rich group can still protect its robot every day.`,
   ];
 
   return (

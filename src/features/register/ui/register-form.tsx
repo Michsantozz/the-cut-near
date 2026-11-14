@@ -153,7 +153,7 @@ export function RegisterForm({ deposit, depositNear, backNear }: Props) {
               </span>
             </div>
           </Field>
-          <Field id={ids.x} label="X account" error={touched.xHandle ? errors.xHandle : undefined} hint="Where the robot posts, signed by NEAR AI">
+          <Field id={ids.x} label="X account" error={touched.xHandle ? errors.xHandle : undefined} hint="Where you post its NEAR AI-signed lines">
             <Input
               id={ids.x}
               value={form.xHandle}
