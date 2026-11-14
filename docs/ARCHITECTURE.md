@@ -66,6 +66,13 @@ request per block (RPC). The indexer stays 200 blocks behind the source's head, 
 receipts, keeps only successful receipts executed by the contract or `<agent>.<contract>`, and moves its cursor only after a page
 is stored. Override the source with `NEAR_TX_API_URL`.
 
+Receipts also catches the journal up on demand (`refreshJournal` in `src/features/indexer/server`), with no public endpoint:
+when no indexer run touched the cursor in the last 30 s, the page starts one run of one page, 20 blocks behind the head, waits up
+to 2.5 s for it and lets a slower one finish after the response (`after`), showing "Updating from NEAR…" and loading once more.
+At that distance a transaction can still have receipts in flight, so a recent one whose created receipts have not all executed
+holds the cursor at its block until the next run. Every run, cron or on demand, holds a transaction-level Postgres advisory lock
+(`withIndexerLock`), so two never overlap; the on-demand run skips when the lock is taken, the cron waits up to 30 s for it.
+
 Crons (`vercel.json`, `Authorization: Bearer $CRON_SECRET`): `/api/cron/cut` at 18:00 UTC plus a backstop at 18:20 (then catches the
 journal up and has the Director sign the roast and receipt of that cut), `/api/cron/moves` at 12:00 and 15:00 (moves close at 17:00)
 and at 19:00, after the cut and its backstop, `/api/cron/director?moment=scheduled` at 12:00 and `?moment=final-hour` at 17:00 (both

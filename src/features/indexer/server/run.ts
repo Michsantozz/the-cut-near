@@ -3,7 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import type { Database } from "@/shared/db/client";
 import { insertJournalRows } from "@/shared/near/journal";
 import { indexerCursor } from "../db/schema";
-import { extractEvents } from "../model/transactions";
+import { extractEvents, isComplete } from "../model/transactions";
 import { SAFETY_LAG_BLOCKS, scanWindow } from "../model/window";
 import { MAX_HASHES_PER_REQUEST, TxApiError, type TxSource } from "./tx-api";
 
@@ -36,6 +36,10 @@ async function advanceCursor(db: Database, name: string, nextBlockHeight: number
  * Idempotent: events are keyed by (receipt, log, item) and inserted with ON CONFLICT DO NOTHING,
  * and the cursor only advances past a page once every transaction in it was stored. Re-running,
  * or two runs at once, re-reads at most one page and never duplicates a row.
+ *
+ * With a `lag` below SAFETY_LAG_BLOCKS (the on-demand catch-up), a transaction from the last
+ * SAFETY_LAG_BLOCKS blocks may still have receipts in flight. Such a transaction, or one the source
+ * cannot return yet, stops the run with the cursor at its block, so the next run reads it again.
  */
 export async function runIndexer({ db, source, contractId, maxPages = 10, lag = SAFETY_LAG_BLOCKS }: IndexerRun): Promise<IndexerReport> {
   const name = cursorName(contractId);
@@ -50,16 +54,24 @@ export async function runIndexer({ db, source, contractId, maxPages = 10, lag = 
   let events = 0;
   let inserted = 0;
   let nextBlockHeight = window.from ?? 0;
+  // Lowest block of a recent transaction that is not finished yet: the run stops there.
+  let unfinishedAt: number | null = null;
 
   do {
     const page = await source.accountTxs({ accountId: contractId, from: window.from, to: window.to, resumeToken });
+    const blockOf = new Map(page.txs.map((tx) => [tx.hash, tx.blockHeight]));
+    const recent = (hash: string) => (blockOf.get(hash) ?? 0) > head - SAFETY_LAG_BLOCKS;
     const hashes = [...new Set(page.txs.map((tx) => tx.hash))];
     for (let i = 0; i < hashes.length; i += MAX_HASHES_PER_REQUEST) {
       const chunk = hashes.slice(i, i + MAX_HASHES_PER_REQUEST);
       const txs = await source.transactions(chunk);
       // A listed transaction the source cannot return yet must not be skipped: stop before the cursor moves.
       const missing = chunk.filter((hash) => !txs.some((tx) => tx.transaction.hash === hash));
-      if (missing.length > 0) throw new TxApiError(`Transactions not available yet: ${missing.join(", ")}`);
+      const missingOld = missing.filter((hash) => !recent(hash));
+      if (missingOld.length > 0) throw new TxApiError(`Transactions not available yet: ${missingOld.join(", ")}`);
+      // Events of receipts that already ran are final, so they are stored now; the cursor waits for the rest.
+      const unfinished = [...missing, ...txs.filter((tx) => recent(tx.transaction.hash) && !isComplete(tx)).map((tx) => tx.transaction.hash)];
+      for (const hash of unfinished) unfinishedAt = Math.min(unfinishedAt ?? Infinity, blockOf.get(hash) ?? Infinity);
       const rows = txs.flatMap((tx) => extractEvents(tx, contractId));
       events += rows.length;
       inserted += await insertJournalRows(db, rows);
@@ -67,11 +79,14 @@ export async function runIndexer({ db, source, contractId, maxPages = 10, lag = 
     pages += 1;
     transactions += hashes.length;
     resumeToken = page.resumeToken ?? undefined;
+    // An unfinished transaction: resume next time at its block (inclusive).
     // More pages: resume next time at the last block seen (inclusive; its rows are already stored).
     // Last page: everything up to the window's end has been read.
-    nextBlockHeight = resumeToken ? (page.txs.at(-1)?.blockHeight ?? nextBlockHeight) : window.to + 1;
+    if (unfinishedAt !== null) nextBlockHeight = unfinishedAt;
+    else nextBlockHeight = resumeToken ? (page.txs.at(-1)?.blockHeight ?? nextBlockHeight) : window.to + 1;
     await advanceCursor(db, name, nextBlockHeight);
-  } while (resumeToken && pages < maxPages);
+  } while (resumeToken && pages < maxPages && unfinishedAt === null);
 
-  return { status: resumeToken ? "partial" : "caught_up", from: window.from, to: window.to, pages, transactions, events, inserted, nextBlockHeight };
+  const done = !resumeToken && unfinishedAt === null;
+  return { status: done ? "caught_up" : "partial", from: window.from, to: window.to, pages, transactions, events, inserted, nextBlockHeight };
 }

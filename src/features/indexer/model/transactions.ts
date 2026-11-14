@@ -16,7 +16,13 @@ const outcomeSchema = z.object({
   block_height: z.number().int().nonnegative(),
   /** Nanoseconds as a JSON number: JSON.parse rounds it by up to 128 ns, so it is used at millisecond precision. */
   block_timestamp: z.number().nonnegative(),
-  outcome: z.object({ logs: z.array(z.string()), executor_id: z.string().min(1), status: z.unknown() }),
+  outcome: z.object({
+    logs: z.array(z.string()),
+    /** Receipts this step created: each one must appear in `receipts` once it has executed. */
+    receipt_ids: z.array(z.string()).default([]),
+    executor_id: z.string().min(1),
+    status: z.unknown(),
+  }),
 });
 
 export const transactionSchema = z.object({
@@ -51,6 +57,17 @@ export type JournalEvent = {
 /** A receipt's logs count only when it succeeded: a failed receipt's state changes were rolled back. */
 function succeeded(status: unknown): boolean {
   return typeof status === "object" && status !== null && ("SuccessValue" in status || "SuccessReceiptId" in status);
+}
+
+/**
+ * True once every receipt the transaction created has executed and is listed with its outcome.
+ * A transaction read a few blocks after it landed can still have receipts in flight, and their
+ * events would be missed if the indexer moved its cursor past it.
+ */
+export function isComplete(tx: TxApiTransaction): boolean {
+  const executed = new Set(tx.receipts.map((receipt) => receipt.execution_outcome.id));
+  const outcomes = [tx.execution_outcome, ...tx.receipts.map((receipt) => receipt.execution_outcome)];
+  return outcomes.every((execution) => execution.outcome.receipt_ids.every((id) => executed.has(id)));
 }
 
 /** The main contract and its agent sub-accounts (`<id>.<contract>`) are the only trusted emitters. */

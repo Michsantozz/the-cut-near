@@ -3,18 +3,26 @@ import type { TxSource } from "@/features/indexer/server/tx-api";
 
 export const event = (name: string, data: unknown, standard = "thecut") => `EVENT_JSON:${JSON.stringify({ standard, version: "1.0.0", event: name, data })}`;
 
-/** A transaction whose single receipt ran on `executor` with `logs`. */
-export function contractTx(hash: string, blockHeight: number, logs: string[], { executor = "thecut.testnet", timestampMs = Date.UTC(2026, 10, 13, 12) } = {}): TxApiTransaction {
-  const outcome = (id: string, executor_id: string, entries: string[], status: object) => ({
+/**
+ * A transaction whose single receipt ran on `executor` with `logs`. With `inFlight`, that receipt
+ * also created one more receipt that has not executed yet (the transaction is not complete).
+ */
+export function contractTx(
+  hash: string,
+  blockHeight: number,
+  logs: string[],
+  { executor = "thecut.testnet", timestampMs = Date.UTC(2026, 10, 13, 12), inFlight = false } = {},
+): TxApiTransaction {
+  const outcome = (id: string, executor_id: string, entries: string[], status: object, receipt_ids: string[]) => ({
     id,
     block_height: blockHeight + 1,
     block_timestamp: timestampMs * 1e6,
-    outcome: { logs: entries, executor_id, status },
+    outcome: { logs: entries, receipt_ids, executor_id, status },
   });
   return {
     transaction: { hash },
-    execution_outcome: outcome(hash, "mika.testnet", [], { SuccessReceiptId: `${hash}-r` }),
-    receipts: [{ execution_outcome: outcome(`${hash}-r`, executor, logs, { SuccessValue: "" }) }],
+    execution_outcome: outcome(hash, "mika.testnet", [], { SuccessReceiptId: `${hash}-r` }, [`${hash}-r`]),
+    receipts: [{ execution_outcome: outcome(`${hash}-r`, executor, logs, { SuccessValue: "" }, inFlight ? [`${hash}-callback`] : []) }],
   };
 }
 

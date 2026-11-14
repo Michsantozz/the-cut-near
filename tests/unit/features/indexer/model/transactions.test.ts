@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractEvents, isContractAccount, transactionSchema, type TxApiTransaction } from "@/features/indexer/model/transactions";
+import { extractEvents, isComplete, isContractAccount, transactionSchema, type TxApiTransaction } from "@/features/indexer/model/transactions";
 
 const CONTRACT = "thecut.testnet";
 const event = (standard: string, name: string, data: unknown) => `EVENT_JSON:${JSON.stringify({ standard, version: "1.0.0", event: name, data })}`;
@@ -73,5 +73,27 @@ describe("isContractAccount", () => {
     expect(isContractAccount(CONTRACT, CONTRACT)).toBe(true);
     expect(isContractAccount(CONTRACT, `pixie.${CONTRACT}`)).toBe(true);
     expect(isContractAccount(CONTRACT, `pixiethecut.testnet`)).toBe(false);
+  });
+});
+
+describe("isComplete", () => {
+  const withIds = (id: string, receiptIds: string[]) => {
+    const step = receipt(id, CONTRACT, []);
+    return { execution_outcome: { ...step.execution_outcome, outcome: { ...step.execution_outcome.outcome, receipt_ids: receiptIds } } };
+  };
+  const parse = (txIds: string[], receipts: ReturnType<typeof withIds>[]) =>
+    transactionSchema.parse({ transaction: { hash: "TX1" }, execution_outcome: withIds("TX1", txIds).execution_outcome, receipts });
+
+  it("is true when every receipt the transaction created has executed", () => {
+    expect(isComplete(parse(["R1"], [withIds("R1", ["R2"]), withIds("R2", [])]))).toBe(true);
+  });
+
+  it("is false while a created receipt is still in flight", () => {
+    expect(isComplete(parse(["R1"], [withIds("R1", ["R2"])]))).toBe(false);
+    expect(isComplete(parse(["R1"], []))).toBe(false);
+  });
+
+  it("treats a source without receipt ids as complete, the indexer's behaviour before the check", () => {
+    expect(isComplete(tx([receipt("R1", CONTRACT, [])]))).toBe(true);
   });
 });

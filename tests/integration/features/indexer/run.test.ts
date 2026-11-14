@@ -96,6 +96,34 @@ describe("runIndexer", () => {
     expect(await rows()).toHaveLength(4);
   });
 
+  it("with a short lag, waits at the block of a recent transaction whose receipts are still in flight", async () => {
+    source.add(9_000, contractTx("OLD", 9_000, [event("buy", [{ account_id: "a.testnet", amount: "1" }])]));
+    source.add(9_950, contractTx("NEW", 9_950, [event("buy", [{ account_id: "b.testnet", amount: "2" }])], { inFlight: true }));
+    source.add(9_960, contractTx("NEXT", 9_960, [event("buy", [{ account_id: "c.testnet", amount: "3" }])]));
+    const first = await runIndexer({ db: t.db, source, contractId: CONTRACT, lag: 20 });
+    // Every receipt that ran is stored; the cursor stays on the unfinished transaction's block.
+    expect(first).toMatchObject({ status: "partial", to: 9_980, inserted: 3, nextBlockHeight: 9_950 });
+    expect(await cursor()).toBe(9_950);
+
+    source.txs = source.txs.map((entry) => (entry.tx.transaction.hash === "NEW" ? { ...entry, tx: contractTx("NEW", 9_950, [event("buy", [{ account_id: "b.testnet", amount: "2" }])]) } : entry));
+    const second = await runIndexer({ db: t.db, source, contractId: CONTRACT, lag: 20 });
+    expect(second).toMatchObject({ status: "caught_up", from: 9_950, inserted: 0, nextBlockHeight: 9_981 });
+    expect(await rows()).toHaveLength(3);
+  });
+
+  it("with a short lag, waits for a recent transaction the source cannot return yet instead of failing", async () => {
+    source.add(9_950, contractTx("NEW", 9_950, [event("buy", [{ account_id: "b.testnet", amount: "2" }])]));
+    source.unavailable.add("NEW");
+    expect(await runIndexer({ db: t.db, source, contractId: CONTRACT, lag: 20 })).toMatchObject({ status: "partial", nextBlockHeight: 9_950 });
+    source.unavailable.clear();
+    expect(await runIndexer({ db: t.db, source, contractId: CONTRACT, lag: 20 })).toMatchObject({ status: "caught_up", inserted: 1 });
+  });
+
+  it("ingests an old unfinished transaction as before, so nothing waits forever", async () => {
+    source.add(5_000, contractTx("STUCK", 5_000, [event("buy", [{ account_id: "a.testnet", amount: "1" }])], { inFlight: true }));
+    expect(await run()).toMatchObject({ status: "caught_up", inserted: 1, nextBlockHeight: 9_901 });
+  });
+
   it("never moves the cursor backwards", async () => {
     await t.db.insert(indexerCursor).values({ name: cursorName(CONTRACT), nextBlockHeight: 5_000 });
     source.pageSize = 1;

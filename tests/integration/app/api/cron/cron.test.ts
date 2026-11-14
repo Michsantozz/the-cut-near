@@ -9,6 +9,10 @@ import { contractTx, event } from "../../../helpers/tx-source";
 import { FakeChain } from "../../../../msw/near-rpc";
 import { server } from "../../../../msw/server";
 
+// The public config is read once at import: pin the contract these fixtures are written for.
+vi.hoisted(() => {
+  process.env.NEXT_PUBLIC_CUT_CONTRACT = "thecut.testnet";
+});
 const db = vi.hoisted(() => ({ current: null as TestDb | null }));
 vi.mock("@/shared/db/client", () => ({
   getDb: () => {
