@@ -1,1 +1,1 @@
-export type { JournalEntry, JournalFilter, JournalPage, JournalStats } from "./model/types";
+export type { JournalEntry, JournalFilter, JournalPage, JournalStats, SampleMoment } from "./model/types";

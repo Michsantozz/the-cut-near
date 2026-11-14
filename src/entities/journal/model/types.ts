@@ -35,7 +35,14 @@ export type JournalFilter = {
   before?: { blockHeight: number; id: number };
   /** 1..200, default 50. */
   limit?: number;
+  /**
+   * Sample data only, live reads ignore it. The design shows the after-cut screens (Prizes, notifications) a minute
+   * after cut #1 ran and every other screen at 13:48 before it (docs/design/SPEC-v19.md §2). Default "before-cut".
+   */
+  sampleMoment?: SampleMoment;
 };
+
+export type SampleMoment = "before-cut" | "after-cut";
 
 /** Totals over the whole journal, for the Receipts page and its audit. Amounts in the smallest unit. */
 export type JournalStats = {

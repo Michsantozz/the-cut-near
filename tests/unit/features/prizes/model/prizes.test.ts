@@ -16,8 +16,8 @@ describe("shareOf", () => {
 describe("latestBreakdown", () => {
   it("explains mika.near's 6.32 $CUT from cut #1", async () => {
     const [cuts, prizes, saves, claimable] = await Promise.all([
-      getJournal({ events: ["cut"], limit: 10 }),
-      getJournal({ events: ["prize"], limit: 50 }),
+      getJournal({ events: ["cut"], limit: 10, sampleMoment: "after-cut" }),
+      getJournal({ events: ["prize"], limit: 50, sampleMoment: "after-cut" }),
       getSaves("mika.near"),
       getClaimable("mika.near"),
     ]);

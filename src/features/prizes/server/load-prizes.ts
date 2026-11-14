@@ -41,20 +41,21 @@ export type Prizes = {
 /** The viewer's prizes: ready to collect, how the last one was made, and past slices. Request-time only. */
 export async function loadPrizes(accountId: string): Promise<Prizes> {
   await connection();
+  // An after-cut screen: sample data shows it a minute after cut #1 ran.
   const [claimable, saves, registered, cuts, prizes, claims, nextCut, params, pool, usd, stage, bench, registers] = await Promise.all([
     getClaimable(accountId),
     getSaves(accountId),
     isStorageRegistered(accountId),
-    getJournal({ events: ["cut"], limit: 10 }),
-    getJournal({ events: ["prize"], limit: 200 }),
-    getJournal({ accountId, events: ["claim"], limit: 20 }),
+    getJournal({ events: ["cut"], limit: 10, sampleMoment: "after-cut" }),
+    getJournal({ events: ["prize"], limit: 200, sampleMoment: "after-cut" }),
+    getJournal({ accountId, events: ["claim"], limit: 20, sampleMoment: "after-cut" }),
     getNextCut(),
     getParams(),
     getPool(),
     getUsdCentsPerNear(),
     getStage(),
     getBench(),
-    getJournal({ events: ["register"], limit: 200 }),
+    getJournal({ events: ["register"], limit: 200, sampleMoment: "after-cut" }),
   ]);
   const names: Record<string, string> = {};
   for (const entry of registers.entries) if (entry.robotId && typeof entry.data.name === "string") names[entry.robotId] = entry.data.name;

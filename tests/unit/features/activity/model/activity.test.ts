@@ -17,8 +17,8 @@ const ctx = (usd: bigint | null): ActivityContext => ({
 });
 
 async function mikaRows(usd: bigint | null = 250n): Promise<ActivityRow[]> {
-  const own = (await getJournal({ accountId: "mika.near", limit: 200 })).entries;
-  const shared = (await getJournal({ events: ["ft_mint", "cut"], limit: 200 })).entries;
+  const own = (await getJournal({ accountId: "mika.near", limit: 200, sampleMoment: "after-cut" })).entries;
+  const shared = (await getJournal({ events: ["ft_mint", "cut"], limit: 200, sampleMoment: "after-cut" })).entries;
   return mergeNewestFirst(own, shared, own)
     .map((entry) => activityRow(entry, ctx(usd)))
     .filter((row): row is ActivityRow => row !== null);

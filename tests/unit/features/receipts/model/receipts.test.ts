@@ -15,7 +15,7 @@ async function context(): Promise<DescribeContext> {
   const params = await getParams();
   const names = new Map([...(await getStage()), ...(await getBench())].map((r) => [r.id, r.name] as const));
   names.set("kiko", "Kiko Bun");
-  const all = (await getJournal({ limit: 200 })).entries;
+  const all = (await getJournal({ limit: 200, sampleMoment: "after-cut" })).entries;
   return {
     names,
     now: NOW,
@@ -26,7 +26,7 @@ async function context(): Promise<DescribeContext> {
 
 describe("groupEntries", () => {
   it("reads one event of one transaction as one line, oldest entry first", async () => {
-    const { entries } = await getJournal({ limit: 200 });
+    const { entries } = await getJournal({ limit: 200, sampleMoment: "after-cut" });
     const groups = groupEntries(entries);
     const prize = groups.find((g) => g.event === "prize")!;
     expect(prize.entries).toHaveLength(9);
@@ -40,7 +40,7 @@ describe("groupEntries", () => {
 describe("describeGroup", () => {
   it("writes the cut receipt of cut #1", async () => {
     const ctx = await context();
-    const groups = groupEntries((await getJournal({ limit: 200 })).entries);
+    const groups = groupEntries((await getJournal({ limit: 200, sampleMoment: "after-cut" })).entries);
     const line = describeGroup(groups.find((g) => g.event === "cut")!, ctx);
     expect(line.tag).toBe("cut");
     expect(line.what).toBe("Cut #1: Kiko Bun is cut");
@@ -50,7 +50,7 @@ describe("describeGroup", () => {
 
   it("names the trade a fee came from and the launch mint", async () => {
     const ctx = await context();
-    const lines = groupEntries((await getJournal({ limit: 200 })).entries).map((g) => describeGroup(g, ctx));
+    const lines = groupEntries((await getJournal({ limit: 200, sampleMoment: "after-cut" })).entries).map((g) => describeGroup(g, ctx));
     const fee = lines.find((l) => l.tag === "fee")!;
     expect(fee.what).toMatch(/\$CUT fee from a .+ \$CUT (buy|sell)$/);
     const launch = lines.find((l) => l.tag === "launch")!;
@@ -99,14 +99,15 @@ describe("runAudit", () => {
     const input = {
       contractId: "thecut.near",
       fullAccessKeys: 0,
-      stats: { ...stats, saved },
+      stats,
       totalSupply: LAUNCH_PARAMS.totalSupply - stats.burned,
       robots,
       params,
       launchIntervalMs: 86_400_000,
     };
     expect(runAudit(input).every((c) => c.pass)).toBe(true);
-    expect(runAudit({ ...input, totalSupply: LAUNCH_PARAMS.totalSupply }).some((c) => !c.pass)).toBe(true);
+    expect(stats.saved).toBe(saved);
+    expect(runAudit({ ...input, totalSupply: LAUNCH_PARAMS.totalSupply - units(11_800) }).some((c) => !c.pass)).toBe(true);
     expect(runAudit({ ...input, fullAccessKeys: 1 }).some((c) => !c.pass)).toBe(true);
   });
 });
